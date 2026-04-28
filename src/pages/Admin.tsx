@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { BulkImport } from "@/components/admin/BulkImport";
+import { ManageAdmins } from "@/components/admin/ManageAdmins";
 
 type Subject = { id: string; name: string; slug: string };
 type QRow = { id: string; statement: string; subject_id: string; correct_answer: string };
@@ -68,9 +69,10 @@ const Admin = () => {
 
       <main className="px-5 py-5 space-y-5">
         <Tabs defaultValue="manual" className="w-full">
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="manual">Manual</TabsTrigger>
             <TabsTrigger value="bulk">Em lote</TabsTrigger>
+            <TabsTrigger value="admins">Admins</TabsTrigger>
           </TabsList>
 
           <TabsContent value="manual" className="mt-4">
