@@ -28,7 +28,7 @@ const Admin = () => {
   useEffect(() => { if (!loading && !isAdmin) navigate("/"); }, [isAdmin, loading, navigate]);
 
   const reload = async () => {
-    const { data: subs } = await supabase.from("subjects").select("id, name").order("display_order");
+    const { data: subs } = await supabase.from("subjects").select("id, name, slug").order("display_order");
     const { data: qs } = await supabase.from("questions").select("id, statement, subject_id, correct_answer").order("created_at", { ascending: false }).limit(100);
     setSubjects((subs ?? []) as Subject[]);
     setList((qs ?? []) as QRow[]);
