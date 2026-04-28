@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { BulkImport } from "@/components/admin/BulkImport";
 
-type Subject = { id: string; name: string };
+type Subject = { id: string; name: string; slug: string };
 type QRow = { id: string; statement: string; subject_id: string; correct_answer: string };
 
 const Admin = () => {
