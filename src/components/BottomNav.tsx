@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart3, User, Crown } from "lucide-react";
+import { Home, BookOpen, BarChart3, User, Crown, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfile";
 
-const items = [
+const baseItems = [
   { to: "/", label: "Início", icon: Home },
   { to: "/materias", label: "Matérias", icon: BookOpen },
   { to: "/dashboard", label: "Progresso", icon: BarChart3 },
@@ -12,6 +13,10 @@ const items = [
 
 export const BottomNav = () => {
   const location = useLocation();
+  const { isAdmin } = useProfile();
+  const items = isAdmin
+    ? [...baseItems.slice(0, 4), { to: "/admin", label: "Admin", icon: Shield }, baseItems[4]]
+    : baseItems;
   // Esconde em telas de questão para foco
   if (location.pathname.startsWith("/questao")) return null;
   if (location.pathname.startsWith("/auth")) return null;
