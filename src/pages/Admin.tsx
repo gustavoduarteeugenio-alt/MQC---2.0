@@ -67,54 +67,67 @@ const Admin = () => {
       </header>
 
       <main className="px-5 py-5 space-y-5">
-        <form onSubmit={submit} className="bg-card border border-border rounded-2xl p-4 shadow-card space-y-3">
-          <div>
-            <Label className="stencil text-[10px]">Matéria</Label>
-            <Select value={form.subject_id} onValueChange={(v) => setForm({ ...form, subject_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                {subjects.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="stencil text-[10px]">Enunciado</Label>
-            <Textarea value={form.statement} onChange={(e) => setForm({ ...form, statement: e.target.value })} rows={3} />
-          </div>
-          {(["a","b","c","d"] as const).map((l) => (
-            <div key={l}>
-              <Label className="stencil text-[10px]">Alternativa {l.toUpperCase()}</Label>
-              <Input value={(form as any)[`option_${l}`]} onChange={(e) => setForm({ ...form, [`option_${l}`]: e.target.value } as any)} />
-            </div>
-          ))}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="stencil text-[10px]">Gabarito</Label>
-              <Select value={form.correct_answer} onValueChange={(v) => setForm({ ...form, correct_answer: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{["A","B","C","D"].map(x => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="stencil text-[10px]">Dificuldade</Label>
-              <Select value={form.difficulty} onValueChange={(v) => setForm({ ...form, difficulty: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Fácil</SelectItem>
-                  <SelectItem value="medium">Médio</SelectItem>
-                  <SelectItem value="hard">Difícil</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div>
-            <Label className="stencil text-[10px]">Gabarito comentado</Label>
-            <Textarea value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} rows={3} />
-          </div>
-          <Button type="submit" className="w-full bg-gradient-flame text-white stencil">
-            <Plus className="w-4 h-4 mr-1" /> Cadastrar questão
-          </Button>
-        </form>
+        <Tabs defaultValue="manual" className="w-full">
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="manual">Manual</TabsTrigger>
+            <TabsTrigger value="bulk">Em lote</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="manual" className="mt-4">
+            <form onSubmit={submit} className="bg-card border border-border rounded-2xl p-4 shadow-card space-y-3">
+              <div>
+                <Label className="stencil text-[10px]">Matéria</Label>
+                <Select value={form.subject_id} onValueChange={(v) => setForm({ ...form, subject_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="stencil text-[10px]">Enunciado</Label>
+                <Textarea value={form.statement} onChange={(e) => setForm({ ...form, statement: e.target.value })} rows={3} />
+              </div>
+              {(["a","b","c","d"] as const).map((l) => (
+                <div key={l}>
+                  <Label className="stencil text-[10px]">Alternativa {l.toUpperCase()}</Label>
+                  <Input value={(form as any)[`option_${l}`]} onChange={(e) => setForm({ ...form, [`option_${l}`]: e.target.value } as any)} />
+                </div>
+              ))}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="stencil text-[10px]">Gabarito</Label>
+                  <Select value={form.correct_answer} onValueChange={(v) => setForm({ ...form, correct_answer: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{["A","B","C","D"].map(x => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="stencil text-[10px]">Dificuldade</Label>
+                  <Select value={form.difficulty} onValueChange={(v) => setForm({ ...form, difficulty: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Fácil</SelectItem>
+                      <SelectItem value="medium">Médio</SelectItem>
+                      <SelectItem value="hard">Difícil</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="stencil text-[10px]">Gabarito comentado</Label>
+                <Textarea value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} rows={3} />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-flame text-white stencil">
+                <Plus className="w-4 h-4 mr-1" /> Cadastrar questão
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="bulk" className="mt-4">
+            <BulkImport subjects={subjects} onImported={reload} />
+          </TabsContent>
+        </Tabs>
 
         <section>
           <h2 className="font-display font-bold mb-2">Últimas cadastradas ({list.length})</h2>
@@ -133,6 +146,7 @@ const Admin = () => {
           </div>
         </section>
       </main>
+
     </div>
   );
 };
