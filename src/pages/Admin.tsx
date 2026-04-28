@@ -129,6 +129,10 @@ const Admin = () => {
           <TabsContent value="bulk" className="mt-4">
             <BulkImport subjects={subjects} onImported={reload} />
           </TabsContent>
+
+          <TabsContent value="admins" className="mt-4">
+            <ManageAdmins />
+          </TabsContent>
         </Tabs>
 
         <section>
