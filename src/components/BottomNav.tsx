@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart3, User, Crown } from "lucide-react";
+import { Home, BookOpen, BarChart3, User, Crown, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfile";
 
-const items = [
+const baseItems = [
   { to: "/", label: "Início", icon: Home },
   { to: "/materias", label: "Matérias", icon: BookOpen },
   { to: "/dashboard", label: "Progresso", icon: BarChart3 },
@@ -12,12 +13,16 @@ const items = [
 
 export const BottomNav = () => {
   const location = useLocation();
+  const { isAdmin } = useProfile();
+  const items = isAdmin
+    ? [...baseItems.slice(0, 4), { to: "/admin", label: "Admin", icon: Shield }, baseItems[4]]
+    : baseItems;
   // Esconde em telas de questão para foco
   if (location.pathname.startsWith("/questao")) return null;
   if (location.pathname.startsWith("/auth")) return null;
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card/95 backdrop-blur border-t border-border z-40">
-      <ul className="grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom)]">
+      <ul className={cn("grid px-2 pb-[env(safe-area-inset-bottom)]", isAdmin ? "grid-cols-6" : "grid-cols-5")}>
         {items.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <NavLink
