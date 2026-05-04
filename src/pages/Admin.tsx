@@ -12,6 +12,7 @@ import { ArrowLeft, Plus, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
+import { ManageUsers } from "@/components/admin/ManageUsers";
 
 type Subject = { id: string; name: string; slug: string };
 type QRow = { id: string; statement: string; subject_id: string; correct_answer: string };
