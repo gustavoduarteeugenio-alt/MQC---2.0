@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Crown, Check, X, Flame, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
 const Plans = () => {
   const { user } = useAuth();
@@ -70,9 +71,11 @@ const Plans = () => {
               Cancelar premium
             </Button>
           ) : (
-            <Button onClick={activate} disabled={loading} className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil">
-              Assinar agora
-            </Button>
+            <PlanSelectionDialog>
+              <Button className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil">
+                Assinar agora
+              </Button>
+            </PlanSelectionDialog>
           )}
           <p className="text-[10px] opacity-80 mt-2 text-center">Demo · Pagamento será integrado em breve.</p>
         </article>
