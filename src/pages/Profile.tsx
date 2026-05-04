@@ -6,6 +6,15 @@ import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight } from "lucide
 import { Link } from "react-router-dom";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
+const planLabel = (plan?: string | null) => {
+  switch (plan) {
+    case "monthly": return "Mensal";
+    case "quarterly": return "Trimestral";
+    case "premium": return "Premium";
+    default: return "Básico";
+  }
+};
+
 const Profile = () => {
   const { signOut, user } = useAuth();
   const { profile, isPremium, isAdmin, dailyCount, dailyLimit } = useProfile();
