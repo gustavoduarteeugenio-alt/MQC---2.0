@@ -81,6 +81,9 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
               <span className="text-xs opacity-80">/trimestre</span>
             </div>
             <p className="text-[10px] opacity-90 mt-0.5">Equivale a R$ 23,30/mês</p>
+            <p className="mt-2 text-xs font-bold text-warning drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]">
+              Garanta seu acesso até o dia da prova!
+            </p>
             <ul className="mt-3 space-y-2 text-xs flex-1">
               {BENEFITS.map((b) => (
                 <li key={b} className="flex items-start gap-2">
