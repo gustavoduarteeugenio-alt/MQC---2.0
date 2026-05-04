@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Crown, Check, X, Flame, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
 const Plans = () => {
   const { user } = useAuth();
