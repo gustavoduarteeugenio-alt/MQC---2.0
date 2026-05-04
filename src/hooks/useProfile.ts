@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export type PlanType = "basic" | "premium" | "monthly" | "quarterly";
+
 export type Profile = {
   id: string;
   user_id: string;
   full_name: string | null;
   email: string | null;
-  plan: "basic" | "premium";
+  plan: PlanType;
   premium_until: string | null;
+  premium_since: string | null;
 };
 
 const BASIC_DAILY_LIMIT = 10;
@@ -46,7 +49,9 @@ export const useProfile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const isPremium = profile?.plan === "premium" && (!profile.premium_until || new Date(profile.premium_until) > new Date());
+  const planIsPremium = profile?.plan === "premium" || profile?.plan === "monthly" || profile?.plan === "quarterly";
+  const notExpired = !profile?.premium_until || new Date(profile.premium_until) > new Date();
+  const isPremium = !!planIsPremium && notExpired;
   const dailyLimit = isPremium ? Infinity : BASIC_DAILY_LIMIT;
   const canAnswerMore = dailyCount < dailyLimit;
 
