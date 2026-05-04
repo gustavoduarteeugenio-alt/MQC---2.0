@@ -71,9 +71,11 @@ const Plans = () => {
               Cancelar premium
             </Button>
           ) : (
-            <Button onClick={activate} disabled={loading} className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil">
-              Assinar agora
-            </Button>
+            <PlanSelectionDialog>
+              <Button className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil">
+                Assinar agora
+              </Button>
+            </PlanSelectionDialog>
           )}
           <p className="text-[10px] opacity-80 mt-2 text-center">Demo · Pagamento será integrado em breve.</p>
         </article>
