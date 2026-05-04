@@ -4,6 +4,7 @@ import * as LucideIcons from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { ChevronRight } from "lucide-react";
+import { AdBanner } from "@/components/AdBanner";
 
 type Subject = { id: string; name: string; slug: string; icon: string | null; questionCount?: number };
 
@@ -31,6 +32,7 @@ const Subjects = () => {
       </header>
 
       <main className="px-5 py-5 space-y-3">
+        <AdBanner className="mb-1" />
         {loading ? (
           <p className="text-center text-muted-foreground py-10">Carregando...</p>
         ) : (

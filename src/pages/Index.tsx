@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
-import { Flame, Crown, BookOpen, Target, Zap, ChevronRight } from "lucide-react";
+import { Flame, Crown, BookOpen, Target, Zap, ChevronRight, ShieldCheck, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { AppShell } from "@/components/AppShell";
+import { AdBanner } from "@/components/AdBanner";
+import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
+
 
 type Stat = { total: number; correct: number; today: number };
 
@@ -90,6 +93,36 @@ const Index = () => {
             </div>
           </div>
         </Link>
+
+        {/* Simulado completo — exclusivo Premium */}
+        {isPremium ? (
+          <Link to="/materias" className="flex items-center justify-between bg-secondary text-secondary-foreground rounded-2xl px-5 py-4 shadow-card">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-6 h-6 text-warning" />
+              <div>
+                <p className="stencil text-[10px] opacity-80">Exclusivo Premium</p>
+                <p className="font-display font-semibold">Simulado completo IDECAN</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5" />
+          </Link>
+        ) : (
+          <PlanSelectionDialog>
+            <button className="w-full flex items-center justify-between bg-card border border-dashed border-primary/40 rounded-2xl px-5 py-4 shadow-card text-left">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="stencil text-[10px] text-muted-foreground">Bloqueado · Premium</p>
+                  <p className="font-display font-semibold">Simulado completo IDECAN</p>
+                </div>
+              </div>
+              <Crown className="w-5 h-5 text-warning" />
+            </button>
+          </PlanSelectionDialog>
+        )}
+
+        {/* Anúncio (apenas básico) */}
+        <AdBanner />
 
         {/* Atalho dashboard */}
         <Link to="/dashboard" className="flex items-center justify-between bg-card border border-border rounded-2xl px-5 py-4 shadow-card">
