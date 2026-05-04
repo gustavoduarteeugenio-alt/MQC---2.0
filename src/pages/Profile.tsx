@@ -36,17 +36,19 @@ const Profile = () => {
         </Card>
 
         {!isPremium && (
-          <Link to="/planos">
-            <Card className="bg-gradient-flame text-white shadow-flame">
-              <div className="flex items-center justify-between p-1">
-                <div>
-                  <p className="stencil text-[11px] opacity-90">Upgrade</p>
-                  <p className="font-display font-bold">Tornar-se Premium</p>
+          <PlanSelectionDialog>
+            <button className="w-full text-left">
+              <Card className="bg-gradient-flame text-white shadow-flame">
+                <div className="flex items-center justify-between p-1">
+                  <div>
+                    <p className="stencil text-[11px] opacity-90">Upgrade</p>
+                    <p className="font-display font-bold">Tornar-se Premium</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5" />
                 </div>
-                <ChevronRight className="w-5 h-5" />
-              </div>
-            </Card>
-          </Link>
+              </Card>
+            </button>
+          </PlanSelectionDialog>
         )}
 
         {isAdmin && (
