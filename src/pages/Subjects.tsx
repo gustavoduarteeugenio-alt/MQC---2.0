@@ -32,6 +32,7 @@ const Subjects = () => {
       </header>
 
       <main className="px-5 py-5 space-y-3">
+        <AdBanner className="mb-1" />
         {loading ? (
           <p className="text-center text-muted-foreground py-10">Carregando...</p>
         ) : (
