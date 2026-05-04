@@ -3,10 +3,12 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, CheckCircle2, XCircle, Lock, Flame, Lightbulb } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle2, XCircle, Lock, Flame, Lightbulb, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
 type Question = {
   id: string; subject_id: string; statement: string;
