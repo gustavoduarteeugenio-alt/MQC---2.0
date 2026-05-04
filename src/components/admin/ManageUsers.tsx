@@ -3,15 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Crown, ShieldOff, Loader2, Users } from "lucide-react";
+import { Search, Crown, ShieldOff, Loader2, Users, Calendar } from "lucide-react";
 import { toast } from "sonner";
+
+type PlanType = "basic" | "premium" | "monthly" | "quarterly";
 
 type UserRow = {
   user_id: string;
   full_name: string | null;
   email: string | null;
-  plan: "basic" | "premium";
+  plan: PlanType;
   premium_until: string | null;
+  premium_since: string | null;
+};
+
+const PLAN_LABEL: Record<PlanType, string> = {
+  basic: "Básico",
+  premium: "Premium",
+  monthly: "Mensal",
+  quarterly: "Trimestral",
 };
 
 export const ManageUsers = () => {
@@ -24,12 +34,12 @@ export const ManageUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, plan, premium_until")
+      .select("user_id, full_name, email, plan, premium_until, premium_since" as any)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
     } else {
-      setUsers((data ?? []) as UserRow[]);
+      setUsers(((data ?? []) as any) as UserRow[]);
     }
     setLoading(false);
   };
@@ -48,17 +58,18 @@ export const ManageUsers = () => {
     );
   }, [users, query]);
 
-  const togglePlan = async (u: UserRow) => {
+  const setPlan = async (u: UserRow, newPlan: PlanType, days: number | null) => {
     setUpdatingId(u.user_id);
-    const newPlan = u.plan === "premium" ? "basic" : "premium";
+    const now = new Date();
+    const premium_since = newPlan === "basic" ? null : now.toISOString();
     const premium_until =
-      newPlan === "premium"
-        ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-        : null;
+      newPlan === "basic" || days === null
+        ? null
+        : new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
 
     const { error } = await supabase
       .from("profiles")
-      .update({ plan: newPlan, premium_until })
+      .update({ plan: newPlan, premium_until, premium_since } as any)
       .eq("user_id", u.user_id);
 
     setUpdatingId(null);
@@ -68,13 +79,13 @@ export const ManageUsers = () => {
       return;
     }
     toast.success(
-      newPlan === "premium"
-        ? `${u.email ?? "Usuário"} agora é Premium ✅`
-        : `Premium removido de ${u.email ?? "usuário"}`
+      newPlan === "basic"
+        ? `Premium removido de ${u.email ?? "usuário"}`
+        : `${u.email ?? "Usuário"} agora é ${PLAN_LABEL[newPlan]} ✅`
     );
     setUsers((prev) =>
       prev.map((x) =>
-        x.user_id === u.user_id ? { ...x, plan: newPlan, premium_until } : x
+        x.user_id === u.user_id ? { ...x, plan: newPlan, premium_until, premium_since } : x
       )
     );
   };
@@ -107,54 +118,68 @@ export const ManageUsers = () => {
       ) : (
         <div className="space-y-2">
           {filtered.map((u) => {
-            const isPremium = u.plan === "premium";
+            const isPremium = u.plan !== "basic";
             const busy = updatingId === u.user_id;
             return (
               <div
                 key={u.user_id}
-                className="border border-border rounded-xl p-3 flex items-center gap-3"
+                className="border border-border rounded-xl p-3 space-y-2"
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">
-                    {u.full_name || "Sem nome"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {u.email ?? "—"}
-                  </p>
-                  <div className="mt-1">
-                    {isPremium ? (
-                      <Badge className="bg-primary text-primary-foreground stencil text-[10px]">
-                        <Crown className="w-3 h-3 mr-1" /> Premium
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="stencil text-[10px]">
-                        Básico
-                      </Badge>
-                    )}
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">
+                      {u.full_name || "Sem nome"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {u.email ?? "—"}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      {isPremium ? (
+                        <Badge className="bg-primary text-primary-foreground stencil text-[10px]">
+                          <Crown className="w-3 h-3 mr-1" /> {PLAN_LABEL[u.plan]}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="stencil text-[10px]">
+                          Básico
+                        </Badge>
+                      )}
+                      {u.premium_until && (
+                        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          até {new Date(u.premium_until).toLocaleDateString("pt-BR")}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => togglePlan(u)}
-                  className={
-                    isPremium
-                      ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground stencil"
-                      : "bg-green-700 hover:bg-green-800 text-white stencil"
-                  }
-                >
-                  {busy ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : isPremium ? (
-                    <>
-                      <ShieldOff className="w-3 h-3 mr-1" /> Remover Premium
-                    </>
-                  ) : (
-                    <>
-                      <Crown className="w-3 h-3 mr-1" /> Tornar Premium
-                    </>
-                  )}
-                </Button>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => setPlan(u, "monthly", 30)}
+                    className="bg-secondary hover:bg-secondary/90 text-secondary-foreground stencil text-[11px]"
+                  >
+                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Crown className="w-3 h-3 mr-1" /> Tornar Mensal</>}
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => setPlan(u, "quarterly", 90)}
+                    className="bg-warning hover:bg-warning/90 text-warning-foreground stencil text-[11px]"
+                  >
+                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Crown className="w-3 h-3 mr-1" /> Tornar Trimestral</>}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy || !isPremium}
+                    onClick={() => setPlan(u, "basic", null)}
+                    className="stencil text-[11px]"
+                  >
+                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ShieldOff className="w-3 h-3 mr-1" /> Restringir p/ Básico</>}
+                  </Button>
+                </div>
               </div>
             );
           })}

@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export type PlanType = "basic" | "premium" | "monthly" | "quarterly";
+
 export type Profile = {
   id: string;
   user_id: string;
   full_name: string | null;
   email: string | null;
-  plan: "basic" | "premium";
+  plan: PlanType;
   premium_until: string | null;
+  premium_since: string | null;
 };
 
 const BASIC_DAILY_LIMIT = 10;
@@ -35,7 +38,21 @@ export const useProfile = () => {
       supabase.from("daily_usage").select("questions_count").eq("user_id", user.id).eq("usage_date", today).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", user.id),
     ]);
-    setProfile(p as Profile | null);
+    let prof = p as Profile | null;
+    // Auto-expire on login: if premium_until passed, downgrade in DB
+    if (
+      prof &&
+      (prof.plan === "premium" || prof.plan === "monthly" || prof.plan === "quarterly") &&
+      prof.premium_until &&
+      new Date(prof.premium_until) < new Date()
+    ) {
+      await supabase
+        .from("profiles")
+        .update({ plan: "basic" as any, premium_until: null, premium_since: null } as any)
+        .eq("user_id", user.id);
+      prof = { ...prof, plan: "basic", premium_until: null, premium_since: null };
+    }
+    setProfile(prof);
     setDailyCount(u?.questions_count ?? 0);
     setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
     setLoading(false);
@@ -46,7 +63,9 @@ export const useProfile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const isPremium = profile?.plan === "premium" && (!profile.premium_until || new Date(profile.premium_until) > new Date());
+  const planIsPremium = profile?.plan === "premium" || profile?.plan === "monthly" || profile?.plan === "quarterly";
+  const notExpired = !profile?.premium_until || new Date(profile.premium_until) > new Date();
+  const isPremium = !!planIsPremium && notExpired;
   const dailyLimit = isPremium ? Infinity : BASIC_DAILY_LIMIT;
   const canAnswerMore = dailyCount < dailyLimit;
 

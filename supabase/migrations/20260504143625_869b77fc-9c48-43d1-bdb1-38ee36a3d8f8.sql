@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.expire_premium_users() FROM PUBLIC, anon, authenticated;

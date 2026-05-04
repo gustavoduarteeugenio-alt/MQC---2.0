@@ -80,6 +80,7 @@ export type Database = {
           full_name: string | null
           id: string
           plan: Database["public"]["Enums"]["plan_type"]
+          premium_since: string | null
           premium_until: string | null
           updated_at: string
           user_id: string
@@ -90,6 +91,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           plan?: Database["public"]["Enums"]["plan_type"]
+          premium_since?: string | null
           premium_until?: string | null
           updated_at?: string
           user_id: string
@@ -100,6 +102,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           plan?: Database["public"]["Enums"]["plan_type"]
+          premium_since?: string | null
           premium_until?: string | null
           updated_at?: string
           user_id?: string
@@ -212,6 +215,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_premium_users: { Args: never; Returns: undefined }
       grant_admin_by_email: { Args: { _email: string }; Returns: Json }
       has_role: {
         Args: {
@@ -233,7 +237,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      plan_type: "basic" | "premium"
+      plan_type: "basic" | "premium" | "monthly" | "quarterly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -362,7 +366,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      plan_type: ["basic", "premium"],
+      plan_type: ["basic", "premium", "monthly", "quarterly"],
     },
   },
 } as const
