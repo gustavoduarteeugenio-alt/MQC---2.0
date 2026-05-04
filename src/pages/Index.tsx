@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
-import { Flame, Crown, BookOpen, Target, Zap, ChevronRight } from "lucide-react";
+import { Flame, Crown, BookOpen, Target, Zap, ChevronRight, ShieldCheck, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { AppShell } from "@/components/AppShell";
+import { AdBanner } from "@/components/AdBanner";
+import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
+import { toast } from "sonner";
 
 type Stat = { total: number; correct: number; today: number };
 
