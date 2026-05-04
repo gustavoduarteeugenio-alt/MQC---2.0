@@ -22,6 +22,7 @@ const Question = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isPremium, canAnswerMore, dailyCount, dailyLimit, incrementDaily, refresh } = useProfile();
+  const { fullExplanations } = usePremiumFeatures();
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
