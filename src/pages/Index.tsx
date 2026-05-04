@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { AppShell } from "@/components/AppShell";
 import { AdBanner } from "@/components/AdBanner";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
-import { toast } from "sonner";
+
 
 type Stat = { total: number; correct: number; today: number };
 
