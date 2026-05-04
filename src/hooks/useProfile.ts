@@ -38,7 +38,21 @@ export const useProfile = () => {
       supabase.from("daily_usage").select("questions_count").eq("user_id", user.id).eq("usage_date", today).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", user.id),
     ]);
-    setProfile(p as Profile | null);
+    let prof = p as Profile | null;
+    // Auto-expire on login: if premium_until passed, downgrade in DB
+    if (
+      prof &&
+      (prof.plan === "premium" || prof.plan === "monthly" || prof.plan === "quarterly") &&
+      prof.premium_until &&
+      new Date(prof.premium_until) < new Date()
+    ) {
+      await supabase
+        .from("profiles")
+        .update({ plan: "basic" as any, premium_until: null, premium_since: null } as any)
+        .eq("user_id", user.id);
+      prof = { ...prof, plan: "basic", premium_until: null, premium_since: null };
+    }
+    setProfile(prof);
     setDailyCount(u?.questions_count ?? 0);
     setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
     setLoading(false);
