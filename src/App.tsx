@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Plans from "./pages/Plans.tsx";
 import Profile from "./pages/Profile.tsx";
 import Admin from "./pages/Admin.tsx";
+import Simulados from "./pages/Simulados.tsx";
+import SimuladoRunner from "./pages/SimuladoRunner.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
