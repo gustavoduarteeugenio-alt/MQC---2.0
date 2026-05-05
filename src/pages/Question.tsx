@@ -10,10 +10,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
+type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
   id: string; subject_id: string; statement: string;
   option_a: string; option_b: string; option_c: string; option_d: string;
-  correct_answer: "A" | "B" | "C" | "D"; explanation: string;
+  option_e: string | null;
+  correct_answer: Letter; explanation: string;
 };
 type Subject = { id: string; name: string; slug: string };
 
