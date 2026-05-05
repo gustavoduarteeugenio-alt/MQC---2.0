@@ -10,10 +10,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
+type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
   id: string; subject_id: string; statement: string;
   option_a: string; option_b: string; option_c: string; option_d: string;
-  correct_answer: "A" | "B" | "C" | "D"; explanation: string;
+  option_e: string | null;
+  correct_answer: Letter; explanation: string;
 };
 type Subject = { id: string; name: string; slug: string };
 
@@ -27,7 +29,7 @@ const Question = () => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<"A" | "B" | "C" | "D" | null>(null);
+  const [selected, setSelected] = useState<Letter | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -160,7 +162,10 @@ const Question = () => {
         </div>
 
         <div className="mt-4 space-y-2.5">
-          {(["A", "B", "C", "D"] as const).map((letter) => {
+          {(["A", "B", "C", "D", "E"] as const).filter((l) => {
+            const t = (current as any)[`option_${l.toLowerCase()}`];
+            return typeof t === "string" && t.trim().length > 0;
+          }).map((letter) => {
             const text = (current as any)[`option_${letter.toLowerCase()}`] as string;
             const isCorrect = letter === current.correct_answer;
             const isSelected = selected === letter;
