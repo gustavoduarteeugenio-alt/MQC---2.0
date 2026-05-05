@@ -171,6 +171,122 @@ export type Database = {
           },
         ]
       }
+      simulado_attempts: {
+        Row: {
+          answers: Json
+          by_subject: Json
+          correct: number
+          duration_seconds: number | null
+          finished_at: string | null
+          id: string
+          mode: string
+          simulado_id: string | null
+          started_at: string
+          title: string | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          by_subject?: Json
+          correct?: number
+          duration_seconds?: number | null
+          finished_at?: string | null
+          id?: string
+          mode: string
+          simulado_id?: string | null
+          started_at?: string
+          title?: string | null
+          total?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          by_subject?: Json
+          correct?: number
+          duration_seconds?: number | null
+          finished_at?: string | null
+          id?: string
+          mode?: string
+          simulado_id?: string | null
+          started_at?: string
+          title?: string | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulado_attempts_simulado_id_fkey"
+            columns: ["simulado_id"]
+            isOneToOne: false
+            referencedRelation: "simulados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulado_questions: {
+        Row: {
+          id: string
+          position: number
+          question_id: string
+          simulado_id: string
+        }
+        Insert: {
+          id?: string
+          position?: number
+          question_id: string
+          simulado_id: string
+        }
+        Update: {
+          id?: string
+          position?: number
+          question_id?: string
+          simulado_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulado_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulado_questions_simulado_id_fkey"
+            columns: ["simulado_id"]
+            isOneToOne: false
+            referencedRelation: "simulados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulados: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subjects: {
         Row: {
           created_at: string
