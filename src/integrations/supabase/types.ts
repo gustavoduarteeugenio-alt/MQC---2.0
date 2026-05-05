@@ -111,6 +111,7 @@ export type Database = {
       }
       questions: {
         Row: {
+          banca: string
           correct_answer: string
           created_at: string
           difficulty: string
@@ -123,8 +124,10 @@ export type Database = {
           statement: string
           subject_id: string
           updated_at: string
+          year: number | null
         }
         Insert: {
+          banca?: string
           correct_answer: string
           created_at?: string
           difficulty?: string
@@ -137,8 +140,10 @@ export type Database = {
           statement: string
           subject_id: string
           updated_at?: string
+          year?: number | null
         }
         Update: {
+          banca?: string
           correct_answer?: string
           created_at?: string
           difficulty?: string
@@ -151,6 +156,7 @@ export type Database = {
           statement?: string
           subject_id?: string
           updated_at?: string
+          year?: number | null
         }
         Relationships: [
           {
