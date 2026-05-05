@@ -162,7 +162,10 @@ const Question = () => {
         </div>
 
         <div className="mt-4 space-y-2.5">
-          {(["A", "B", "C", "D"] as const).map((letter) => {
+          {(["A", "B", "C", "D", "E"] as const).filter((l) => {
+            const t = (current as any)[`option_${l.toLowerCase()}`];
+            return typeof t === "string" && t.trim().length > 0;
+          }).map((letter) => {
             const text = (current as any)[`option_${letter.toLowerCase()}`] as string;
             const isCorrect = letter === current.correct_answer;
             const isSelected = selected === letter;
