@@ -29,7 +29,7 @@ const Question = () => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<"A" | "B" | "C" | "D" | null>(null);
+  const [selected, setSelected] = useState<Letter | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
