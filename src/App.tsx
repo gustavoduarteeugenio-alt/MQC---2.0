@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Plans from "./pages/Plans.tsx";
 import Profile from "./pages/Profile.tsx";
 import Admin from "./pages/Admin.tsx";
+import Simulados from "./pages/Simulados.tsx";
+import SimuladoRunner from "./pages/SimuladoRunner.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,9 @@ const App = () => (
             <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/simulados" element={<ProtectedRoute><Simulados /></ProtectedRoute>} />
+            <Route path="/simulado/:id" element={<ProtectedRoute><SimuladoRunner /></ProtectedRoute>} />
+            <Route path="/simulado/:id/revisar" element={<ProtectedRoute><SimuladoRunner /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

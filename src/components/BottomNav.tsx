@@ -19,6 +19,7 @@ export const BottomNav = () => {
     : baseItems;
   // Esconde em telas de questão para foco
   if (location.pathname.startsWith("/questao")) return null;
+  if (location.pathname.startsWith("/simulado/")) return null;
   if (location.pathname.startsWith("/auth")) return null;
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card/95 backdrop-blur border-t border-border z-40">

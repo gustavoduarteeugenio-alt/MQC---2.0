@@ -96,12 +96,12 @@ const Index = () => {
 
         {/* Simulado completo — exclusivo Premium */}
         {isPremium ? (
-          <Link to="/materias" className="flex items-center justify-between bg-secondary text-secondary-foreground rounded-2xl px-5 py-4 shadow-card">
+          <Link to="/simulados" className="flex items-center justify-between bg-secondary text-secondary-foreground rounded-2xl px-5 py-4 shadow-card">
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-6 h-6 text-warning" />
               <div>
                 <p className="stencil text-[10px] opacity-80">Exclusivo Premium</p>
-                <p className="font-display font-semibold">Simulado completo IDECAN</p>
+                <p className="font-display font-semibold">Simulados IDECAN (4h)</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5" />
