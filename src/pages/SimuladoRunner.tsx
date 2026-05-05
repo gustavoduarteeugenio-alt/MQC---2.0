@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -21,19 +21,21 @@ type AttemptRow = {
   duration_seconds: number | null; answers: Answer[]; by_subject: any;
 };
 
-const TOTAL_SECONDS = 4 * 60 * 60; // 4h
+const TOTAL_SECONDS = 4 * 60 * 60;
 
 const SimuladoRunner = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const isReviewRoute = location.pathname.endsWith("/revisar");
+
   const [attempt, setAttempt] = useState<AttemptRow | null>(null);
   const [questions, setQuestions] = useState<Q[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [remaining, setRemaining] = useState(TOTAL_SECONDS);
-  const [reviewMode, setReviewMode] = useState(false);
   const [subjectsMap, setSubjectsMap] = useState<Record<string, string>>({});
   const finishedRef = useRef(false);
 
@@ -57,11 +59,7 @@ const SimuladoRunner = () => {
         (subs ?? []).forEach((s: any) => { sm[s.id] = s.name; });
         setSubjectsMap(sm);
       }
-      // tempo restante
-      if (att.finished_at) {
-        setReviewMode(true);
-        setRemaining(0);
-      } else {
+      if (!att.finished_at) {
         const elapsed = Math.floor((Date.now() - new Date(att.started_at).getTime()) / 1000);
         setRemaining(Math.max(0, TOTAL_SECONDS - elapsed));
       }
@@ -69,22 +67,22 @@ const SimuladoRunner = () => {
     })();
   }, [id, navigate]);
 
-  // timer
+  const isFinished = !!attempt?.finished_at;
+  const showResult = isFinished && !isReviewRoute;
+  const reviewMode = isFinished;
+
+  // timer (only while running)
   useEffect(() => {
-    if (loading || reviewMode || !attempt || attempt.finished_at) return;
+    if (loading || isFinished || !attempt) return;
     const t = setInterval(() => {
       setRemaining((r) => {
-        if (r <= 1) {
-          clearInterval(t);
-          finish(true);
-          return 0;
-        }
+        if (r <= 1) { clearInterval(t); finish(true); return 0; }
         return r - 1;
       });
     }, 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, reviewMode, attempt?.id]);
+  }, [loading, isFinished, attempt?.id]);
 
   const fmt = useMemo(() => {
     const h = Math.floor(remaining / 3600).toString().padStart(2, "0");
@@ -120,26 +118,24 @@ const SimuladoRunner = () => {
     const finished_at = new Date().toISOString();
     const duration = Math.floor((Date.now() - new Date(attempt.started_at).getTime()) / 1000);
     const by_subject = Object.values(bySubject);
-    // also save attempts records for accuracy stats
     if (user) {
       const rows = questions.map((q) => {
         const ans = answers.find((a) => a.question_id === q.id);
+        if (!ans?.selected) return null;
         return {
           user_id: user.id,
           question_id: q.id,
-          selected_answer: (ans?.selected ?? "A") as string,
-          is_correct: ans?.selected === q.correct_answer,
+          selected_answer: ans.selected as string,
+          is_correct: ans.selected === q.correct_answer,
           time_seconds: 0,
         };
-      }).filter((r) => answers.find((a) => a.question_id === r.question_id)?.selected);
+      }).filter(Boolean) as any[];
       if (rows.length) await supabase.from("attempts").insert(rows);
     }
     await (supabase.from("simulado_attempts" as any).update({
-      finished_at, duration_seconds: duration, total: questions.length,
-      correct, by_subject,
+      finished_at, duration_seconds: duration, total: questions.length, correct, by_subject,
     } as any).eq("id", id!)) as any;
     setAttempt({ ...attempt, finished_at, duration_seconds: duration, correct, total: questions.length, by_subject });
-    setReviewMode(true);
     if (auto) toast.error("Tempo esgotado! Simulado finalizado.");
   };
 
@@ -147,22 +143,18 @@ const SimuladoRunner = () => {
     return <div className="app-shell flex items-center justify-center bg-gradient-night text-white">Carregando...</div>;
   }
 
-  // Tela de resultado
-  if (reviewMode && attempt.finished_at && !current) {
-    return <ResultView attempt={attempt} onReview={() => { setReviewMode(true); setIndex(0); }} navigate={navigate} />;
+  // Tela de resultado (após finalizar e não em revisão)
+  if (showResult) {
+    return <ResultView attempt={attempt} navigate={navigate} />;
   }
-
-  const isFinished = !!attempt.finished_at;
 
   return (
     <div className="app-shell bg-background flex flex-col min-h-screen pb-32">
       <header className="flex items-center justify-between px-4 pt-12 pb-3 bg-card border-b border-border sticky top-0 z-30">
-        <button onClick={() => navigate("/simulados")} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-muted">
+        <button onClick={() => navigate(isFinished ? `/simulado/${id}` : "/simulados")} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-muted">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="font-display font-bold truncate flex-1 text-center px-2 text-sm">
-          {attempt.title}
-        </h1>
+        <h1 className="font-display font-bold truncate flex-1 text-center px-2 text-sm">{attempt.title}</h1>
         <div className={cn(
           "flex items-center gap-1.5 px-3 py-1.5 rounded-full stencil text-xs",
           remaining < 600 && !isFinished ? "bg-destructive text-destructive-foreground" : "bg-secondary text-secondary-foreground"
@@ -174,7 +166,7 @@ const SimuladoRunner = () => {
       <div className="px-5 pt-3">
         <div className="flex items-center justify-between text-xs stencil text-muted-foreground mb-2">
           <span>Questão {index + 1}/{questions.length}</span>
-          <span>{answered} respondidas</span>
+          <span>{isFinished ? `${attempt.correct} acertos` : `${answered} respondidas · faltam ${questions.length - answered}`}</span>
         </div>
         <Progress value={((index + 1) / Math.max(1, questions.length)) * 100} className="h-1.5" />
       </div>
@@ -195,30 +187,29 @@ const SimuladoRunner = () => {
               const isCorrect = letter === current.correct_answer;
               const ans = answers.find((a) => a.question_id === current.id);
               const isSelected = ans?.selected === letter;
-              const showResult = isFinished;
               return (
                 <button
                   key={letter}
-                  disabled={isFinished}
+                  disabled={reviewMode}
                   onClick={() => select(letter)}
                   className={cn(
                     "w-full text-left flex items-start gap-3 p-4 rounded-xl border-2 transition-all",
-                    !showResult && isSelected && "border-primary bg-primary/5",
-                    !showResult && !isSelected && "border-border bg-card hover:border-primary/40",
-                    showResult && isCorrect && "border-success bg-success/10",
-                    showResult && !isCorrect && isSelected && "border-destructive bg-destructive/10",
-                    showResult && !isCorrect && !isSelected && "border-border bg-card opacity-60"
+                    !reviewMode && isSelected && "border-primary bg-primary/5",
+                    !reviewMode && !isSelected && "border-border bg-card hover:border-primary/40",
+                    reviewMode && isCorrect && "border-success bg-success/10",
+                    reviewMode && !isCorrect && isSelected && "border-destructive bg-destructive/10",
+                    reviewMode && !isCorrect && !isSelected && "border-border bg-card opacity-60"
                   )}
                 >
                   <span className={cn(
                     "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold",
-                    !showResult && isSelected && "bg-primary text-primary-foreground",
-                    !showResult && !isSelected && "bg-muted text-foreground",
-                    showResult && isCorrect && "bg-success text-success-foreground",
-                    showResult && !isCorrect && isSelected && "bg-destructive text-destructive-foreground",
+                    !reviewMode && isSelected && "bg-primary text-primary-foreground",
+                    !reviewMode && !isSelected && "bg-muted text-foreground",
+                    reviewMode && isCorrect && "bg-success text-success-foreground",
+                    reviewMode && !isCorrect && isSelected && "bg-destructive text-destructive-foreground",
                   )}>
-                    {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
-                     showResult && !isCorrect && isSelected ? <XCircle className="w-4 h-4" /> : letter}
+                    {reviewMode && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
+                     reviewMode && !isCorrect && isSelected ? <XCircle className="w-4 h-4" /> : letter}
                   </span>
                   <span className="text-sm leading-snug pt-1">{text}</span>
                 </button>
@@ -226,7 +217,7 @@ const SimuladoRunner = () => {
             })}
           </div>
 
-          {isFinished && (
+          {reviewMode && (
             <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5">
               <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
                 <Lightbulb className="w-4 h-4" /> Comentário do professor
@@ -258,7 +249,7 @@ const SimuladoRunner = () => {
           </Button>
         ) : isFinished ? (
           <Button
-            onClick={() => { finishedRef.current = true; navigate("/simulados"); }}
+            onClick={() => navigate(`/simulado/${id}`)}
             className="flex-1 bg-secondary text-secondary-foreground font-display stencil"
           >
             <Trophy className="w-4 h-4 mr-1" /> Ver resultado
@@ -272,29 +263,15 @@ const SimuladoRunner = () => {
           </Button>
         )}
       </div>
-
-      {isFinished && (
-        <FloatingResult attempt={attempt} onClose={() => navigate("/simulados")} />
-      )}
     </div>
   );
 };
 
-const FloatingResult = ({ attempt, onClose }: { attempt: AttemptRow; onClose: () => void }) => {
-  const pct = attempt.total > 0 ? Math.round((attempt.correct / attempt.total) * 100) : 0;
-  return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-20 bg-card border border-border rounded-xl px-4 py-2 shadow-card flex items-center gap-2 text-xs stencil">
-      <Trophy className="w-4 h-4 text-warning" />
-      {attempt.correct}/{attempt.total} acertos · {pct}%
-    </div>
-  );
-};
-
-const ResultView = ({ attempt, navigate }: { attempt: AttemptRow; onReview: () => void; navigate: (to: string) => void }) => {
+const ResultView = ({ attempt, navigate }: { attempt: AttemptRow; navigate: (to: string) => void }) => {
   const pct = attempt.total > 0 ? Math.round((attempt.correct / attempt.total) * 100) : 0;
   const bySub = (attempt.by_subject ?? []) as { name: string; correct: number; total: number }[];
   return (
-    <div className="app-shell bg-background min-h-screen">
+    <div className="app-shell bg-background min-h-screen pb-10">
       <header className="bg-gradient-night text-white px-5 pt-12 pb-8 rounded-b-3xl">
         <p className="stencil text-xs text-primary">Resultado</p>
         <h1 className="font-display text-2xl font-bold">{attempt.title}</h1>
@@ -306,8 +283,9 @@ const ResultView = ({ attempt, navigate }: { attempt: AttemptRow; onReview: () =
       </header>
       <main className="px-5 py-5 space-y-4">
         <section>
-          <h2 className="font-display font-bold mb-2">Por matéria</h2>
+          <h2 className="font-display font-bold mb-2">Acertos por matéria</h2>
           <div className="space-y-2">
+            {bySub.length === 0 && <p className="text-sm text-muted-foreground">Sem dados.</p>}
             {bySub.map((s) => (
               <div key={s.name} className="bg-card border border-border rounded-xl p-3">
                 <div className="flex justify-between items-center text-sm">
