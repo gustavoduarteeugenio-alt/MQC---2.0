@@ -8,6 +8,7 @@ import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
 import { ManageUsers } from "@/components/admin/ManageUsers";
 import { ManageQuestions } from "@/components/admin/ManageQuestions";
+import { ManageSimulados } from "@/components/admin/ManageSimulados";
 
 type Subject = { id: string; name: string; slug: string };
 
