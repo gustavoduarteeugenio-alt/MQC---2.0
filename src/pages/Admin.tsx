@@ -42,8 +42,9 @@ const Admin = () => {
 
       <main className="px-5 py-5 space-y-5">
         <Tabs defaultValue="questions" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="questions">Questões</TabsTrigger>
+            <TabsTrigger value="simulados">Simulados</TabsTrigger>
             <TabsTrigger value="bulk">Em lote</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="admins">Admins</TabsTrigger>
@@ -51,6 +52,10 @@ const Admin = () => {
 
           <TabsContent value="questions" className="mt-4">
             <ManageQuestions subjects={subjects} />
+          </TabsContent>
+
+          <TabsContent value="simulados" className="mt-4">
+            <ManageSimulados subjects={subjects} />
           </TabsContent>
 
           <TabsContent value="bulk" className="mt-4">
