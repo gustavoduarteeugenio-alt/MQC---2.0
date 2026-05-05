@@ -121,6 +121,7 @@ export type Database = {
           option_b: string
           option_c: string
           option_d: string
+          option_e: string | null
           statement: string
           subject_id: string
           updated_at: string
@@ -137,6 +138,7 @@ export type Database = {
           option_b: string
           option_c: string
           option_d: string
+          option_e?: string | null
           statement: string
           subject_id: string
           updated_at?: string
@@ -153,6 +155,7 @@ export type Database = {
           option_b?: string
           option_c?: string
           option_d?: string
+          option_e?: string | null
           statement?: string
           subject_id?: string
           updated_at?: string
