@@ -342,6 +342,10 @@ export type Database = {
     Functions: {
       expire_premium_users: { Args: never; Returns: undefined }
       grant_admin_by_email: { Args: { _email: string }; Returns: Json }
+      grant_role_by_email: {
+        Args: { _email: string; _role: Database["public"]["Enums"]["app_role"] }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -358,7 +362,24 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_staff: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          granted_at: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       revoke_admin: { Args: { _user_id: string }; Returns: Json }
+      revoke_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "admin_didatico"
