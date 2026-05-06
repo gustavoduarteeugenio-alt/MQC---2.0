@@ -14,13 +14,14 @@ export type Profile = {
   premium_since: string | null;
 };
 
-const BASIC_DAILY_LIMIT = 10;
+const BASIC_DAILY_LIMIT = 5;
 
 export const useProfile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [dailyCount, setDailyCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDidacticAdmin, setIsDidacticAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -28,6 +29,7 @@ export const useProfile = () => {
       setProfile(null);
       setDailyCount(0);
       setIsAdmin(false);
+      setIsDidacticAdmin(false);
       setLoading(false);
       return;
     }
@@ -54,7 +56,9 @@ export const useProfile = () => {
     }
     setProfile(prof);
     setDailyCount(u?.questions_count ?? 0);
-    setIsAdmin((roles ?? []).some((r: any) => r.role === "admin"));
+    const rolesArr = (roles ?? []).map((r: any) => r.role);
+    setIsAdmin(rolesArr.includes("admin"));
+    setIsDidacticAdmin(rolesArr.includes("admin_didatico"));
     setLoading(false);
   };
 
@@ -88,5 +92,5 @@ export const useProfile = () => {
     }
   };
 
-  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, canAnswerMore, loading, refresh, incrementDaily };
+  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, isDidacticAdmin, canAnswerMore, loading, refresh, incrementDaily };
 };
