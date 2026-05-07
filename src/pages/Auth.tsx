@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Flame, Shield, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -73,6 +74,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [origem, setOrigem] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -104,7 +106,7 @@ const Auth = () => {
           password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: parsed.data.fullName },
+            data: { full_name: parsed.data.fullName, origem: origem || null },
           },
         });
         if (error) {
@@ -191,6 +193,25 @@ const Auth = () => {
                 onChange={setConfirmPassword}
                 hint={confirmHint}
               />
+            )}
+
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="origem" className="text-white/80 stencil text-xs">
+                  Como você nos conheceu? <span className="text-white/40 normal-case">(opcional)</span>
+                </Label>
+                <Select value={origem} onValueChange={setOrigem}>
+                  <SelectTrigger id="origem" className="bg-white/10 border-white/20 text-white h-12 data-[placeholder]:text-white/40">
+                    <SelectValue placeholder="Selecione uma opção" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Instagram">Instagram</SelectItem>
+                    <SelectItem value="Indicação de Amigo">Indicação de Amigo</SelectItem>
+                    <SelectItem value="Grupos de Estudo">Grupos de Estudo</SelectItem>
+                    <SelectItem value="Google">Google</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {mode === "signin" && (

@@ -79,6 +79,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          origem: string | null
           plan: Database["public"]["Enums"]["plan_type"]
           premium_since: string | null
           premium_until: string | null
@@ -90,6 +91,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          origem?: string | null
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
@@ -101,6 +103,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          origem?: string | null
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
