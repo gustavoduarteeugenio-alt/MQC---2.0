@@ -106,7 +106,7 @@ const Auth = () => {
           password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: parsed.data.fullName },
+            data: { full_name: parsed.data.fullName, origem: origem || null },
           },
         });
         if (error) {
