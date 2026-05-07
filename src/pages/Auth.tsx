@@ -195,6 +195,25 @@ const Auth = () => {
               />
             )}
 
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="origem" className="text-white/80 stencil text-xs">
+                  Como você nos conheceu? <span className="text-white/40 normal-case">(opcional)</span>
+                </Label>
+                <Select value={origem} onValueChange={setOrigem}>
+                  <SelectTrigger id="origem" className="bg-white/10 border-white/20 text-white h-12 data-[placeholder]:text-white/40">
+                    <SelectValue placeholder="Selecione uma opção" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Instagram">Instagram</SelectItem>
+                    <SelectItem value="Indicação de Amigo">Indicação de Amigo</SelectItem>
+                    <SelectItem value="Grupos de Estudo">Grupos de Estudo</SelectItem>
+                    <SelectItem value="Google">Google</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {mode === "signin" && (
               <div className="flex justify-end pt-0.5">
                 <Link
