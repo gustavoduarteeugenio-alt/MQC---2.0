@@ -173,6 +173,7 @@ export const ManageUsers = () => {
           {filtered.map((u) => {
             const isPremium = u.plan !== "basic";
             const busy = updatingId === u.user_id;
+            const origemLabel = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
             return (
               <div
                 key={u.user_id}
