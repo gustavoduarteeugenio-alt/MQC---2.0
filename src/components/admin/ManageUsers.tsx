@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Crown, ShieldOff, Loader2, Users, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ type UserRow = {
   plan: PlanType;
   premium_until: string | null;
   premium_since: string | null;
+  origem: string | null;
 };
 
 const PLAN_LABEL: Record<PlanType, string> = {
@@ -24,17 +26,21 @@ const PLAN_LABEL: Record<PlanType, string> = {
   quarterly: "Trimestral",
 };
 
+const ORIGEM_OPTIONS = ["Instagram", "Indicação de Amigo", "Grupos de Estudo", "Google"];
+const NOT_INFORMED = "Não Informado";
+
 export const ManageUsers = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [originFilter, setOriginFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, plan, premium_until, premium_since" as any)
+      .select("user_id, full_name, email, plan, premium_until, premium_since, origem" as any)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
@@ -48,15 +54,30 @@ export const ManageUsers = () => {
     load();
   }, []);
 
+  const originStats = useMemo(() => {
+    const stats: Record<string, number> = { [NOT_INFORMED]: 0 };
+    ORIGEM_OPTIONS.forEach((o) => (stats[o] = 0));
+    users.forEach((u) => {
+      const key = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
+      stats[key] = (stats[key] ?? 0) + 1;
+    });
+    return stats;
+  }, [users]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
+    return users.filter((u) => {
+      if (originFilter !== "all") {
+        const orig = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
+        if (orig !== originFilter) return false;
+      }
+      if (!q) return true;
+      return (
         (u.email ?? "").toLowerCase().includes(q) ||
         (u.full_name ?? "").toLowerCase().includes(q)
-    );
-  }, [users, query]);
+      );
+    });
+  }, [users, query, originFilter]);
 
   const setPlan = async (u: UserRow, newPlan: PlanType, days: number | null) => {
     setUpdatingId(u.user_id);
@@ -97,14 +118,46 @@ export const ManageUsers = () => {
         <h2 className="font-display font-bold">Usuários ({users.length})</h2>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por e-mail ou nome…"
-          className="pl-9"
-        />
+      {/* Resumo por origem */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        {[...ORIGEM_OPTIONS, NOT_INFORMED].map((o) => (
+          <button
+            key={o}
+            onClick={() => setOriginFilter(originFilter === o ? "all" : o)}
+            className={`text-left rounded-xl border p-2.5 transition-colors ${
+              originFilter === o
+                ? "bg-primary/10 border-primary"
+                : "bg-card border-border hover:bg-muted/40"
+            }`}
+          >
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground stencil truncate">{o}</p>
+            <p className="font-display font-bold text-lg">{originStats[o] ?? 0}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2 flex-col sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por e-mail ou nome…"
+            className="pl-9"
+          />
+        </div>
+        <Select value={originFilter} onValueChange={setOriginFilter}>
+          <SelectTrigger className="sm:w-56">
+            <SelectValue placeholder="Filtrar por origem" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as origens</SelectItem>
+            {ORIGEM_OPTIONS.map((o) => (
+              <SelectItem key={o} value={o}>{o}</SelectItem>
+            ))}
+            <SelectItem value={NOT_INFORMED}>{NOT_INFORMED}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
@@ -120,6 +173,7 @@ export const ManageUsers = () => {
           {filtered.map((u) => {
             const isPremium = u.plan !== "basic";
             const busy = updatingId === u.user_id;
+            const origemLabel = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
             return (
               <div
                 key={u.user_id}
@@ -132,6 +186,12 @@ export const ManageUsers = () => {
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {u.email ?? "—"}
+                    </p>
+                    <p className="text-[11px] mt-0.5">
+                      <span className="text-muted-foreground">Origem: </span>
+                      <span className={`font-semibold ${origemLabel === NOT_INFORMED ? "text-muted-foreground italic" : "text-foreground"}`}>
+                        {origemLabel}
+                      </span>
                     </p>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
                       {isPremium ? (
