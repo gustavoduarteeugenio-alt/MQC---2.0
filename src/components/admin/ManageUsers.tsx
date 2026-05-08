@@ -118,14 +118,46 @@ export const ManageUsers = () => {
         <h2 className="font-display font-bold">Usuários ({users.length})</h2>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por e-mail ou nome…"
-          className="pl-9"
-        />
+      {/* Resumo por origem */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        {[...ORIGEM_OPTIONS, NOT_INFORMED].map((o) => (
+          <button
+            key={o}
+            onClick={() => setOriginFilter(originFilter === o ? "all" : o)}
+            className={`text-left rounded-xl border p-2.5 transition-colors ${
+              originFilter === o
+                ? "bg-primary/10 border-primary"
+                : "bg-card border-border hover:bg-muted/40"
+            }`}
+          >
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground stencil truncate">{o}</p>
+            <p className="font-display font-bold text-lg">{originStats[o] ?? 0}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2 flex-col sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por e-mail ou nome…"
+            className="pl-9"
+          />
+        </div>
+        <Select value={originFilter} onValueChange={setOriginFilter}>
+          <SelectTrigger className="sm:w-56">
+            <SelectValue placeholder="Filtrar por origem" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as origens</SelectItem>
+            {ORIGEM_OPTIONS.map((o) => (
+              <SelectItem key={o} value={o}>{o}</SelectItem>
+            ))}
+            <SelectItem value={NOT_INFORMED}>{NOT_INFORMED}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
