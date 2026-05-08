@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Crown, ShieldOff, Loader2, Users, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ type UserRow = {
   plan: PlanType;
   premium_until: string | null;
   premium_since: string | null;
+  origem: string | null;
 };
 
 const PLAN_LABEL: Record<PlanType, string> = {
@@ -24,17 +26,21 @@ const PLAN_LABEL: Record<PlanType, string> = {
   quarterly: "Trimestral",
 };
 
+const ORIGEM_OPTIONS = ["Instagram", "Indicação de Amigo", "Grupos de Estudo", "Google"];
+const NOT_INFORMED = "Não Informado";
+
 export const ManageUsers = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [originFilter, setOriginFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, plan, premium_until, premium_since" as any)
+      .select("user_id, full_name, email, plan, premium_until, premium_since, origem" as any)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
@@ -48,15 +54,30 @@ export const ManageUsers = () => {
     load();
   }, []);
 
+  const originStats = useMemo(() => {
+    const stats: Record<string, number> = { [NOT_INFORMED]: 0 };
+    ORIGEM_OPTIONS.forEach((o) => (stats[o] = 0));
+    users.forEach((u) => {
+      const key = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
+      stats[key] = (stats[key] ?? 0) + 1;
+    });
+    return stats;
+  }, [users]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
+    return users.filter((u) => {
+      if (originFilter !== "all") {
+        const orig = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
+        if (orig !== originFilter) return false;
+      }
+      if (!q) return true;
+      return (
         (u.email ?? "").toLowerCase().includes(q) ||
         (u.full_name ?? "").toLowerCase().includes(q)
-    );
-  }, [users, query]);
+      );
+    });
+  }, [users, query, originFilter]);
 
   const setPlan = async (u: UserRow, newPlan: PlanType, days: number | null) => {
     setUpdatingId(u.user_id);
