@@ -187,6 +187,12 @@ export const ManageUsers = () => {
                     <p className="text-xs text-muted-foreground truncate">
                       {u.email ?? "—"}
                     </p>
+                    <p className="text-[11px] mt-0.5">
+                      <span className="text-muted-foreground">Origem: </span>
+                      <span className={`font-semibold ${origemLabel === NOT_INFORMED ? "text-muted-foreground italic" : "text-foreground"}`}>
+                        {origemLabel}
+                      </span>
+                    </p>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
                       {isPremium ? (
                         <Badge className="bg-primary text-primary-foreground stencil text-[10px]">
