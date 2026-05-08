@@ -47,7 +47,7 @@ const Admin = () => {
           <TabsList className={`grid w-full ${isAdmin ? "grid-cols-5" : "grid-cols-2"}`}>
             <TabsTrigger value="questions">Questões</TabsTrigger>
             <TabsTrigger value="bulk">Em lote</TabsTrigger>
-            {isAdmin && <TabsTrigger value="simulados">Simulados</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="simulados">Gestão de Simulados</TabsTrigger>}
             {isAdmin && <TabsTrigger value="users">Usuários</TabsTrigger>}
             {isAdmin && <TabsTrigger value="admins">Admins</TabsTrigger>}
           </TabsList>
