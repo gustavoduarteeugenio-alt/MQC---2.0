@@ -306,6 +306,12 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
               />
             </div>
 
+            <ImageUploader
+              label="Imagem do enunciado (opcional)"
+              value={form.image_url}
+              onChange={(url) => setForm({ ...form, image_url: url ?? "" })}
+            />
+
             {letters.map((l) => {
               const key = `option_${l.toLowerCase()}` as keyof FormState;
               return (
