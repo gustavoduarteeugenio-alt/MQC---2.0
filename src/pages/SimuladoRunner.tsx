@@ -230,6 +230,9 @@ const SimuladoRunner = () => {
                 <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
                 {current.explanation}
               </p>
+              {current.comment_image_url && (
+                <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
+              )}
             </div>
           )}
         </main>
