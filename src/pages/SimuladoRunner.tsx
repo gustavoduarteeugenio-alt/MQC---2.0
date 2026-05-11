@@ -179,6 +179,7 @@ const SimuladoRunner = () => {
           <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
             <p className="stencil text-[10px] text-muted-foreground mb-2">{subjectsMap[current.subject_id]}</p>
             <p className="text-[15px] leading-relaxed">{current.statement}</p>
+            {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
           </div>
 
           <div className="mt-4 space-y-2.5">
