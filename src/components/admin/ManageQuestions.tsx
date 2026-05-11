@@ -358,6 +358,12 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
                 rows={3}
               />
             </div>
+
+            <ImageUploader
+              label="Imagem do comentário (opcional)"
+              value={form.comment_image_url}
+              onChange={(url) => setForm({ ...form, comment_image_url: url ?? "" })}
+            />
           </div>
 
           <DialogFooter>
