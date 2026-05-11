@@ -11,12 +11,12 @@ import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
 // Distribuição: total 50 (10+5+10+10+10+5)
 const RANDOM_DISTRIBUTION: { label: string; slugs: string[]; count: number }[] = [
-  { label: "Língua Portuguesa", slugs: ["portugues"], count: 10 },
-  { label: "Raciocínio Lógico/Matemático", slugs: ["rlm"], count: 5 },
-  { label: "Direitos Humanos e Legislação", slugs: ["direitos-humanos", "legislacao", "direito"], count: 10 },
-  { label: "Ciências Naturais", slugs: ["quimica", "biologia", "fisica"], count: 10 },
-  { label: "Ciências Humanas (História e Geografia de MG)", slugs: ["historia-mg", "geografia-mg"], count: 10 },
-  { label: "Proteção e Defesa Civil", slugs: ["defesa-civil"], count: 5 },
+  { label: "Língua Portuguesa", slugs: ["lingua-portuguesa"], count: 10 },
+  { label: "Raciocínio Lógico e Matemático", slugs: ["rlm"], count: 5 },
+  { label: "Noções de Direitos Humanos e Legislação", slugs: ["direitos-humanos-legislacao"], count: 10 },
+  { label: "Ciências Naturais", slugs: ["ciencias-naturais"], count: 10 },
+  { label: "Ciências Humanas", slugs: ["ciencias-humanas"], count: 10 },
+  { label: "Proteção e Defesa Civil", slugs: ["protecao-defesa-civil"], count: 5 },
 ];
 
 type Simulado = { id: string; name: string; description: string | null; q_count?: number };

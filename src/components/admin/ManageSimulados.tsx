@@ -16,13 +16,12 @@ type Question = { id: string; statement: string; subject_id: string; year: numbe
 const TARGET_TOTAL = 50;
 // Distribuição alvo por matéria (slug → quantidade)
 const SUBJECT_TARGETS: Record<string, number> = {
-  portugues: 10,
+  "lingua-portuguesa": 10,
   rlm: 5,
-  "direitos-humanos": 5,
-  legislacao: 5,
+  "direitos-humanos-legislacao": 10,
   "ciencias-naturais": 10,
   "ciencias-humanas": 10,
-  "defesa-civil": 5,
+  "protecao-defesa-civil": 5,
 };
 
 export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {

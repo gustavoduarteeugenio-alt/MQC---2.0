@@ -30,6 +30,7 @@ type QRow = {
   difficulty: string;
   year: number | null;
   banca: string;
+  subtopic: string | null;
 };
 
 const emptyForm = (subject_id = "") => ({
@@ -45,6 +46,7 @@ const emptyForm = (subject_id = "") => ({
   difficulty: "medium",
   year: "" as string | number,
   banca: "IDECAN",
+  subtopic: "",
 });
 
 type FormState = ReturnType<typeof emptyForm>;
@@ -72,7 +74,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("questions")
-      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca")
+      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic")
       .eq("subject_id", subjectId)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
@@ -103,6 +105,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       difficulty: q.difficulty,
       year: q.year ?? "",
       banca: q.banca ?? "IDECAN",
+      subtopic: q.subtopic ?? "",
     });
     setOpen(true);
   };
@@ -135,6 +138,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       difficulty: form.difficulty,
       year: yearNum,
       banca: form.banca.trim(),
+      subtopic: form.subtopic.trim() || null,
     };
     let error;
     if (editingId) {
@@ -273,6 +277,17 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
               </div>
             </div>
 
+            <div>
+              <Label className="stencil text-[10px]">Subtema (opcional)</Label>
+              <Input
+                value={form.subtopic}
+                onChange={(e) => setForm({ ...form, subtopic: e.target.value })}
+                placeholder="Ex.: Física, Química, História de MG, Legislação"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Apenas para organização interna — não é exibido para o aluno.
+              </p>
+            </div>
             <div>
               <Label className="stencil text-[10px]">Enunciado</Label>
               <Textarea
