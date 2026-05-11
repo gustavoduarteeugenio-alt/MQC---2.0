@@ -228,6 +228,9 @@ const Question = () => {
                 </span>
               )}
             </p>
+            {fullExplanations && current.comment_image_url && (
+              <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
+            )}
             {!fullExplanations && (
               <PlanSelectionDialog>
                 <button className="mt-3 w-full flex items-center justify-center gap-1.5 bg-gradient-flame text-white rounded-xl py-2.5 font-display stencil text-xs shadow-flame">
