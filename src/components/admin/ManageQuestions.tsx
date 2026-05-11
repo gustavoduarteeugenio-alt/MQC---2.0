@@ -146,6 +146,8 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       year: yearNum,
       banca: form.banca.trim(),
       subtopic: form.subtopic.trim() || null,
+      image_url: form.image_url?.trim() || null,
+      comment_image_url: form.comment_image_url?.trim() || null,
     };
     let error;
     if (editingId) {
