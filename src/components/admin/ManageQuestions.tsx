@@ -79,7 +79,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("questions")
-      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic")
+      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic, image_url, comment_image_url")
       .eq("subject_id", subjectId)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
