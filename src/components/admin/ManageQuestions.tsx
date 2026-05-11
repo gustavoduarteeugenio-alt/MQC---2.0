@@ -111,6 +111,8 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       year: q.year ?? "",
       banca: q.banca ?? "IDECAN",
       subtopic: q.subtopic ?? "",
+      image_url: q.image_url ?? "",
+      comment_image_url: q.comment_image_url ?? "",
     });
     setOpen(true);
   };
