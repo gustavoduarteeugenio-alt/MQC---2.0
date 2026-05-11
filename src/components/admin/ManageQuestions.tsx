@@ -138,6 +138,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       difficulty: form.difficulty,
       year: yearNum,
       banca: form.banca.trim(),
+      subtopic: form.subtopic.trim() || null,
     };
     let error;
     if (editingId) {
