@@ -74,7 +74,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("questions")
-      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca")
+      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic")
       .eq("subject_id", subjectId)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
@@ -105,6 +105,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       difficulty: q.difficulty,
       year: q.year ?? "",
       banca: q.banca ?? "IDECAN",
+      subtopic: q.subtopic ?? "",
     });
     setOpen(true);
   };
