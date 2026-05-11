@@ -127,6 +127,7 @@ export type Database = {
           option_e: string | null
           statement: string
           subject_id: string
+          subtopic: string | null
           updated_at: string
           year: number | null
         }
@@ -144,6 +145,7 @@ export type Database = {
           option_e?: string | null
           statement: string
           subject_id: string
+          subtopic?: string | null
           updated_at?: string
           year?: number | null
         }
@@ -161,6 +163,7 @@ export type Database = {
           option_e?: string | null
           statement?: string
           subject_id?: string
+          subtopic?: string | null
           updated_at?: string
           year?: number | null
         }
