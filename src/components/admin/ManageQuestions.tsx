@@ -30,6 +30,7 @@ type QRow = {
   difficulty: string;
   year: number | null;
   banca: string;
+  subtopic: string | null;
 };
 
 const emptyForm = (subject_id = "") => ({
@@ -45,6 +46,7 @@ const emptyForm = (subject_id = "") => ({
   difficulty: "medium",
   year: "" as string | number,
   banca: "IDECAN",
+  subtopic: "",
 });
 
 type FormState = ReturnType<typeof emptyForm>;
