@@ -32,6 +32,8 @@ type QRow = {
   year: number | null;
   banca: string;
   subtopic: string | null;
+  image_url: string | null;
+  comment_image_url: string | null;
 };
 
 const emptyForm = (subject_id = "") => ({
@@ -48,6 +50,8 @@ const emptyForm = (subject_id = "") => ({
   year: "" as string | number,
   banca: "IDECAN",
   subtopic: "",
+  image_url: "" as string,
+  comment_image_url: "" as string,
 });
 
 type FormState = ReturnType<typeof emptyForm>;
