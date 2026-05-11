@@ -9,6 +9,7 @@ import { ArrowLeft, Clock, CheckCircle2, XCircle, Lock, Flame, Lightbulb, Crown 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
+import { QuestionImage } from "@/components/QuestionImage";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
@@ -16,6 +17,7 @@ type Question = {
   option_a: string; option_b: string; option_c: string; option_d: string;
   option_e: string | null;
   correct_answer: Letter; explanation: string;
+  image_url: string | null; comment_image_url: string | null;
 };
 type Subject = { id: string; name: string; slug: string };
 
