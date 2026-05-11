@@ -278,6 +278,17 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
             </div>
 
             <div>
+              <Label className="stencil text-[10px]">Subtema (opcional)</Label>
+              <Input
+                value={form.subtopic}
+                onChange={(e) => setForm({ ...form, subtopic: e.target.value })}
+                placeholder="Ex.: Física, Química, História de MG, Legislação"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Apenas para organização interna — não é exibido para o aluno.
+              </p>
+            </div>
+            <div>
               <Label className="stencil text-[10px]">Enunciado</Label>
               <Textarea
                 value={form.statement}
