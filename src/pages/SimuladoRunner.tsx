@@ -8,11 +8,14 @@ import { ArrowLeft, Clock, CheckCircle2, XCircle, Trophy, Lightbulb, ChevronRigh
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+import { QuestionImage } from "@/components/QuestionImage";
+
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Q = {
   id: string; subject_id: string; statement: string;
   option_a: string; option_b: string; option_c: string; option_d: string;
   option_e: string | null; correct_answer: Letter; explanation: string;
+  image_url: string | null; comment_image_url: string | null;
 };
 type Answer = { question_id: string; selected: Letter | null };
 type AttemptRow = {
@@ -176,6 +179,7 @@ const SimuladoRunner = () => {
           <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
             <p className="stencil text-[10px] text-muted-foreground mb-2">{subjectsMap[current.subject_id]}</p>
             <p className="text-[15px] leading-relaxed">{current.statement}</p>
+            {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
           </div>
 
           <div className="mt-4 space-y-2.5">
@@ -226,6 +230,9 @@ const SimuladoRunner = () => {
                 <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
                 {current.explanation}
               </p>
+              {current.comment_image_url && (
+                <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
+              )}
             </div>
           )}
         </main>

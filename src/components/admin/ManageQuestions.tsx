@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 
 type Subject = { id: string; name: string; slug: string };
 
@@ -31,6 +32,8 @@ type QRow = {
   year: number | null;
   banca: string;
   subtopic: string | null;
+  image_url: string | null;
+  comment_image_url: string | null;
 };
 
 const emptyForm = (subject_id = "") => ({
@@ -47,6 +50,8 @@ const emptyForm = (subject_id = "") => ({
   year: "" as string | number,
   banca: "IDECAN",
   subtopic: "",
+  image_url: "" as string,
+  comment_image_url: "" as string,
 });
 
 type FormState = ReturnType<typeof emptyForm>;
@@ -74,7 +79,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("questions")
-      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic")
+      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic, image_url, comment_image_url")
       .eq("subject_id", subjectId)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
@@ -106,6 +111,8 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       year: q.year ?? "",
       banca: q.banca ?? "IDECAN",
       subtopic: q.subtopic ?? "",
+      image_url: q.image_url ?? "",
+      comment_image_url: q.comment_image_url ?? "",
     });
     setOpen(true);
   };
@@ -139,6 +146,8 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
       year: yearNum,
       banca: form.banca.trim(),
       subtopic: form.subtopic.trim() || null,
+      image_url: form.image_url?.trim() || null,
+      comment_image_url: form.comment_image_url?.trim() || null,
     };
     let error;
     if (editingId) {
@@ -297,6 +306,12 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
               />
             </div>
 
+            <ImageUploader
+              label="Imagem do enunciado (opcional)"
+              value={form.image_url}
+              onChange={(url) => setForm({ ...form, image_url: url ?? "" })}
+            />
+
             {letters.map((l) => {
               const key = `option_${l.toLowerCase()}` as keyof FormState;
               return (
@@ -343,6 +358,12 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
                 rows={3}
               />
             </div>
+
+            <ImageUploader
+              label="Imagem do comentário (opcional)"
+              value={form.comment_image_url}
+              onChange={(url) => setForm({ ...form, comment_image_url: url ?? "" })}
+            />
           </div>
 
           <DialogFooter>

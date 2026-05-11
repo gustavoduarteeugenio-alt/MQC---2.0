@@ -9,6 +9,7 @@ import { ArrowLeft, Clock, CheckCircle2, XCircle, Lock, Flame, Lightbulb, Crown 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
+import { QuestionImage } from "@/components/QuestionImage";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
@@ -16,6 +17,7 @@ type Question = {
   option_a: string; option_b: string; option_c: string; option_d: string;
   option_e: string | null;
   correct_answer: Letter; explanation: string;
+  image_url: string | null; comment_image_url: string | null;
 };
 type Subject = { id: string; name: string; slug: string };
 
@@ -169,6 +171,7 @@ const Question = () => {
       <main className="flex-1 px-5 pt-5 pb-32">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card animate-fade-in">
           <p className="text-[15px] leading-relaxed">{current.statement}</p>
+          {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
         </div>
 
         <div className="mt-4 space-y-2.5">
@@ -225,6 +228,9 @@ const Question = () => {
                 </span>
               )}
             </p>
+            {fullExplanations && current.comment_image_url && (
+              <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
+            )}
             {!fullExplanations && (
               <PlanSelectionDialog>
                 <button className="mt-3 w-full flex items-center justify-center gap-1.5 bg-gradient-flame text-white rounded-xl py-2.5 font-display stencil text-xs shadow-flame">

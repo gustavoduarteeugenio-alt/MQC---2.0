@@ -115,11 +115,13 @@ export type Database = {
       questions: {
         Row: {
           banca: string
+          comment_image_url: string | null
           correct_answer: string
           created_at: string
           difficulty: string
           explanation: string
           id: string
+          image_url: string | null
           option_a: string
           option_b: string
           option_c: string
@@ -133,11 +135,13 @@ export type Database = {
         }
         Insert: {
           banca?: string
+          comment_image_url?: string | null
           correct_answer: string
           created_at?: string
           difficulty?: string
           explanation: string
           id?: string
+          image_url?: string | null
           option_a: string
           option_b: string
           option_c: string
@@ -151,11 +155,13 @@ export type Database = {
         }
         Update: {
           banca?: string
+          comment_image_url?: string | null
           correct_answer?: string
           created_at?: string
           difficulty?: string
           explanation?: string
           id?: string
+          image_url?: string | null
           option_a?: string
           option_b?: string
           option_c?: string
