@@ -172,7 +172,7 @@ const Admin = () => {
           </header>
 
           {/* Mobile Horizontal Nav */}
-          <nav className="md:hidden px-4 py-2 border-b border-border bg-card overflow-x-auto scrollbar-hide">
+          <nav className="md:hidden px-4 py-2 border-b border-border bg-card overflow-x-auto">
             <div className="flex gap-2 min-w-max">
               <button
                 onClick={() => handleNav("questions")}
