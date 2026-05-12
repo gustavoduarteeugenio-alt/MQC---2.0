@@ -2,8 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Shield } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
 import { ManageUsers } from "@/components/admin/ManageUsers";
@@ -11,11 +23,21 @@ import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
 
 type Subject = { id: string; name: string; slug: string };
+type Section = "questions" | "bulk" | "simulados" | "users" | "admins";
+
+const sectionLabels: Record<Section, string> = {
+  questions: "Questões",
+  bulk: "Importar em Lote",
+  simulados: "Simulados",
+  users: "Usuários",
+  admins: "Administradores",
+};
 
 const Admin = () => {
   const navigate = useNavigate();
   const { isAdmin, isDidacticAdmin, loading } = useProfile();
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [active, setActive] = useState<Section>("questions");
 
   useEffect(() => {
     if (!loading && !isAdmin && !isDidacticAdmin) navigate("/");
@@ -30,54 +52,191 @@ const Admin = () => {
   };
   useEffect(() => { reload(); }, []);
 
+  const renderContent = () => {
+    switch (active) {
+      case "questions": return <ManageQuestions subjects={subjects} />;
+      case "bulk": return <BulkImport subjects={subjects} onImported={() => {}} />;
+      case "simulados": return <ManageSimulados subjects={subjects} />;
+      case "users": return <ManageUsers />;
+      case "admins": return <ManageAdmins />;
+      default: return null;
+    }
+  };
+
+  const handleNav = (section: Section) => {
+    setActive(section);
+  };
+
   return (
-    <div className="app-shell pb-10">
-      <header className="flex items-center gap-2 px-4 pt-12 pb-3 bg-gradient-night text-white">
-        <button onClick={() => navigate(-1)} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-white/10">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <p className="stencil text-xs text-primary flex items-center gap-1"><Shield className="w-3 h-3" /> Admin</p>
-          <h1 className="font-display text-xl font-bold">Painel administrativo</h1>
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen flex w-full">
+        {/* Desktop Sidebar */}
+        <Sidebar collapsible="icon" className="hidden md:flex border-r border-border bg-card">
+          <SidebarContent>
+            <div className="px-4 pt-6 pb-2">
+              <p className="stencil text-[10px] text-primary flex items-center gap-1">
+                <Shield className="w-3 h-3" /> Admin
+              </p>
+              <h1 className="font-display text-sm font-bold mt-0.5">Painel</h1>
+            </div>
+
+            {/* Banco de Questões Group */}
+            <SidebarGroup>
+              <SidebarGroupLabel>Banco de Questões</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={active === "questions"} onClick={() => handleNav("questions")}>
+                      <button className={cn("flex items-center gap-2", active === "questions" && "bg-primary/10 text-primary")}>
+                        <FilePlus className="h-4 w-4" />
+                        <span>Cadastrar</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={active === "bulk"} onClick={() => handleNav("bulk")}>
+                      <button className={cn("flex items-center gap-2", active === "bulk" && "bg-primary/10 text-primary")}>
+                        <Upload className="h-4 w-4" />
+                        <span>Importar Lote</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Simulados Group */}
+            {isAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Simulados</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "simulados"} onClick={() => handleNav("simulados")}>
+                        <button className={cn("flex items-center gap-2", active === "simulados" && "bg-primary/10 text-primary")}>
+                          <ClipboardList className="h-4 w-4" />
+                          <span>Gerenciar</span>
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+
+            {/* Gestão de Acesso Group */}
+            {isAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Gestão de Acesso</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "users"} onClick={() => handleNav("users")}>
+                        <button className={cn("flex items-center gap-2", active === "users" && "bg-primary/10 text-primary")}>
+                          <Users className="h-4 w-4" />
+                          <span>Usuários</span>
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "admins"} onClick={() => handleNav("admins")}>
+                        <button className={cn("flex items-center gap-2", active === "admins" && "bg-primary/10 text-primary")}>
+                          <UserCog className="h-4 w-4" />
+                          <span>Admins</span>
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+          </SidebarContent>
+        </Sidebar>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header */}
+          <header className="flex items-center gap-3 px-4 pt-12 md:pt-4 pb-3 bg-gradient-night text-white">
+            <SidebarTrigger className="hidden md:flex -ml-1 text-white hover:bg-white/10" />
+            <button onClick={() => navigate(-1)} className="w-10 h-10 -ml-2 md:ml-0 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 min-w-0">
+              <Library className="w-5 h-5 text-primary hidden md:block" />
+              <div>
+                <p className="stencil text-xs text-primary flex items-center gap-1 md:hidden"><Shield className="w-3 h-3" /> Admin</p>
+                <h1 className="font-display text-xl font-bold truncate">Painel Administrativo</h1>
+              </div>
+            </div>
+            <span className="ml-auto stencil text-[10px] text-white/60 hidden md:block">{sectionLabels[active]}</span>
+          </header>
+
+          {/* Mobile Horizontal Nav */}
+          <nav className="md:hidden px-4 py-2 border-b border-border bg-card overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 min-w-max">
+              <button
+                onClick={() => handleNav("questions")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                  active === "questions" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                )}
+              >
+                Questões
+              </button>
+              <button
+                onClick={() => handleNav("bulk")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                  active === "bulk" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                )}
+              >
+                Em lote
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => handleNav("simulados")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    active === "simulados" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Simulados
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => handleNav("users")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    active === "users" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Usuários
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => handleNav("admins")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    active === "admins" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Admins
+                </button>
+              )}
+            </div>
+          </nav>
+
+          {/* Content Area */}
+          <main className="flex-1 px-4 md:px-6 py-5 overflow-y-auto">
+            <div className="max-w-4xl">
+              {renderContent()}
+            </div>
+          </main>
         </div>
-      </header>
-
-      <main className="px-5 py-5 space-y-5">
-        <Tabs defaultValue="questions" className="w-full">
-          <TabsList className={`grid w-full ${isAdmin ? "grid-cols-5" : "grid-cols-2"}`}>
-            <TabsTrigger value="questions">Questões</TabsTrigger>
-            <TabsTrigger value="bulk">Em lote</TabsTrigger>
-            {isAdmin && <TabsTrigger value="simulados">Gestão de Simulados</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="users">Usuários</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="admins">Admins</TabsTrigger>}
-          </TabsList>
-
-          <TabsContent value="questions" className="mt-4">
-            <ManageQuestions subjects={subjects} />
-          </TabsContent>
-
-          <TabsContent value="bulk" className="mt-4">
-            <BulkImport subjects={subjects} onImported={() => { /* noop */ }} />
-          </TabsContent>
-
-          {isAdmin && (
-            <>
-              <TabsContent value="simulados" className="mt-4">
-                <ManageSimulados subjects={subjects} />
-              </TabsContent>
-
-              <TabsContent value="users" className="mt-4">
-                <ManageUsers />
-              </TabsContent>
-
-              <TabsContent value="admins" className="mt-4">
-                <ManageAdmins />
-              </TabsContent>
-            </>
-          )}
-        </Tabs>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
