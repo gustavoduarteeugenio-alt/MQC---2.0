@@ -161,6 +161,19 @@ const Admin = () => {
                         </button>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "support"} onClick={() => handleNav("support")}>
+                        <button className={cn("flex items-center gap-2 w-full", active === "support" && "bg-primary/10 text-primary")}>
+                          <MessageSquare className="h-4 w-4" />
+                          <span className="flex-1 text-left">Suporte</span>
+                          {pendingSupport > 0 && (
+                            <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                              {pendingSupport}
+                            </span>
+                          )}
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
