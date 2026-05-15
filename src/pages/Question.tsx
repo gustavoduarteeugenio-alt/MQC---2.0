@@ -219,16 +219,16 @@ const Question = () => {
             <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
               <Lightbulb className="w-4 h-4" /> Gabarito {fullExplanations ? "comentado" : "(resumido)"}
             </div>
-            <p className="text-sm leading-relaxed">
+            <div className="text-sm leading-relaxed">
               <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
               {fullExplanations ? (
-                current.explanation
+                <RichText content={current.explanation} />
               ) : (
                 <span className="opacity-80">
                   Comentário completo do professor disponível apenas no Premium.
                 </span>
               )}
-            </p>
+            </div>
             {fullExplanations && current.comment_image_url && (
               <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
             )}
