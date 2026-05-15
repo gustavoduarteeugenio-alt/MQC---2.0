@@ -212,7 +212,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
                 {questions.map((q) => (
                   <div key={q.id} className="bg-card border border-border rounded-xl p-3 flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm line-clamp-2">{q.statement}</p>
+                      <RichText content={q.statement} className="text-sm line-clamp-2" />
                       <div className="flex flex-wrap items-center gap-2 mt-1.5">
                         <span className="text-[10px] stencil bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">
                           Gab. {q.correct_answer}
