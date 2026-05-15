@@ -79,10 +79,12 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          onboarding_completed_at: string | null
           origem: string | null
           plan: Database["public"]["Enums"]["plan_type"]
           premium_since: string | null
           premium_until: string | null
+          trial_started_at: string | null
           updated_at: string
           user_id: string
         }
@@ -91,10 +93,12 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          onboarding_completed_at?: string | null
           origem?: string | null
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -103,10 +107,12 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          onboarding_completed_at?: string | null
           origem?: string | null
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id?: string
         }
