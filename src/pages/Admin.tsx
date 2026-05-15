@@ -40,6 +40,7 @@ const Admin = () => {
   const { isAdmin, isDidacticAdmin, loading } = useProfile();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [active, setActive] = useState<Section>("questions");
+  const [pendingSupport, setPendingSupport] = useState(0);
 
   useEffect(() => {
     if (!loading && !isAdmin && !isDidacticAdmin) navigate("/");
@@ -52,7 +53,18 @@ const Admin = () => {
       .order("display_order");
     setSubjects((subs ?? []) as Subject[]);
   };
+
+  const reloadPending = async () => {
+    if (!isAdmin) return;
+    const { count } = await (supabase as any)
+      .from("support_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendente");
+    setPendingSupport(count ?? 0);
+  };
+
   useEffect(() => { reload(); }, []);
+  useEffect(() => { reloadPending(); }, [isAdmin, active]);
 
   const renderContent = () => {
     switch (active) {
