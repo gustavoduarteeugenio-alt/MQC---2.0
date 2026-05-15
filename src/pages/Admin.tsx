@@ -73,6 +73,7 @@ const Admin = () => {
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
       case "admins": return <ManageAdmins />;
+      case "support": return <SupportMessages />;
       default: return null;
     }
   };
