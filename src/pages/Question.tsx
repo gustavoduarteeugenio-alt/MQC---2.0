@@ -171,7 +171,7 @@ const Question = () => {
 
       <main className="flex-1 px-5 pt-5 pb-32">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card animate-fade-in">
-          <p className="text-[15px] leading-relaxed">{current.statement}</p>
+          <RichText content={current.statement} className="text-[15px] leading-relaxed" />
           {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
         </div>
 
