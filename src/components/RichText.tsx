@@ -7,10 +7,6 @@ import { cn } from "@/lib/utils";
 const schema = {
   ...defaultSchema,
   tagNames: [...(defaultSchema.tagNames || []), "u", "mark", "sub", "sup"],
-  attributes: {
-    ...defaultSchema.attributes,
-    "*": [...(defaultSchema.attributes?.["*"] || []), "className"],
-  },
 };
 
 interface Props {
@@ -24,9 +20,6 @@ export const RichText = ({ content, className }: Props) => {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, schema]]}
-        components={{
-          p: ({ node, ...props }) => <span {...props} />,
-        }}
       >
         {content || ""}
       </ReactMarkdown>
