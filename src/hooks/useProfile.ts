@@ -12,7 +12,11 @@ export type Profile = {
   plan: PlanType;
   premium_until: string | null;
   premium_since: string | null;
+  trial_started_at: string | null;
+  onboarding_completed_at: string | null;
 };
+
+export const TRIAL_DAYS = 5;
 
 const BASIC_DAILY_LIMIT = 5;
 
@@ -70,7 +74,17 @@ export const useProfile = () => {
   const planIsPremium = profile?.plan === "premium" || profile?.plan === "monthly" || profile?.plan === "quarterly";
   const notExpired = !profile?.premium_until || new Date(profile.premium_until) > new Date();
   const isPremium = !!planIsPremium && notExpired;
-  const dailyLimit = isPremium ? Infinity : BASIC_DAILY_LIMIT;
+
+  // Trial calculation
+  const trialStartedAt = profile?.trial_started_at ? new Date(profile.trial_started_at) : null;
+  const trialEndsAt = trialStartedAt ? new Date(trialStartedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000) : null;
+  const trialActive = !!trialEndsAt && trialEndsAt > new Date();
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 0;
+  const hasAccess = isPremium || trialActive || isAdmin || isDidacticAdmin;
+
+  const dailyLimit = isPremium || trialActive ? Infinity : BASIC_DAILY_LIMIT;
   const canAnswerMore = dailyCount < dailyLimit;
 
   const incrementDaily = async () => {
@@ -92,5 +106,5 @@ export const useProfile = () => {
     }
   };
 
-  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, isDidacticAdmin, canAnswerMore, loading, refresh, incrementDaily };
+  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, isDidacticAdmin, canAnswerMore, loading, refresh, incrementDaily, trialActive, trialDaysLeft, trialEndsAt, hasAccess };
 };

@@ -16,7 +16,9 @@ import Profile from "./pages/Profile.tsx";
 import Admin from "./pages/Admin.tsx";
 import Simulados from "./pages/Simulados.tsx";
 import SimuladoRunner from "./pages/SimuladoRunner.tsx";
+import TrialExpired from "./pages/TrialExpired.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +29,11 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <AuthProvider>
+          <OnboardingTour />
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
+            <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
             <Route path="/questao/:slug" element={<ProtectedRoute><Question /></ProtectedRoute>} />
