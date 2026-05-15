@@ -261,12 +261,45 @@ export const ManageUsers = () => {
                   >
                     {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ShieldOff className="w-3 h-3 mr-1" /> Restringir p/ Básico</>}
                   </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => setResetTarget(u)}
+                          className="stencil text-[11px]"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" /> Reiniciar Trial
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Reiniciar 5 dias de teste</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <AlertDialog open={!!resetTarget} onOpenChange={(o) => !o && setResetTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reiniciar período de teste</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja conceder mais 5 dias de acesso gratuito para {resetTarget?.email ?? "este usuário"}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={resetting} onClick={(e) => { e.preventDefault(); resetTarget && resetTrial(resetTarget); }}>
+              {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
