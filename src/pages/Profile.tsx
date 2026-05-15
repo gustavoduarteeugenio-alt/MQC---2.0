@@ -2,9 +2,11 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight } from "lucide-react";
+import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight, PlayCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const planLabel = (plan?: string | null) => {
   switch (plan) {
@@ -17,7 +19,14 @@ const planLabel = (plan?: string | null) => {
 
 const Profile = () => {
   const { signOut, user } = useAuth();
-  const { profile, isPremium, isAdmin, dailyCount, dailyLimit } = useProfile();
+  const { profile, isPremium, isAdmin, dailyCount, dailyLimit, refresh } = useProfile();
+
+  const replayTutorial = async () => {
+    if (!user) return;
+    await supabase.from("profiles").update({ onboarding_completed_at: null }).eq("user_id", user.id);
+    await refresh();
+    toast({ title: "Tutorial reiniciado", description: "Bem-vindo de volta, combatente!" });
+  };
 
   const initials = (profile?.full_name ?? user?.email ?? "U").slice(0, 2).toUpperCase();
 
@@ -78,6 +87,18 @@ const Profile = () => {
             </Card>
           </Link>
         )}
+
+        <button onClick={replayTutorial} className="w-full text-left">
+          <Card>
+            <div className="flex items-center justify-between p-1">
+              <div className="flex items-center gap-3">
+                <PlayCircle className="w-5 h-5 text-primary" />
+                <p className="font-display font-semibold">Rever tutorial de boas-vindas</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </button>
 
         <Button onClick={signOut} variant="outline" className="w-full mt-2 stencil">
           <LogOut className="w-4 h-4 mr-2" /> Sair
