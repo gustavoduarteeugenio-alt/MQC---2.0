@@ -12,7 +12,11 @@ export type Profile = {
   plan: PlanType;
   premium_until: string | null;
   premium_since: string | null;
+  trial_started_at: string | null;
+  onboarding_completed_at: string | null;
 };
+
+export const TRIAL_DAYS = 5;
 
 const BASIC_DAILY_LIMIT = 5;
 
