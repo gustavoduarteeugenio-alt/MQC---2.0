@@ -19,7 +19,14 @@ const planLabel = (plan?: string | null) => {
 
 const Profile = () => {
   const { signOut, user } = useAuth();
-  const { profile, isPremium, isAdmin, dailyCount, dailyLimit } = useProfile();
+  const { profile, isPremium, isAdmin, dailyCount, dailyLimit, refresh } = useProfile();
+
+  const replayTutorial = async () => {
+    if (!user) return;
+    await supabase.from("profiles").update({ onboarding_completed_at: null }).eq("user_id", user.id);
+    await refresh();
+    toast({ title: "Tutorial reiniciado", description: "Bem-vindo de volta, combatente!" });
+  };
 
   const initials = (profile?.full_name ?? user?.email ?? "U").slice(0, 2).toUpperCase();
 
