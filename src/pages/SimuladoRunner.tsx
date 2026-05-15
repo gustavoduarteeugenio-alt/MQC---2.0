@@ -227,10 +227,10 @@ const SimuladoRunner = () => {
               <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
                 <Lightbulb className="w-4 h-4" /> Comentário do professor
               </div>
-              <p className="text-sm leading-relaxed">
+              <div className="text-sm leading-relaxed">
                 <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
-                {current.explanation}
-              </p>
+                <RichText content={current.explanation} />
+              </div>
               {current.comment_image_url && (
                 <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
               )}
