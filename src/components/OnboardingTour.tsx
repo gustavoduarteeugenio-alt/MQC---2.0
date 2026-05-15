@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { Flame, BookOpen, BarChart3, ShieldCheck, ChevronRight } from "lucide-react";
+import { Flame, BookOpen, BarChart3, ShieldCheck, Radio, ChevronRight } from "lucide-react";
 
 const STEPS = [
   {
@@ -27,11 +27,16 @@ const STEPS = [
     title: "Simulados completos",
     body: "Os simulados reproduzem o estilo IDECAN, com tempo cronometrado e relatório por disciplina. Use-os para medir sua prontidão real para a prova.",
   },
+  {
+    icon: Radio,
+    title: "Canal direto com a Sala de Comando",
+    body: "Precisa de ajuda, encontrou um erro em alguma questão ou tem uma sugestão? Vá em 'Perfil' → 'Suporte e Sugestões', escolha o tipo de mensagem (Dúvida Técnica, Erro em Questão, Sugestão de Melhoria ou Outros), descreva sua demanda e envie. Nossa equipe responderá o quanto antes.",
+  },
 ];
 
 export const OnboardingTour = () => {
   const { user } = useAuth();
-  const { profile, loading, refresh } = useProfile();
+  const { profile, loading, refresh, isPremium } = useProfile();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
