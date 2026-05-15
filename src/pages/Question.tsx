@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 import { QuestionImage } from "@/components/QuestionImage";
+import { RichText } from "@/components/RichText";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
@@ -170,7 +171,7 @@ const Question = () => {
 
       <main className="flex-1 px-5 pt-5 pb-32">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card animate-fade-in">
-          <p className="text-[15px] leading-relaxed">{current.statement}</p>
+          <RichText content={current.statement} className="text-[15px] leading-relaxed" />
           {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
         </div>
 
@@ -207,7 +208,7 @@ const Question = () => {
                   {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
                    showResult && !isCorrect && isSelected ? <XCircle className="w-4 h-4" /> : letter}
                 </span>
-                <span className="text-sm leading-snug pt-1">{text}</span>
+                <RichText content={text} className="text-sm leading-snug pt-1" />
               </button>
             );
           })}
@@ -218,16 +219,16 @@ const Question = () => {
             <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
               <Lightbulb className="w-4 h-4" /> Gabarito {fullExplanations ? "comentado" : "(resumido)"}
             </div>
-            <p className="text-sm leading-relaxed">
+            <div className="text-sm leading-relaxed">
               <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
               {fullExplanations ? (
-                current.explanation
+                <RichText content={current.explanation} />
               ) : (
                 <span className="opacity-80">
                   Comentário completo do professor disponível apenas no Premium.
                 </span>
               )}
-            </p>
+            </div>
             {fullExplanations && current.comment_image_url && (
               <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
             )}

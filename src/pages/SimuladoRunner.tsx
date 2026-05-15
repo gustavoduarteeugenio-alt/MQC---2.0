@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import { QuestionImage } from "@/components/QuestionImage";
+import { RichText } from "@/components/RichText";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Q = {
@@ -178,7 +179,7 @@ const SimuladoRunner = () => {
         <main className="flex-1 px-5 pt-5">
           <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
             <p className="stencil text-[10px] text-muted-foreground mb-2">{subjectsMap[current.subject_id]}</p>
-            <p className="text-[15px] leading-relaxed">{current.statement}</p>
+            <RichText content={current.statement} className="text-[15px] leading-relaxed" />
             {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
           </div>
 
@@ -215,7 +216,7 @@ const SimuladoRunner = () => {
                     {reviewMode && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
                      reviewMode && !isCorrect && isSelected ? <XCircle className="w-4 h-4" /> : letter}
                   </span>
-                  <span className="text-sm leading-snug pt-1">{text}</span>
+                  <RichText content={text} className="text-sm leading-snug pt-1" />
                 </button>
               );
             })}
@@ -226,10 +227,10 @@ const SimuladoRunner = () => {
               <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
                 <Lightbulb className="w-4 h-4" /> Comentário do professor
               </div>
-              <p className="text-sm leading-relaxed">
+              <div className="text-sm leading-relaxed">
                 <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
-                {current.explanation}
-              </p>
+                <RichText content={current.explanation} />
+              </div>
               {current.comment_image_url && (
                 <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
               )}

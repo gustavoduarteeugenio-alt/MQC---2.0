@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { RichText } from "@/components/RichText";
 
 type Subject = { id: string; name: string; slug: string };
 
@@ -212,7 +213,7 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
                 {questions.map((q) => (
                   <div key={q.id} className="bg-card border border-border rounded-xl p-3 flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm line-clamp-2">{q.statement}</p>
+                      <RichText content={q.statement} className="text-sm line-clamp-2" />
                       <div className="flex flex-wrap items-center gap-2 mt-1.5">
                         <span className="text-[10px] stencil bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">
                           Gab. {q.correct_answer}
@@ -364,6 +365,38 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
               value={form.comment_image_url}
               onChange={(url) => setForm({ ...form, comment_image_url: url ?? "" })}
             />
+
+            <div className="border-2 border-dashed border-primary/30 rounded-xl p-4 bg-muted/30">
+              <Label className="stencil text-[10px] text-primary">Pré-visualização (como o aluno verá)</Label>
+              <p className="text-[10px] text-muted-foreground mt-1 mb-3">
+                Use **negrito**, *itálico*, __sublinhado__ ou tags HTML (&lt;strong&gt;, &lt;u&gt;, &lt;em&gt;).
+              </p>
+              <div className="space-y-3">
+                <div className="bg-card border border-border rounded-lg p-3">
+                  <div className="text-[10px] stencil text-muted-foreground mb-1">Enunciado</div>
+                  <RichText content={form.statement} className="text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  {letters.map((l) => {
+                    const text = (form as any)[`option_${l.toLowerCase()}`] as string;
+                    if (!text?.trim()) return null;
+                    const isCorrect = l === form.correct_answer;
+                    return (
+                      <div key={l} className={`flex gap-2 p-2 rounded-lg border text-sm ${isCorrect ? "border-success bg-success/10" : "border-border bg-card"}`}>
+                        <span className="font-display font-bold">{l})</span>
+                        <RichText content={text} className="flex-1" />
+                      </div>
+                    );
+                  })}
+                </div>
+                {form.explanation?.trim() && (
+                  <div className="bg-secondary text-secondary-foreground rounded-lg p-3">
+                    <div className="text-[10px] stencil mb-1 opacity-80">Comentário</div>
+                    <RichText content={form.explanation} className="text-sm" />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
