@@ -37,9 +37,10 @@ export const OnboardingTour = () => {
 
   useEffect(() => {
     if (!loading && profile && !profile.onboarding_completed_at) {
+      setStep(0);
       setOpen(true);
     }
-  }, [loading, profile]);
+  }, [loading, profile?.onboarding_completed_at]);
 
   const finish = async () => {
     setOpen(false);
