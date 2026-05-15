@@ -82,7 +82,7 @@ export const OnboardingTour = () => {
         </div>
         <div className="px-6 py-5 space-y-4">
           <p className="text-sm text-foreground/80 leading-relaxed">{current.body}</p>
-          {isFirst && (
+          {isFirst && !isPremium && (
             <div className="rounded-lg bg-warning/10 border border-warning/30 px-3 py-2 text-xs text-foreground">
               <strong className="stencil text-warning-foreground">Teste grátis ativo:</strong> 5 dias de acesso total a todas as funcionalidades. Aproveite cada minuto.
             </div>
