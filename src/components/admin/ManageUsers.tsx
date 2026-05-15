@@ -19,6 +19,7 @@ type UserRow = {
   premium_until: string | null;
   premium_since: string | null;
   origem: string | null;
+  trial_started_at: string | null;
 };
 
 const PLAN_LABEL: Record<PlanType, string> = {
