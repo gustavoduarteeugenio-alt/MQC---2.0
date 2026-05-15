@@ -116,6 +116,23 @@ export const ManageUsers = () => {
     );
   };
 
+  const resetTrial = async (u: UserRow) => {
+    setResetting(true);
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("profiles")
+      .update({ trial_started_at: now, plan: u.plan === "basic" ? "basic" : u.plan, premium_until: u.plan === "basic" ? null : u.premium_until } as any)
+      .eq("user_id", u.user_id);
+    setResetting(false);
+    if (error) {
+      toast.error("Falha ao reiniciar teste: " + error.message);
+      return;
+    }
+    toast.success("Período de teste reiniciado com sucesso!");
+    setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, trial_started_at: now } : x)));
+    setResetTarget(null);
+  };
+
   return (
     <div className="bg-card border border-border rounded-2xl p-4 shadow-card space-y-4">
       <div className="flex items-center gap-2">
