@@ -106,5 +106,5 @@ export const useProfile = () => {
     }
   };
 
-  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, isDidacticAdmin, canAnswerMore, loading, refresh, incrementDaily };
+  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, isDidacticAdmin, canAnswerMore, loading, refresh, incrementDaily, trialActive, trialDaysLeft, trialEndsAt, hasAccess };
 };
