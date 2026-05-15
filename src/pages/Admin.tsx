@@ -14,16 +14,17 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog } from "lucide-react";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
 import { ManageUsers } from "@/components/admin/ManageUsers";
 import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
+import { SupportMessages } from "@/components/admin/SupportMessages";
 
 type Subject = { id: string; name: string; slug: string };
-type Section = "questions" | "bulk" | "simulados" | "users" | "admins";
+type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support";
 
 const sectionLabels: Record<Section, string> = {
   questions: "Questões",
@@ -31,6 +32,7 @@ const sectionLabels: Record<Section, string> = {
   simulados: "Simulados",
   users: "Usuários",
   admins: "Administradores",
+  support: "Mensagens de Suporte",
 };
 
 const Admin = () => {
