@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight, PlayCircle } from "lucide-react";
+import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight, PlayCircle, Radio } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 import { supabase } from "@/integrations/supabase/client";
