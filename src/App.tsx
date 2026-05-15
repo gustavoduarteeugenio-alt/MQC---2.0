@@ -16,7 +16,9 @@ import Profile from "./pages/Profile.tsx";
 import Admin from "./pages/Admin.tsx";
 import Simulados from "./pages/Simulados.tsx";
 import SimuladoRunner from "./pages/SimuladoRunner.tsx";
+import TrialExpired from "./pages/TrialExpired.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 const queryClient = new QueryClient();
 
