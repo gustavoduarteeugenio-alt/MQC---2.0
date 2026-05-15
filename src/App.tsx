@@ -17,6 +17,7 @@ import Admin from "./pages/Admin.tsx";
 import Simulados from "./pages/Simulados.tsx";
 import SimuladoRunner from "./pages/SimuladoRunner.tsx";
 import TrialExpired from "./pages/TrialExpired.tsx";
+import Support from "./pages/Support.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { OnboardingTour } from "@/components/OnboardingTour";
 
