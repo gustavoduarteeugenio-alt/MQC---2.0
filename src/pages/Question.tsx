@@ -208,7 +208,7 @@ const Question = () => {
                   {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
                    showResult && !isCorrect && isSelected ? <XCircle className="w-4 h-4" /> : letter}
                 </span>
-                <span className="text-sm leading-snug pt-1">{text}</span>
+                <RichText content={text} className="text-sm leading-snug pt-1" />
               </button>
             );
           })}
