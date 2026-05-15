@@ -253,6 +253,22 @@ const Admin = () => {
                   Admins
                 </button>
               )}
+              {isAdmin && (
+                <button
+                  onClick={() => handleNav("support")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors inline-flex items-center gap-1.5",
+                    active === "support" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Suporte
+                  {pendingSupport > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold">
+                      {pendingSupport}
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
           </nav>
 
