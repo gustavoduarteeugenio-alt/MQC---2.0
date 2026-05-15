@@ -88,6 +88,18 @@ const Profile = () => {
           </Link>
         )}
 
+        <button onClick={replayTutorial} className="w-full text-left">
+          <Card>
+            <div className="flex items-center justify-between p-1">
+              <div className="flex items-center gap-3">
+                <PlayCircle className="w-5 h-5 text-primary" />
+                <p className="font-display font-semibold">Rever tutorial de boas-vindas</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </button>
+
         <Button onClick={signOut} variant="outline" className="w-full mt-2 stencil">
           <LogOut className="w-4 h-4 mr-2" /> Sair
         </Button>
