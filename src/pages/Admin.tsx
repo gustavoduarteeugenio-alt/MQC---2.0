@@ -14,16 +14,17 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog } from "lucide-react";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
 import { ManageUsers } from "@/components/admin/ManageUsers";
 import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
+import { SupportMessages } from "@/components/admin/SupportMessages";
 
 type Subject = { id: string; name: string; slug: string };
-type Section = "questions" | "bulk" | "simulados" | "users" | "admins";
+type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support";
 
 const sectionLabels: Record<Section, string> = {
   questions: "Questões",
@@ -31,6 +32,7 @@ const sectionLabels: Record<Section, string> = {
   simulados: "Simulados",
   users: "Usuários",
   admins: "Administradores",
+  support: "Mensagens de Suporte",
 };
 
 const Admin = () => {
@@ -38,6 +40,7 @@ const Admin = () => {
   const { isAdmin, isDidacticAdmin, loading } = useProfile();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [active, setActive] = useState<Section>("questions");
+  const [pendingSupport, setPendingSupport] = useState(0);
 
   useEffect(() => {
     if (!loading && !isAdmin && !isDidacticAdmin) navigate("/");
@@ -50,7 +53,18 @@ const Admin = () => {
       .order("display_order");
     setSubjects((subs ?? []) as Subject[]);
   };
+
+  const reloadPending = async () => {
+    if (!isAdmin) return;
+    const { count } = await (supabase as any)
+      .from("support_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pendente");
+    setPendingSupport(count ?? 0);
+  };
+
   useEffect(() => { reload(); }, []);
+  useEffect(() => { reloadPending(); }, [isAdmin, active]);
 
   const renderContent = () => {
     switch (active) {
@@ -59,6 +73,7 @@ const Admin = () => {
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
       case "admins": return <ManageAdmins />;
+      case "support": return <SupportMessages />;
       default: return null;
     }
   };
@@ -146,6 +161,19 @@ const Admin = () => {
                         </button>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "support"} onClick={() => handleNav("support")}>
+                        <button className={cn("flex items-center gap-2 w-full", active === "support" && "bg-primary/10 text-primary")}>
+                          <MessageSquare className="h-4 w-4" />
+                          <span className="flex-1 text-left">Suporte</span>
+                          {pendingSupport > 0 && (
+                            <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                              {pendingSupport}
+                            </span>
+                          )}
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -223,6 +251,22 @@ const Admin = () => {
                   )}
                 >
                   Admins
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => handleNav("support")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors inline-flex items-center gap-1.5",
+                    active === "support" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Suporte
+                  {pendingSupport > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold">
+                      {pendingSupport}
+                    </span>
+                  )}
                 </button>
               )}
             </div>

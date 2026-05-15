@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight, PlayCircle } from "lucide-react";
+import { LogOut, Mail, Crown, Calendar, Zap, Shield, ChevronRight, PlayCircle, Radio } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,6 +87,21 @@ const Profile = () => {
             </Card>
           </Link>
         )}
+
+        <Link to="/suporte">
+          <Card>
+            <div className="flex items-center justify-between p-1">
+              <div className="flex items-center gap-3">
+                <Radio className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="font-display font-semibold">Suporte e Sugestões</p>
+                  <p className="text-[11px] text-muted-foreground">Canal direto com a Sala de Comando</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </Link>
 
         <button onClick={replayTutorial} className="w-full text-left">
           <Card>
