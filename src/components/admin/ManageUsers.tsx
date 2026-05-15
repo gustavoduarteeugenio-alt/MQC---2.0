@@ -45,7 +45,7 @@ export const ManageUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, plan, premium_until, premium_since, origem" as any)
+      .select("user_id, full_name, email, plan, premium_until, premium_since, origem, trial_started_at" as any)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
