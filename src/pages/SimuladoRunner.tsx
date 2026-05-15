@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import { QuestionImage } from "@/components/QuestionImage";
+import { RichText } from "@/components/RichText";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Q = {
