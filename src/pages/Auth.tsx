@@ -142,7 +142,7 @@ const Auth = () => {
         }
         if (signUpData.user) await linkPendingDiagnostic(signUpData.user.id);
         toast.success("Conta criada! Bem-vindo, recruta.");
-        navigate("/", { replace: true });
+        navigate("/selecionar-plano", { replace: true });
       } else {
         const parsed = signInSchema.safeParse({ email, password });
         if (!parsed.success) {

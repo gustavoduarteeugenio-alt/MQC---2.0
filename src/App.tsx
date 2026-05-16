@@ -19,6 +19,7 @@ import SimuladoRunner from "./pages/SimuladoRunner.tsx";
 import TrialExpired from "./pages/TrialExpired.tsx";
 import Support from "./pages/Support.tsx";
 import Diagnostico from "./pages/Diagnostico.tsx";
+import SelecionarPlano from "./pages/SelecionarPlano.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { OnboardingTour } from "@/components/OnboardingTour";
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
+            <Route path="/selecionar-plano" element={<ProtectedRoute><SelecionarPlano /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
             <Route path="/questao/:slug" element={<ProtectedRoute><Question /></ProtectedRoute>} />

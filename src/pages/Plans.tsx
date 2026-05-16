@@ -58,9 +58,10 @@ const Plans = () => {
           </div>
           <p className="stencil text-xs opacity-90">Plano Premium</p>
           <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-4xl font-display font-bold">R$ 29,90</span>
+            <span className="text-4xl font-display font-bold">R$ 49,90</span>
             <span className="text-sm opacity-80">/mês</span>
           </div>
+          <p className="text-xs opacity-90 mt-1">ou R$ 79,90 até o dia da prova (2x sem juros)</p>
           <ul className="mt-4 space-y-2 text-sm">
             {["Questões ilimitadas todos os dias", "Sem anúncios", "Simulados completos no estilo IDECAN", "Gabarito comentado em todas as questões", "Estatísticas avançadas por matéria"].map((t) => (
               <li key={t} className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0" /> {t}</li>
