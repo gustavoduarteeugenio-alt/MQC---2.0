@@ -64,7 +64,9 @@ const Question = () => {
         if (fresh.length > 0) pool = fresh;
       }
 
-      const shuffled = pool.sort(() => Math.random() - 0.5);
+      // Sorteio aleatório + limite de 10 questões por bloco da matéria selecionada
+      const BLOCK_SIZE = 10;
+      const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, BLOCK_SIZE);
       setQuestions(shuffled as Question[]);
       setIndex(0);
       setSelected(null);
