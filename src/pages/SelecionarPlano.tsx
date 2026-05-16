@@ -56,7 +56,7 @@ const SelecionarPlano = () => {
             ))}
           </ul>
           <Button asChild className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil">
-            <a href={KIWIFY_URL} target="_blank" rel="noopener noreferrer">Garantir acesso</a>
+            <a href={EXAM_URL} target="_blank" rel="noopener noreferrer">Garantir acesso</a>
           </Button>
         </article>
 
@@ -82,7 +82,7 @@ const SelecionarPlano = () => {
             ))}
           </ul>
           <Button asChild className="w-full mt-5 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-display stencil">
-            <a href={KIWIFY_URL} target="_blank" rel="noopener noreferrer">Assinar mensal</a>
+            <a href={MONTHLY_URL} target="_blank" rel="noopener noreferrer">Assinar mensal</a>
           </Button>
         </article>
       </main>
