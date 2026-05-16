@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 import { QuestionImage } from "@/components/QuestionImage";
 import { RichText } from "@/components/RichText";
+import { getSubjectStats, pickNextSubject } from "@/lib/training";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
