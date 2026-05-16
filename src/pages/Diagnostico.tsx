@@ -168,8 +168,6 @@ const Diagnostico = () => {
     const isCorrect = sel === correct;
     setAnswers((prev) => ({ ...prev, [current.id]: sel }));
     setConfirmed(true);
-    if (isCorrect) setSessionCorrect((n) => n + 1);
-    else setSessionWrong((n) => n + 1);
   };
 
   const next = async () => {
