@@ -58,8 +58,6 @@ const Diagnostico = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [sessionCorrect, setSessionCorrect] = useState(0);
-  const [sessionWrong, setSessionWrong] = useState(0);
   const [results, setResults] = useState<SubjectResult[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
