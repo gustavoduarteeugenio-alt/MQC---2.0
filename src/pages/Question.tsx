@@ -290,8 +290,8 @@ const Question = () => {
         )}
       </main>
 
-      {/* Botão fixo */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent">
+      {/* Botões fixos */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent space-y-2.5">
         {!confirmed ? (
           <Button onClick={confirm} disabled={!selected}
             className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50">
@@ -303,16 +303,23 @@ const Question = () => {
             Próxima questão →
           </Button>
         )}
+        {sessionTotals.totalAnswered > 0 && (
+          <Button
+            onClick={endTraining}
+            variant="outline"
+            className="w-full h-12 py-3 border-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-display text-sm stencil"
+          >
+            <LogOut className="w-4 h-4 mr-2" /> Encerrar treino
+          </Button>
+        )}
       </div>
     </div>
   );
 };
 
-const TopBar = ({ onBack, title, right }: { onBack: () => void; title: string; right?: React.ReactNode }) => (
+const TopBar = ({ title, right }: { title: string; right?: React.ReactNode }) => (
   <header className="flex items-center justify-between px-4 pt-12 pb-3 bg-card border-b border-border sticky top-0 z-30">
-    <button onClick={onBack} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-muted">
-      <ArrowLeft className="w-5 h-5" />
-    </button>
+    <div className="min-w-[80px]" />
     <h1 className="font-display font-bold truncate flex-1 text-center px-2">{title}</h1>
     <div className="min-w-[80px] flex justify-end">{right}</div>
   </header>
