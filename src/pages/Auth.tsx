@@ -286,13 +286,9 @@ const Auth = () => {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={backToLogin}
-              className="w-full text-sm text-white/70 hover:text-white py-3 mt-2 transition"
-            >
-              ← Voltar para o login
-            </button>
+            <p className="text-center text-[11px] text-white/50 stencil pt-1">
+              Esta mensagem permanecerá visível até a liberação do seu acesso.
+            </p>
           </div>
         ) : (
         <form onSubmit={submit} className="space-y-3 animate-fade-in">
