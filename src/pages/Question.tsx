@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, CheckCircle2, XCircle, Flame, Lightbulb } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Flame, Lightbulb, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { QuestionImage } from "@/components/QuestionImage";
