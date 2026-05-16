@@ -137,8 +137,6 @@ const Diagnostico = () => {
       setAnswers({});
       setSelected(null);
       setConfirmed(false);
-      setSessionCorrect(0);
-      setSessionWrong(0);
 
       const token = getToken();
       const { data: ses, error } = await supabase
