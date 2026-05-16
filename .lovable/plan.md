@@ -1,38 +1,45 @@
 ## Objetivo
-Após o cadastro (signup), redirecionar o usuário para uma nova tela `/selecionar-plano` mostrando dois planos com checkout no Kiwify. Substituir os planos antigos (R$29,90 mensal / R$69,90 trimestral) nos lugares onde aparecem.
 
-## Novos planos
-- **Mensal** — R$ 49,90/mês — `https://pay.kiwify.com.br/PMLV49m`
-- **Até o dia da prova** — R$ 79,90, em até 2x sem juros (destaque "Melhor escolha") — `https://pay.kiwify.com.br/PMLV49m` *(mesmo link informado — confirmar se há link distinto ou se é intencional usar o mesmo checkout)*
+Fazer a lógica de treino direcionado funcionar também **dentro da página de questão**, ou seja, ao avançar de uma questão para a próxima, sem o aluno precisar voltar para a home.
 
-## Mudanças
+## Como vai funcionar
 
-### 1. Nova página `src/pages/SelecionarPlano.tsx`
-- Layout no estilo da marca (gradient night + flame), centralizado.
-- Dois cards lado a lado (mobile: empilhados):
-  - **Até o dia da prova** com badge "Melhor escolha", preço R$ 79,90, sub "2x de R$ 39,95 sem juros", benefícios, CTA "Garantir acesso".
-  - **Mensal** R$ 49,90/mês, benefícios, CTA "Assinar mensal".
-- Botão secundário "Continuar sem plano" → vai para `/`.
-- Cliques nos CTAs abrem o link Kiwify em nova aba (`target="_blank"`).
-- Rota pública apenas para usuários logados (envolver em `ProtectedRoute`).
+1. **Botão "Treinar agora" (home)** — escolhe a matéria mais fraca (abaixo de 80%) e abre a primeira questão dessa matéria. Mesma regra já planejada.
 
-### 2. `src/App.tsx`
-- Adicionar `<Route path="/selecionar-plano" element={<ProtectedRoute><SelecionarPlano /></ProtectedRoute>} />`.
+2. **Dentro da página de questão (`/questao/:slug`)** — ao clicar em "Próxima questão":
+   - Se o aluno **errou** a questão atual → próxima questão é da **mesma matéria** (reforço).
+   - Se o aluno **acertou** → o sistema recalcula o ranking de matérias e:
+     - Se a matéria atual ainda está abaixo de 80%, pode continuar nela, mas **alterna** ocasionalmente para outra matéria fraca.
+     - Se houver outra matéria com desempenho **pior** que a atual, troca para ela.
+     - Se a matéria atual já passou de 80%, prioriza outra matéria abaixo de 80%.
+   - Quando o aluno muda de matéria, a URL muda para `/questao/{novo-slug}` e a próxima questão (não respondida ainda) daquela matéria aparece.
 
-### 3. `src/pages/Auth.tsx`
-- No fluxo de **signup** bem-sucedido, navegar para `/selecionar-plano` em vez de `/`.
-- Signin continua indo para `/`.
+3. **Filtro de questões já respondidas** — ao carregar questões de uma matéria, excluir as que o usuário já respondeu (consulta `attempts` por `user_id` + `question_id`), para não repetir. Se acabarem as inéditas da matéria, libera repetição (modo revisão).
 
-### 4. `src/components/PlanSelectionDialog.tsx`
-- Trocar os dois planos para os novos (Mensal R$49,90 e Até a Prova R$79,90 2x).
-- Remover constantes `MONTHLY_URL`/`QUARTERLY_URL` e usar o novo link.
+## Regra resumida da alternância (acertou)
 
-### 5. `src/pages/Plans.tsx`
-- Atualizar card Premium para refletir os novos preços e oferecer as duas opções (reaproveitar `PlanSelectionDialog`).
+- Monta ranking ao vivo: matérias < 80% ordenadas da pior para a melhor.
+- Pega o **topo da fila**. Se for diferente da matéria atual → troca.
+- Se for a mesma → continua mais 1–2 questões nela, depois força um "respiro" indo para a 2ª pior, para manter variedade (evita monotonia).
+- Sem matérias < 80% → modo revisão: rotaciona entre as matérias com menor acerto recente.
 
-## Arquivos
-- novo: `src/pages/SelecionarPlano.tsx`
-- editado: `src/App.tsx`, `src/pages/Auth.tsx`, `src/components/PlanSelectionDialog.tsx`, `src/pages/Plans.tsx`
+## Arquivos a editar
 
-## Observação
-O usuário forneceu apenas **uma URL Kiwify** (`PMLV49m`) para os dois planos. Vou usá-la nos dois CTAs. Se houver um link separado para o "Até a prova" (R$79,90 2x), basta enviar que eu troco.
+- **`src/lib/training.ts`** (novo) — funções puras: `getSubjectStats(userId)`, `pickNextSubject({ stats, currentSubjectId, lastWasCorrect })`, `pickNextQuestion(subjectId, userId)`. Centraliza a lógica para ser reusada na home e na página de questão.
+- **`src/pages/Index.tsx`** — botão "Treinar agora" chama `pickNextSubject` + `navigate('/questao/{slug}')`. Remove badge "Plano Básico".
+- **`src/pages/Question.tsx`** — função `next()` passa a:
+  1. Recalcular stats (incluindo a tentativa que acabou de ser salva).
+  2. Decidir próxima matéria via `pickNextSubject` usando `lastWasCorrect`.
+  3. Se mudou de matéria → `navigate('/questao/{novo-slug}')`.
+  4. Se mesma matéria → avança no array local (recarregando se necessário para excluir respondidas).
+  - Também ajustar o carregamento inicial para filtrar questões já respondidas.
+
+## O que NÃO muda
+
+- Estrutura visual da página de questão, layout, animações.
+- Tabelas do banco (sem migração).
+- Página `/materias` continua existindo como navegação livre.
+
+## Resultado para o aluno
+
+O aluno clica em "Treinar agora" uma vez e pode responder dezenas de questões seguidas — o app vai automaticamente puxando da matéria onde ele está pior, reforçando quando erra e alternando quando acerta, sem precisar voltar para a home.
