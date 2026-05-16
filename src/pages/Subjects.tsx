@@ -47,7 +47,6 @@ const Subjects = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-semibold leading-tight">{s.name}</p>
-                  <p className="text-xs text-muted-foreground stencil mt-0.5">{s.questionCount} questões</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </Link>
