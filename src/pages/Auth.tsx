@@ -232,6 +232,67 @@ const Auth = () => {
           </p>
         </header>
 
+        {pendingEmail ? (
+          <div className="animate-fade-in">
+            <div className="bg-amber-500/10 border-2 border-amber-400/70 rounded-2xl p-5 shadow-flame backdrop-blur space-y-4">
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="w-14 h-14 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center animate-pulse">
+                  <AlertTriangle className="w-7 h-7 text-amber-300" />
+                </div>
+                <h2 className="font-display text-lg font-bold text-amber-100">
+                  ⚠️ Aguardando liberação do administrador
+                </h2>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  Seu cadastro foi realizado com sucesso! Nossa equipe está validando seu acesso junto à plataforma de pagamento.
+                  Em breve suas frentes de combate estarão liberadas. Se preferir, envie uma mensagem direto para o nosso suporte abaixo.
+                </p>
+                <p className="text-[11px] text-amber-200/80 stencil mt-1">E-mail: {pendingEmail}</p>
+              </div>
+
+              {supportSent ? (
+                <div className="flex flex-col items-center gap-2 py-3 text-success">
+                  <CheckCircle2 className="w-8 h-8" />
+                  <p className="text-sm font-semibold text-success-foreground">Mensagem enviada com sucesso!</p>
+                  <p className="text-xs text-white/70 text-center">Analisaremos seu acesso prioritariamente.</p>
+                </div>
+              ) : (
+                <>
+                  <Textarea
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value)}
+                    placeholder="Digite sua mensagem ou informe o e-mail cadastrado na Kiwifi..."
+                    rows={4}
+                    maxLength={2000}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                  />
+                  <Button
+                    type="button"
+                    onClick={sendSupport}
+                    disabled={supportSending || supportMessage.trim().length < 3}
+                    className="w-full h-12 bg-gradient-flame hover:opacity-95 text-white font-display tracking-wider shadow-flame stencil"
+                  >
+                    {supportSending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Enviar para o Suporte
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={backToLogin}
+              className="w-full text-sm text-white/70 hover:text-white py-3 mt-2 transition"
+            >
+              ← Voltar para o login
+            </button>
+          </div>
+        ) : (
         <form onSubmit={submit} className="space-y-3 animate-fade-in">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur space-y-3">
             {mode === "signup" && (
@@ -328,6 +389,7 @@ const Auth = () => {
             </span>
           </button>
         </form>
+        )}
 
         <footer className="text-center text-[11px] text-white/40 stencil flex items-center justify-center gap-2">
           <Shield className="w-3 h-3" /> Honra · Disciplina · Coragem
