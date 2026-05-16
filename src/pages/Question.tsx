@@ -92,6 +92,8 @@ const Question = () => {
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
     setCorrectStreak((s) => (isCorrect ? s + 1 : 0));
+    if (isCorrect) setSessionCorrect((n) => n + 1);
+    else setSessionWrong((n) => n + 1);
     await Promise.all([
       supabase.from("attempts").insert({
         user_id: user.id,
