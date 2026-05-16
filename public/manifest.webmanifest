@@ -1,7 +1,7 @@
 {
-  "name": "CFSd CBMMG 2027 — Questões",
-  "short_name": "CFSd CBMMG",
-  "description": "Banco de questões para o concurso de Soldado do CBMMG 2027 (IDECAN).",
+  "name": "Método Questão Certa",
+  "short_name": "Questão Certa",
+  "description": "Método Questão Certa: o app identifica suas matérias fracas e escolhe as próximas questões para te levar a 80% de acerto até o dia da prova do CFSd CBMMG 2027 (IDECAN).",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
