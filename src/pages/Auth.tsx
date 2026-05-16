@@ -78,7 +78,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [origem, setOrigem] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(() => localStorage.getItem("pending_approval_email"));
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
@@ -175,11 +175,13 @@ const Auth = () => {
             .maybeSingle();
           if (!prof || (prof as any).approved !== true) {
             await supabase.auth.signOut();
+            localStorage.setItem("pending_approval_email", parsed.data.email);
             setPendingEmail(parsed.data.email);
             setSupportSent(false);
             setSupportMessage("");
             return;
           }
+          localStorage.removeItem("pending_approval_email");
           await linkPendingDiagnostic(signInData.user.id);
         }
         navigate("/", { replace: true });
@@ -284,13 +286,9 @@ const Auth = () => {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={backToLogin}
-              className="w-full text-sm text-white/70 hover:text-white py-3 mt-2 transition"
-            >
-              ← Voltar para o login
-            </button>
+            <p className="text-center text-[11px] text-white/50 stencil pt-1">
+              Esta mensagem permanecerá visível até a liberação do seu acesso.
+            </p>
           </div>
         ) : (
         <form onSubmit={submit} className="space-y-3 animate-fade-in">
