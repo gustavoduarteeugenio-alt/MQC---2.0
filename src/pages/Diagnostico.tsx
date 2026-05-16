@@ -3,9 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Flame, Target, ChevronRight, Loader2, CheckCircle2, XCircle, Lock, Crown } from "lucide-react";
+import { Target, ChevronRight, Loader2, CheckCircle2, XCircle, Crown, Lightbulb } from "lucide-react";
 import { RichText } from "@/components/RichText";
+import { QuestionImage } from "@/components/QuestionImage";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const PER_SUBJECT = 2;
 const MASTERY_TARGET = 80;
@@ -22,6 +24,9 @@ type Question = {
   option_d: string;
   option_e: string | null;
   correct_answer: string;
+  explanation: string;
+  image_url: string | null;
+  comment_image_url: string | null;
   subjects?: { id: string; name: string };
 };
 
@@ -52,6 +57,9 @@ const Diagnostico = () => {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [sessionWrong, setSessionWrong] = useState(0);
   const [results, setResults] = useState<SubjectResult[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
@@ -75,7 +83,7 @@ const Diagnostico = () => {
         return;
       }
 
-      // 1) Para cada matéria, lista todos os IDs e sorteia PER_SUBJECT
+      // Para cada matéria, sorteia exatamente PER_SUBJECT. Pula matérias sem banco suficiente.
       const pickedIds: string[] = [];
       const insufficient: string[] = [];
       for (const s of subs) {
@@ -85,11 +93,6 @@ const Diagnostico = () => {
           .eq("subject_id", s.id);
         if (!ids || ids.length < PER_SUBJECT) {
           insufficient.push(s.name);
-          // pega o que tiver, mesmo abaixo do alvo
-          if (ids?.length) {
-            const shuffled = [...ids].sort(() => Math.random() - 0.5);
-            pickedIds.push(...shuffled.map((q) => q.id));
-          }
           continue;
         }
         const shuffled = [...ids].sort(() => Math.random() - 0.5);
@@ -97,17 +100,16 @@ const Diagnostico = () => {
       }
 
       if (insufficient.length) {
-        console.warn("Matérias com menos de", PER_SUBJECT, "questões:", insufficient);
+        console.warn("Matérias ignoradas por falta de questões:", insufficient);
       }
-      if (pickedIds.length < 5) {
+      if (pickedIds.length < PER_SUBJECT) {
         toast.error("Banco de questões insuficiente para o diagnóstico.");
         return;
       }
 
-      // 2) Busca as questões completas em uma única query
       const { data: full } = await supabase
         .from("questions")
-        .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, subjects:subject_id(id,name)")
+        .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, image_url, comment_image_url, subjects:subject_id(id,name)")
         .in("id", pickedIds);
 
       if (!full?.length) {
@@ -115,7 +117,7 @@ const Diagnostico = () => {
         return;
       }
 
-      // 3) Intercala matérias para não cair 2 da mesma seguidas
+      // Intercala matérias
       const bySubject = new Map<string, Question[]>();
       for (const q of full as any[]) {
         const arr = bySubject.get(q.subject_id) ?? [];
@@ -136,8 +138,10 @@ const Diagnostico = () => {
       setIdx(0);
       setAnswers({});
       setSelected(null);
+      setConfirmed(false);
+      setSessionCorrect(0);
+      setSessionWrong(0);
 
-      // cria sessão
       const token = getToken();
       const { data: ses, error } = await supabase
         .from("diagnostic_sessions")
@@ -158,28 +162,38 @@ const Diagnostico = () => {
     if (!current) return [];
     return ["a", "b", "c", "d", "e"]
       .map((l) => ({ letter: l, text: (current as any)[`option_${l}`] as string | null }))
-      .filter((o) => o.text);
+      .filter((o) => o.text && (o.text as string).trim().length > 0);
   }, [current]);
 
-  const confirm = async () => {
-    if (!selected || !current) return;
-    const next = { ...answers, [current.id]: selected };
-    setAnswers(next);
+  const confirm = () => {
+    if (!selected || !current || confirmed) return;
+    const isCorrect = selected === current.correct_answer;
+    setAnswers((prev) => ({ ...prev, [current.id]: selected }));
+    setConfirmed(true);
+    if (isCorrect) setSessionCorrect((n) => n + 1);
+    else setSessionWrong((n) => n + 1);
+  };
 
+  const next = async () => {
+    if (!current) return;
+
+    // Não é a última: avança
     if (idx + 1 < questions.length) {
       setIdx(idx + 1);
       setSelected(null);
+      setConfirmed(false);
       return;
     }
 
-    // calcula resultado
+    // Última: calcula resultado e persiste
+    const finalAnswers = answers;
     const bySub = new Map<string, SubjectResult>();
     for (const q of questions) {
       const sub = q.subjects;
       if (!sub) continue;
       const cur = bySub.get(sub.id) ?? { subject_id: sub.id, subject_name: sub.name, total: 0, correct: 0, pct: 0 };
       cur.total += 1;
-      if (next[q.id] === q.correct_answer) cur.correct += 1;
+      if (finalAnswers[q.id] === q.correct_answer) cur.correct += 1;
       bySub.set(sub.id, cur);
     }
     const finalRes: SubjectResult[] = Array.from(bySub.values())
@@ -188,19 +202,17 @@ const Diagnostico = () => {
 
     setResults(finalRes);
 
-    // persiste
     const totalCorrect = finalRes.reduce((s, r) => s + r.correct, 0);
     if (sessionId) {
       await supabase
         .from("diagnostic_sessions")
         .update({
-          answers: Object.entries(next).map(([qid, ans]) => ({ qid, ans })) as any,
+          answers: Object.entries(finalAnswers).map(([qid, ans]) => ({ qid, ans })) as any,
           results: finalRes as any,
           correct: totalCorrect,
           completed_at: new Date().toISOString(),
         })
         .eq("id", sessionId);
-      // marca como pendente para vincular após signup
       localStorage.setItem(PENDING_KEY, getToken());
     }
 
@@ -223,12 +235,12 @@ const Diagnostico = () => {
             Descubra em 5 minutos seu nível real de preparo.
           </p>
           <p className="text-sm text-white/70 mt-3 leading-relaxed">
-            12 questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
+            2 questões por matéria no padrão IDECAN. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
           </p>
 
           <ul className="mt-6 space-y-2 text-left text-sm">
             <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Comece agora, sem cadastro</li>
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Percentual de acerto matéria por matéria</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Gabarito comentado em cada questão</li>
             <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Veja se você está na zona de aprovação (≥ {MASTERY_TARGET}%)</li>
           </ul>
 
@@ -239,7 +251,6 @@ const Diagnostico = () => {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Quero saber se passaria <ChevronRight className="w-5 h-5 ml-1" /></>}
           </Button>
-
 
           <Link to="/auth" className="mt-4 text-xs text-white/50 hover:text-white">
             Já tenho conta · Entrar
@@ -252,8 +263,9 @@ const Diagnostico = () => {
   // ---------------- QUIZ ----------------
   if (stage === "quiz" && current) {
     const progress = ((idx + 1) / questions.length) * 100;
+    const isLast = idx + 1 === questions.length;
     return (
-      <div className="app-shell bg-background flex flex-col">
+      <div className="app-shell bg-background flex flex-col min-h-screen">
         <header className="bg-gradient-night text-white px-5 pt-8 pb-5">
           <div className="max-w-xl mx-auto">
             <div className="flex items-center justify-between text-xs">
@@ -269,44 +281,98 @@ const Diagnostico = () => {
           </div>
         </header>
 
-        <main className="px-5 py-5 flex-1 max-w-xl mx-auto w-full">
+        <div className="px-5 pt-3 max-w-xl mx-auto w-full">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
+              <CheckCircle2 className="w-4 h-4 text-success" />
+              <span className="stencil text-[11px] text-muted-foreground tracking-widest">Acertos</span>
+              <span className="font-display font-bold text-success">{sessionCorrect}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
+              <XCircle className="w-4 h-4 text-destructive" />
+              <span className="stencil text-[11px] text-muted-foreground tracking-widest">Erros</span>
+              <span className="font-display font-bold text-destructive">{sessionWrong}</span>
+            </div>
+          </div>
+        </div>
+
+        <main className="px-5 py-5 flex-1 max-w-xl mx-auto w-full pb-32">
           <div className="bg-card rounded-2xl border border-border p-5 shadow-card">
             <RichText content={current.statement} className="text-foreground text-[15px] leading-relaxed" />
+            {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2.5">
             {options.map((o) => {
+              const letter = o.letter.toUpperCase();
+              const isCorrect = o.letter === current.correct_answer.toLowerCase() || letter === current.correct_answer;
               const isSel = selected === o.letter;
+              const showResult = confirmed;
               return (
                 <button
                   key={o.letter}
                   type="button"
+                  disabled={confirmed}
                   onClick={() => setSelected(o.letter)}
-                  className={`w-full text-left rounded-xl border px-4 py-3 transition flex gap-3 items-start ${
-                    isSel
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:border-primary/40"
-                  }`}
+                  className={cn(
+                    "w-full text-left flex items-start gap-3 p-4 rounded-xl border-2 transition-all",
+                    !showResult && isSel && "border-primary bg-primary/5",
+                    !showResult && !isSel && "border-border bg-card hover:border-primary/40",
+                    showResult && isCorrect && "border-success bg-success/10",
+                    showResult && !isCorrect && isSel && "border-destructive bg-destructive/10",
+                    showResult && !isCorrect && !isSel && "border-border bg-card opacity-60"
+                  )}
                 >
-                  <span className={`mt-0.5 w-7 h-7 shrink-0 rounded-full grid place-items-center font-display text-sm font-bold ${
-                    isSel ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                  }`}>
-                    {o.letter.toUpperCase()}
+                  <span className={cn(
+                    "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold",
+                    !showResult && isSel && "bg-primary text-primary-foreground",
+                    !showResult && !isSel && "bg-muted text-foreground",
+                    showResult && isCorrect && "bg-success text-success-foreground",
+                    showResult && !isCorrect && isSel && "bg-destructive text-destructive-foreground",
+                  )}>
+                    {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
+                     showResult && !isCorrect && isSel ? <XCircle className="w-4 h-4" /> : letter}
                   </span>
-                  <RichText content={o.text!} className="text-foreground text-sm leading-relaxed flex-1 pt-1" />
+                  <RichText content={o.text!} className="text-sm leading-snug pt-1 flex-1" />
                 </button>
               );
             })}
           </div>
 
-          <Button
-            onClick={confirm}
-            disabled={!selected}
-            className="w-full h-12 mt-5 bg-gradient-flame text-white font-display stencil"
-          >
-            {idx + 1 === questions.length ? "Ver meu resultado" : "Confirmar"} <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
+          {confirmed && (
+            <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
+              <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
+                <Lightbulb className="w-4 h-4" /> Gabarito comentado
+              </div>
+              <div className="text-sm leading-relaxed">
+                <strong className="font-display">Resposta correta: {current.correct_answer.toUpperCase()}.</strong>{" "}
+                <RichText content={current.explanation} />
+              </div>
+              {current.comment_image_url && (
+                <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
+              )}
+            </div>
+          )}
         </main>
+
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent">
+          {!confirmed ? (
+            <Button
+              onClick={confirm}
+              disabled={!selected}
+              className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50"
+            >
+              Confirmar resposta
+            </Button>
+          ) : (
+            <Button
+              onClick={next}
+              className="w-full h-13 py-3.5 bg-secondary text-secondary-foreground font-display text-base stencil shadow-card"
+            >
+              {isLast ? "Ver meu resultado" : "Próxima questão →"}
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -380,7 +446,6 @@ const Diagnostico = () => {
             Pagamento seguro pela Kiwify
           </p>
         </div>
-
 
         <div className="text-center">
           <button
