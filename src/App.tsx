@@ -40,7 +40,8 @@ const App = () => (
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
             <Route path="/selecionar-plano" element={<ProtectedRoute><SelecionarPlano /></ProtectedRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/inicio" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
             <Route path="/questao/:slug" element={<ProtectedRoute><Question /></ProtectedRoute>} />
             <Route path="/treino/resumo" element={<ProtectedRoute><TrainingSummary /></ProtectedRoute>} />
