@@ -7,18 +7,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const planLabel = (plan?: string | null) => {
-  switch (plan) {
-    case "monthly": return "Mensal";
-    case "quarterly": return "Trimestral";
-    case "premium": return "Premium";
-    default: return "Básico";
-  }
-};
-
 const Profile = () => {
   const { signOut, user } = useAuth();
-  const { profile, isPremium, isAdmin, dailyCount, dailyLimit, refresh } = useProfile();
+  const { profile, isAdmin, dailyCount, refresh } = useProfile();
 
   const replayTutorial = async () => {
     if (!user) return;
