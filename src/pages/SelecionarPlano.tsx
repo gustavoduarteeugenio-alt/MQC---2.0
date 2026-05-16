@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { Crown, Check, Flame, Sparkles, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const KIWIFY_URL = "https://pay.kiwify.com.br/PMLV49m";
+const MONTHLY_URL = "https://pay.kiwify.com.br/PMLV49m";
+const EXAM_URL = "https://pay.kiwify.com.br/5kq1jdL";
 
 const BENEFITS = [
   "Acesso total ao banco de questões IDECAN",
