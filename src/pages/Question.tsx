@@ -224,7 +224,7 @@ const Question = () => {
           <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
             <XCircle className="w-4 h-4 text-destructive" />
             <span className="stencil text-[11px] text-muted-foreground tracking-widest">Erros</span>
-            <span className="font-display font-bold text-destructive">{sessionWrong}</span>
+            <span className="font-display font-bold text-destructive">{sessionTotals.totalWrong}</span>
           </div>
         </div>
       </div>
