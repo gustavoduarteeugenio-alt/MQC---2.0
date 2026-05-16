@@ -114,6 +114,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved: boolean
           created_at: string
           diagnostic_completed_at: string | null
           diagnostic_results: Json | null
@@ -130,6 +131,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approved?: boolean
           created_at?: string
           diagnostic_completed_at?: string | null
           diagnostic_results?: Json | null
@@ -146,6 +148,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approved?: boolean
           created_at?: string
           diagnostic_completed_at?: string | null
           diagnostic_results?: Json | null
