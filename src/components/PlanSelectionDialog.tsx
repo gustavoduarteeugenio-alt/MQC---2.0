@@ -10,8 +10,7 @@ const BENEFITS = [
   "Simulados ilimitados",
 ];
 
-const MONTHLY_URL = "https://pay.kiwify.com.br/PMLV49m";
-const QUARTERLY_URL = "https://pay.kiwify.com.br/5kq1jdL";
+const KIWIFY_URL = "https://pay.kiwify.com.br/PMLV49m";
 
 interface PlanSelectionDialogProps {
   children: ReactNode;
@@ -35,25 +34,24 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
         </div>
 
         <div className="px-5 py-5 grid gap-4 sm:grid-cols-2 bg-background">
-          {/* Trimestral */}
+          {/* Até o dia da prova */}
           <article className="relative bg-gradient-flame text-white rounded-2xl p-5 shadow-flame flex flex-col">
             <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground px-3 py-1 rounded-full text-[10px] stencil font-bold flex items-center gap-1 shadow-card whitespace-nowrap">
-              <Sparkles className="w-3 h-3" /> Melhor Custo-Benefício
+              <Sparkles className="w-3 h-3" /> Melhor escolha
             </div>
             <div className="flex items-center gap-2 mt-1">
               <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
                 <Crown className="w-5 h-5 text-white" />
               </div>
-              <p className="stencil text-[11px] font-bold">Plano Trimestral</p>
+              <p className="stencil text-[11px] font-bold">Até o dia da prova</p>
             </div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="font-display text-3xl font-bold">R$ 69,90</span>
-              <span className="text-xs opacity-80">/trimestre</span>
+              <span className="font-display text-3xl font-bold">R$ 79,90</span>
             </div>
-            <p className="text-[10px] opacity-90 mt-0.5">Equivale a R$ 23,30/mês</p>
+            <p className="text-[10px] opacity-90 mt-0.5">Em até 2x de R$ 39,95 sem juros</p>
             <div className="mt-3 rounded-lg bg-warning/95 text-warning-foreground px-3 py-2 shadow-card ring-2 ring-warning/60 animate-pulse">
               <p className="text-sm font-extrabold uppercase tracking-wide text-center leading-tight">
-                ⚡ Garanta seu acesso até o dia da prova!
+                ⚡ Acesso garantido até a prova!
               </p>
             </div>
             <ul className="mt-3 space-y-2 text-xs flex-1">
@@ -68,8 +66,8 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
               asChild
               className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil"
             >
-              <a href={QUARTERLY_URL} target="_blank" rel="noopener noreferrer">
-                Assinar trimestral
+              <a href={KIWIFY_URL} target="_blank" rel="noopener noreferrer">
+                Garantir acesso
               </a>
             </Button>
           </article>
@@ -83,7 +81,7 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
               <p className="stencil text-[11px] text-secondary font-bold">Plano Mensal</p>
             </div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="font-display text-3xl font-bold text-foreground">R$ 29,90</span>
+              <span className="font-display text-3xl font-bold text-foreground">R$ 49,90</span>
               <span className="text-xs text-muted-foreground">/mês</span>
             </div>
             <ul className="mt-4 space-y-2 text-xs flex-1">
@@ -98,7 +96,7 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
               asChild
               className="w-full mt-5 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-display stencil"
             >
-              <a href={MONTHLY_URL} target="_blank" rel="noopener noreferrer">
+              <a href={KIWIFY_URL} target="_blank" rel="noopener noreferrer">
                 Assinar mensal
               </a>
             </Button>
