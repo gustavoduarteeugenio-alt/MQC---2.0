@@ -175,11 +175,13 @@ const Auth = () => {
             .maybeSingle();
           if (!prof || (prof as any).approved !== true) {
             await supabase.auth.signOut();
+            localStorage.setItem("pending_approval_email", parsed.data.email);
             setPendingEmail(parsed.data.email);
             setSupportSent(false);
             setSupportMessage("");
             return;
           }
+          localStorage.removeItem("pending_approval_email");
           await linkPendingDiagnostic(signInData.user.id);
         }
         navigate("/", { replace: true });
