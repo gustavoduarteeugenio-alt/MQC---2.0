@@ -89,10 +89,6 @@ const Question = () => {
 
   const confirm = async () => {
     if (!selected || !current || !user) return;
-    if (!canAnswerMore) {
-      toast.error("Você atingiu o limite diário do plano básico.");
-      return;
-    }
     const isCorrect = selected === current.correct_answer;
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
