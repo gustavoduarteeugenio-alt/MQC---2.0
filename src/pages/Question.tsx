@@ -64,7 +64,9 @@ const Question = () => {
         if (fresh.length > 0) pool = fresh;
       }
 
-      const shuffled = pool.sort(() => Math.random() - 0.5);
+      // Sorteio aleatório + limite de 10 questões por bloco da matéria selecionada
+      const BLOCK_SIZE = 10;
+      const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, BLOCK_SIZE);
       setQuestions(shuffled as Question[]);
       setIndex(0);
       setSelected(null);
@@ -151,25 +153,7 @@ const Question = () => {
       navigate("/dashboard");
       return;
     }
-    const lastWasCorrect = selected === current.correct_answer;
-
-    // Recalcula stats e decide próxima matéria
-    const subjectStats = await getSubjectStats(user.id);
-    const nextSubject = pickNextSubject({
-      stats: subjectStats,
-      currentSubjectId: subject.id,
-      lastWasCorrect,
-      streakOnCurrent: lastWasCorrect ? correctStreak + 1 : 0,
-    });
-
-    // Trocou de matéria → navega para a nova
-    if (nextSubject && nextSubject.id !== subject.id) {
-      setCorrectStreak(0);
-      navigate(`/questao/${nextSubject.slug}`);
-      return;
-    }
-
-    // Mesma matéria: avança no array local
+    // Mantém o aluno estritamente na matéria selecionada
     if (index + 1 < questions.length) {
       setIndex(index + 1);
       setSelected(null);
@@ -177,9 +161,9 @@ const Question = () => {
       return;
     }
 
-    // Acabaram as questões inéditas desta matéria → volta pro dashboard
+    // Bloco de 10 questões concluído → encerra treino e volta ao dashboard
     refresh();
-    toast.success("Você concluiu todas as questões inéditas desta matéria!");
+    toast.success("Bloco concluído! Você respondeu as 10 questões desta matéria.");
     navigate("/dashboard");
   };
 
