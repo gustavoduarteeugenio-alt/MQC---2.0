@@ -179,9 +179,6 @@ const Question = () => {
       <div className="px-5 pt-3">
         <div className="flex items-center justify-between text-xs stencil text-muted-foreground">
           <span>Questão {index + 1}</span>
-          {!isPremium && Number.isFinite(dailyLimit) && (
-            <span>Diário: {dailyCount}/{dailyLimit}</span>
-          )}
         </div>
       </div>
 
