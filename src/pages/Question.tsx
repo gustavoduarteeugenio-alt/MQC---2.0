@@ -157,34 +157,6 @@ const Question = () => {
     );
   }
 
-  if (!canAnswerMore && !confirmed) {
-    return (
-      <div className="app-shell bg-background flex flex-col">
-        <TopBar onBack={() => navigate("/materias")} title={subject?.name ?? ""} />
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full text-center shadow-flame animate-fade-in">
-            <div className="w-14 h-14 mx-auto rounded-full bg-gradient-flame flex items-center justify-center shadow-flame mb-4">
-              <Lock className="w-7 h-7 text-white" />
-            </div>
-            <h2 className="font-display text-2xl font-bold">Limite atingido</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Você já respondeu {dailyCount}/{dailyLimit} questões hoje no plano básico.
-              O contador reinicia à meia-noite.
-            </p>
-            <PlanSelectionDialog>
-              <button className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-flame text-white rounded-xl py-3 font-display stencil shadow-flame">
-                <Crown className="w-4 h-4" /> Tornar-se Premium para questões ilimitadas
-              </button>
-            </PlanSelectionDialog>
-            <button onClick={() => navigate("/materias")} className="mt-3 w-full text-xs stencil text-muted-foreground hover:text-foreground">
-              Voltar para matérias
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (questions.length === 0) {
     return (
       <div className="app-shell bg-background flex flex-col">
