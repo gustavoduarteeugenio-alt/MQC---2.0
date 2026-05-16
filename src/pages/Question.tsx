@@ -219,7 +219,7 @@ const Question = () => {
           <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
             <CheckCircle2 className="w-4 h-4 text-success" />
             <span className="stencil text-[11px] text-muted-foreground tracking-widest">Acertos</span>
-            <span className="font-display font-bold text-success">{sessionCorrect}</span>
+            <span className="font-display font-bold text-success">{sessionTotals.totalCorrect}</span>
           </div>
           <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
             <XCircle className="w-4 h-4 text-destructive" />
