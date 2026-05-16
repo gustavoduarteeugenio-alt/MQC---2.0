@@ -1,5 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Navigate to={user ? "/inicio" : "/diagnostico"} replace />;
+};
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,7 +47,8 @@ const App = () => (
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
             <Route path="/selecionar-plano" element={<ProtectedRoute><SelecionarPlano /></ProtectedRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/inicio" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
             <Route path="/questao/:slug" element={<ProtectedRoute><Question /></ProtectedRoute>} />
             <Route path="/treino/resumo" element={<ProtectedRoute><TrainingSummary /></ProtectedRoute>} />
