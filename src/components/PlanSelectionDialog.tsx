@@ -67,7 +67,7 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
               asChild
               className="w-full mt-5 bg-white text-primary hover:bg-white/90 font-display stencil"
             >
-              <a href={KIWIFY_URL} target="_blank" rel="noopener noreferrer">
+              <a href={EXAM_URL} target="_blank" rel="noopener noreferrer">
                 Garantir acesso
               </a>
             </Button>
@@ -97,7 +97,7 @@ export const PlanSelectionDialog = ({ children }: PlanSelectionDialogProps) => {
               asChild
               className="w-full mt-5 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-display stencil"
             >
-              <a href={KIWIFY_URL} target="_blank" rel="noopener noreferrer">
+              <a href={MONTHLY_URL} target="_blank" rel="noopener noreferrer">
                 Assinar mensal
               </a>
             </Button>
