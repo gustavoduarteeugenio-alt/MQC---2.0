@@ -281,6 +281,13 @@ const ResultView = ({ attempt, navigate }: { attempt: AttemptRow; navigate: (to:
   return (
     <div className="app-shell bg-background min-h-screen pb-10">
       <header className="bg-gradient-night text-white px-5 pt-12 pb-8 rounded-b-3xl">
+        <button
+          onClick={() => navigate("/simulados")}
+          className="w-10 h-10 -ml-2 mb-2 flex items-center justify-center rounded-full hover:bg-white/10"
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
         <p className="stencil text-xs text-primary">Resultado</p>
         <h1 className="font-display text-2xl font-bold">{attempt.title}</h1>
         <div className="mt-4 bg-white/10 rounded-2xl p-4">
