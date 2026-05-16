@@ -362,15 +362,24 @@ const Diagnostico = () => {
         <div className="rounded-2xl bg-gradient-flame text-white p-5 shadow-flame mt-4">
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5 text-warning" />
-            <p className="stencil text-[11px] opacity-90">Plano único · Até o dia da prova</p>
+            <p className="stencil text-[11px] opacity-90">Método Questão Certa · Até o dia da prova</p>
           </div>
-          <h3 className="font-display text-2xl font-bold mt-1">Garanta sua aprovação — R$ 97</h3>
-          <ul className="text-sm mt-3 space-y-1.5 opacity-95">
-            <li>✓ Questões ilimitadas até o dia da prova</li>
-            <li>✓ O app escolhe a próxima questão pela sua matéria mais fraca</li>
-            <li>✓ Meta de {MASTERY_TARGET}% por matéria</li>
-            <li>✓ IDECAN real + Estilo IDECAN</li>
-          </ul>
+          <h3 className="font-display text-2xl font-bold mt-1 leading-tight">
+            Com o Método Questão Certa você acerta 80% das questões até o dia da prova.
+          </h3>
+          <p className="text-sm mt-3 opacity-95 leading-relaxed">
+            <strong className="font-semibold">Nosso método:</strong> você responde, o app identifica suas matérias fracas e escolhe as próximas questões para te levar até 80% de acerto.
+          </p>
+          <Button
+            onClick={() => navigate("/auth?signup=1&from=diag")}
+            className="w-full h-12 mt-4 bg-white text-foreground hover:bg-white/90 font-display stencil"
+          >
+            Liberar meu treino focado <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+          <p className="text-[11px] text-white/70 mt-2 text-center">
+            Pagamento seguro pela Kiwify
+          </p>
+        </div>
           <Button
             onClick={() => navigate("/auth?signup=1&from=diag")}
             className="w-full h-12 mt-4 bg-white text-foreground hover:bg-white/90 font-display stencil"
