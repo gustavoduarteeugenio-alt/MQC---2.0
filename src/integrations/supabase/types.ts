@@ -73,9 +73,50 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostic_sessions: {
+        Row: {
+          answers: Json
+          client_token: string
+          completed_at: string | null
+          correct: number
+          created_at: string
+          id: string
+          results: Json | null
+          total: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          answers?: Json
+          client_token: string
+          completed_at?: string | null
+          correct?: number
+          created_at?: string
+          id?: string
+          results?: Json | null
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json
+          client_token?: string
+          completed_at?: string | null
+          correct?: number
+          created_at?: string
+          id?: string
+          results?: Json | null
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
+          diagnostic_completed_at: string | null
+          diagnostic_results: Json | null
           email: string | null
           full_name: string | null
           id: string
@@ -90,6 +131,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          diagnostic_completed_at?: string | null
+          diagnostic_results?: Json | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -104,6 +147,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          diagnostic_completed_at?: string | null
+          diagnostic_results?: Json | null
           email?: string | null
           full_name?: string | null
           id?: string
