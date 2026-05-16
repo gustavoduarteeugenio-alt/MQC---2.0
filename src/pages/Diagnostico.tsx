@@ -415,6 +415,28 @@ const Diagnostico = () => {
             {verdict.label}
           </h1>
           <p className="text-sm text-white/75 mt-2">{verdict.sub}</p>
+
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
+              <CheckCircle2 className="w-4 h-4 text-success" />
+              <span className="stencil text-[11px] text-white/70 tracking-widest">Acertos</span>
+              <span className="font-display font-bold text-success">{totalCorrect}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
+              <XCircle className="w-4 h-4 text-destructive" />
+              <span className="stencil text-[11px] text-white/70 tracking-widest">Erros</span>
+              <span className="font-display font-bold text-destructive">{totalWrong}</span>
+            </div>
+          </div>
+
+          <div className="mt-3 h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className={`h-full ${barColor} transition-all`} style={{ width: `${overallPct}%` }} />
+          </div>
+          <div className="flex justify-between text-[11px] text-white/60 mt-1 stencil">
+            <span>0%</span>
+            <span>Meta {MASTERY_TARGET}%</span>
+            <span>100%</span>
+          </div>
         </div>
       </header>
 
