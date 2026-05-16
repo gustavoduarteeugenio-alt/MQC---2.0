@@ -384,12 +384,6 @@ const Diagnostico = () => {
   const weak = results.filter((r) => r.pct < MASTERY_TARGET);
   const strong = results.filter((r) => r.pct >= MASTERY_TARGET);
 
-  // Pior matéria — desempate prioriza Proteção e Defesa Civil (diferencial do edital)
-  const worstPct = results.length ? Math.min(...results.map((r) => r.pct)) : 0;
-  const worstTied = results.filter((r) => r.pct === worstPct);
-  const worst =
-    worstTied.find((r) => /prote/i.test(r.subject_name) && /defesa civil/i.test(r.subject_name)) ||
-    worstTied[Math.floor(Math.random() * worstTied.length)];
 
   const tone: "success" | "warning" | "destructive" =
     overallPct >= MASTERY_TARGET ? "success" : overallPct >= 60 ? "warning" : "destructive";
