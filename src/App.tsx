@@ -10,6 +10,7 @@ import Auth from "./pages/Auth.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import Subjects from "./pages/Subjects.tsx";
 import Question from "./pages/Question.tsx";
+import TrainingSummary from "./pages/TrainingSummary.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Plans from "./pages/Plans.tsx";
 import Profile from "./pages/Profile.tsx";
