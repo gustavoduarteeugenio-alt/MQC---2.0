@@ -467,6 +467,17 @@ const Diagnostico = () => {
       </header>
 
       <main className="px-5 py-5 max-w-xl mx-auto w-full space-y-4">
+        {worst && (
+          <section className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4">
+            <div className="flex items-center gap-2 stencil text-destructive text-xs">
+              <AlertTriangle className="w-4 h-4" /> Matéria mais crítica
+            </div>
+            <h3 className="font-display text-lg font-bold mt-1">{worst.subject_name}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Você acertou <strong className="text-foreground">{worst.correct} de {worst.total}</strong> ({worst.pct}%) nessa disciplina. É por aqui que seu treino precisa começar.
+            </p>
+          </section>
+        )}
         {weak.length > 0 && (
           <section>
             <h2 className="stencil text-xs text-destructive mb-2 flex items-center gap-2">
