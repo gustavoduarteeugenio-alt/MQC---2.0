@@ -37,22 +37,42 @@ const Question = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [correctStreak, setCorrectStreak] = useState(0);
   const startRef = useRef<number>(Date.now());
 
   const current = questions[index];
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const { data: sub } = await supabase.from("subjects").select("*").eq("slug", slug!).maybeSingle();
       if (!sub) { navigate("/materias"); return; }
       setSubject(sub as Subject);
-      const { data: qs } = await supabase.from("questions").select("*").eq("subject_id", sub.id).limit(50);
-      // shuffle
-      const shuffled = (qs ?? []).sort(() => Math.random() - 0.5);
+
+      const { data: qs } = await supabase.from("questions").select("*").eq("subject_id", sub.id).limit(100);
+
+      // Excluir questões já respondidas pelo usuário
+      let pool = qs ?? [];
+      if (user && pool.length > 0) {
+        const { data: doneRows } = await supabase
+          .from("attempts")
+          .select("question_id")
+          .eq("user_id", user.id)
+          .in("question_id", pool.map((q: any) => q.id));
+        const done = new Set((doneRows ?? []).map((r: any) => r.question_id));
+        const fresh = pool.filter((q: any) => !done.has(q.id));
+        // se sobraram inéditas, usa só elas; senão libera repetição (modo revisão)
+        if (fresh.length > 0) pool = fresh;
+      }
+
+      const shuffled = pool.sort(() => Math.random() - 0.5);
       setQuestions(shuffled as Question[]);
+      setIndex(0);
+      setSelected(null);
+      setConfirmed(false);
       setLoading(false);
     })();
-  }, [slug, navigate]);
+  }, [slug, navigate, user]);
 
   useEffect(() => {
     startRef.current = Date.now();
