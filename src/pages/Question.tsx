@@ -194,7 +194,7 @@ const Question = () => {
   if (questions.length === 0) {
     return (
       <div className="app-shell bg-background flex flex-col">
-        <TopBar onBack={() => navigate("/materias")} title={subject?.name ?? ""} />
+        <TopBar title={subject?.name ?? ""} />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center text-muted-foreground">
           Ainda não há questões nesta matéria.
         </div>
