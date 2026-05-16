@@ -98,13 +98,11 @@ const Index = () => {
             </div>
           </div>
 
-          <div
-            className={`mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] stencil tracking-wide ${
-              isPremium ? "bg-warning text-warning-foreground" : "bg-white/10 text-white/80"
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5" /> Plano {isPremium ? "Premium" : "Básico"}
-          </div>
+          {isPremium && (
+            <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] stencil tracking-wide bg-warning text-warning-foreground">
+              <Crown className="w-3.5 h-3.5" /> Plano Premium
+            </div>
+          )}
         </div>
       </header>
 
