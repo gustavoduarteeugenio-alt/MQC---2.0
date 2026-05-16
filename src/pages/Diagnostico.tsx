@@ -7,7 +7,7 @@ import { Flame, Target, ChevronRight, Loader2, CheckCircle2, XCircle, Lock, Crow
 import { RichText } from "@/components/RichText";
 import { toast } from "sonner";
 
-const TOTAL_QUESTIONS = 12;
+const PER_SUBJECT = 2;
 const MASTERY_TARGET = 80;
 const TOKEN_KEY = "diag_client_token";
 const PENDING_KEY = "diag_pending_token";
