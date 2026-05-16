@@ -38,41 +38,13 @@ const Profile = () => {
         </div>
         <h1 className="font-display text-xl font-bold mt-3">{profile?.full_name ?? "Recruta"}</h1>
         <p className="text-xs text-white/70">{profile?.email ?? user?.email}</p>
-        <div className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs stencil ${isPremium ? "bg-warning text-warning-foreground" : "bg-white/10"}`}>
-          <Crown className="w-3.5 h-3.5" /> {planLabel(profile?.plan)}
-        </div>
-        {isPremium && profile?.premium_until && (
-          <p className="mt-2 text-[11px] text-white/80">
-            Válido até {new Date(profile.premium_until).toLocaleDateString("pt-BR")}
-          </p>
-        )}
       </header>
 
       <main className="px-5 -mt-10 space-y-3 relative">
         <Card>
           <Row icon={Mail} label="E-mail" value={profile?.email ?? user?.email ?? "—"} />
-          <Row icon={Crown} label="Plano" value={planLabel(profile?.plan)} />
-          {profile?.premium_until && (
-            <Row icon={Calendar} label="Premium até" value={new Date(profile.premium_until).toLocaleDateString("pt-BR")} />
-          )}
-          <Row icon={Zap} label="Questões hoje" value={isPremium ? `${dailyCount} (ilimitado)` : `${dailyCount} / ${dailyLimit}`} />
+          <Row icon={Zap} label="Questões hoje" value={`${dailyCount}`} />
         </Card>
-
-        {!isPremium && (
-          <PlanSelectionDialog>
-            <button className="w-full text-left">
-              <Card className="bg-gradient-flame text-white shadow-flame">
-                <div className="flex items-center justify-between p-1">
-                  <div>
-                    <p className="stencil text-[11px] opacity-90">Upgrade</p>
-                    <p className="font-display font-bold">Tornar-se Premium</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </Card>
-            </button>
-          </PlanSelectionDialog>
-        )}
 
         {isAdmin && (
           <Link to="/admin">
