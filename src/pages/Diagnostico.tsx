@@ -398,19 +398,23 @@ const Diagnostico = () => {
     overallPct >= MASTERY_TARGET
       ? {
           label: `Prontidão: ${overallPct}% — você passaria hoje.`,
-          sub: `Você acertou ${totalCorrect} de ${totalQuestions} questões. Hora de blindar o resultado até a prova.`,
+          sub: weak.length === 0
+            ? "Você está dentro da meta em todas as matérias. Hora de blindar o resultado até a prova."
+            : `${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar. Veja quais e foque nelas agora.`,
         }
       : overallPct >= 60
       ? {
           label: `Prontidão: ${overallPct}% — você está perto, mas ainda reprovaria.`,
-          sub: `Você acertou ${totalCorrect} de ${totalQuestions} (${totalWrong} erro${totalWrong === 1 ? "" : "s"}). ${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar.`,
+          sub: `${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar. Veja quais e foque nelas agora.`,
         }
       : {
           label: `Prontidão: ${overallPct}% — se a prova fosse hoje, você não passaria.`,
-          sub: `Você acertou ${totalCorrect} de ${totalQuestions} (${totalWrong} erro${totalWrong === 1 ? "" : "s"}). ${weak.length} matéria${weak.length > 1 ? "s" : ""} abaixo da meta — você precisa virar o jogo na reta final.`,
+          sub: `${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar. Veja quais e foque nelas agora.`,
         };
 
-  const barColor = tone === "success" ? "bg-success" : tone === "warning" ? "bg-warning" : "bg-destructive";
+  // tone reservado para evoluções visuais futuras
+  void tone;
+  void totalWrong;
 
   return (
     <div className="app-shell bg-background flex flex-col">
@@ -421,43 +425,10 @@ const Diagnostico = () => {
             {verdict.label}
           </h1>
           <p className="text-sm text-white/75 mt-2">{verdict.sub}</p>
-
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
-              <CheckCircle2 className="w-4 h-4 text-success" />
-              <span className="stencil text-[11px] text-white/70 tracking-widest">Acertos</span>
-              <span className="font-display font-bold text-success">{totalCorrect}</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
-              <XCircle className="w-4 h-4 text-destructive" />
-              <span className="stencil text-[11px] text-white/70 tracking-widest">Erros</span>
-              <span className="font-display font-bold text-destructive">{totalWrong}</span>
-            </div>
-          </div>
-
-          <div className="mt-3 h-2 bg-white/10 rounded-full overflow-hidden">
-            <div className={`h-full ${barColor} transition-all`} style={{ width: `${overallPct}%` }} />
-          </div>
-          <div className="flex justify-between text-[11px] text-white/60 mt-1 stencil">
-            <span>0%</span>
-            <span>Meta {MASTERY_TARGET}%</span>
-            <span>100%</span>
-          </div>
         </div>
       </header>
 
       <main className="px-5 py-5 max-w-xl mx-auto w-full space-y-4">
-        {worst && (
-          <section className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4">
-            <div className="flex items-center gap-2 stencil text-destructive text-xs">
-              <AlertTriangle className="w-4 h-4" /> Matéria mais crítica
-            </div>
-            <h3 className="font-display text-lg font-bold mt-1">{worst.subject_name}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Você acertou <strong className="text-foreground">{worst.correct} de {worst.total}</strong> ({worst.pct}%) nessa disciplina. É por aqui que seu treino precisa começar.
-            </p>
-          </section>
-        )}
         {weak.length > 0 && (
           <section>
             <h2 className="stencil text-xs text-destructive mb-2 flex items-center gap-2">
@@ -483,23 +454,22 @@ const Diagnostico = () => {
         <div className="rounded-2xl bg-gradient-flame text-white p-5 shadow-flame mt-4">
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5 text-warning" />
-            <p className="stencil text-[11px] opacity-90">Método Questão Certa · Até o dia da prova</p>
+            <p className="stencil text-[11px] opacity-90">Plano único · Até o dia da prova</p>
           </div>
           <h3 className="font-display text-2xl font-bold mt-1 leading-tight">
-            Com o Método Questão Certa você acerta 80% das questões até o dia da prova.
+            Garanta sua aprovação — R$ 97
           </h3>
-          <p className="text-sm mt-3 opacity-95 leading-relaxed">
-            <strong className="font-semibold">Nosso método:</strong> você responde, o app identifica suas matérias fracas e escolhe as próximas questões para te levar até 80% de acerto.
-          </p>
+          <ul className="mt-3 space-y-1.5 text-sm opacity-95">
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> Questões ilimitadas até o dia da prova</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> O app escolhe a próxima questão pela sua matéria mais fraca</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> Diagnósticos e simulados no padrão IDECAN</li>
+          </ul>
           <Button
             onClick={() => navigate("/auth?signup=1&from=diag")}
             className="w-full h-12 mt-4 bg-white text-foreground hover:bg-white/90 font-display stencil"
           >
             Liberar meu treino focado <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
-          <p className="text-[11px] text-white/70 mt-2 text-center">
-            Pagamento seguro pela Kiwify
-          </p>
         </div>
 
         <div className="text-center">
