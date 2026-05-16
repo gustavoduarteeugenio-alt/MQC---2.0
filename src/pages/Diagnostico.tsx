@@ -323,8 +323,9 @@ const Diagnostico = () => {
           <div className="mt-4 space-y-2.5">
             {options.map((o) => {
               const letter = o.letter.toUpperCase();
-              const isCorrect = o.letter === current.correct_answer.toLowerCase() || letter === current.correct_answer;
-              const isSel = selected === o.letter;
+              const correctUp = (current.correct_answer || "").toUpperCase();
+              const isCorrect = letter === correctUp;
+              const isSel = selected?.toUpperCase() === letter;
               const showResult = confirmed;
               return (
                 <button
