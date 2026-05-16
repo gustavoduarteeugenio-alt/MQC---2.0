@@ -1,38 +1,55 @@
 ## Objetivo
 
-Criar testes automatizados para a função `pickNextSubject` em `src/lib/training.ts`, validando a lógica de seleção da próxima matéria em diversas combinações de acertos/erros.
+Permitir que o aluno encerre o treino a qualquer momento e veja uma tela de resumo com feedback baseado no que respondeu na sessão.
 
-## Arquivo
+## Mudanças
 
-- **`src/lib/training.test.ts`** (novo) — suite Vitest puramente lógica, sem mock de rede (a função `pickNextSubject` já é pura).
+### 1. `src/pages/Question.tsx`
 
-## Cenários cobertos
+- **Remover o botão de voltar** (seta `←`) do `TopBar`. O título da matéria fica centralizado e o cronômetro à direita.
+- Trocar `sessionCorrect`/`sessionWrong` por um mapa `sessionBySubject: { [subjectId]: { name, slug, correct, wrong } }` atualizado a cada `confirm()`. O totalizador no topo continua mostrando acertos/erros somados.
+- Adicionar um botão **"Encerrar treino"** grande, largura total, **logo abaixo** do botão "Próxima questão" (e também abaixo do "Confirmar resposta" quando ainda não confirmou). Visual secundário/outline para não competir com o CTA principal.
+- Visível só depois da 1ª resposta na sessão (`totalAnswered > 0`).
+- Ao clicar: `navigate("/treino/resumo", { state: { bySubject: [...], totalCorrect, totalWrong, durationSeconds } })`.
 
-Cada teste monta um array de `SubjectStat` simulando o estado atual do aluno e verifica qual matéria é escolhida.
+### 2. `src/pages/TrainingSummary.tsx` (novo)
 
-1. **Sem dados** — nenhum subject → retorna `null`.
-2. **Matérias inéditas têm prioridade** — uma sem `hasAttempts` vence qualquer matéria com `<80%`.
-3. **Errou a última** — retorna a matéria atual, ignorando ranking (modo reforço).
-4. **Acertou e existe matéria mais fraca que a atual** — troca para a pior.
-5. **Acertou e a atual é a mais fraca, sem streak** — continua na atual.
-6. **Acertou em sequência (`streakOnCurrent >= 2`) na pior matéria** — alterna para a 2ª pior, mesmo sendo melhor (variedade).
-7. **Streak alto mas só existe uma matéria fraca** — continua na atual (não há para onde alternar).
-8. **Todas as matérias ≥ 80%** — modo revisão: escolhe a de menor acerto entre as fortes.
-9. **Sequência de chamadas simulando treino real**:
-   - Estado: Matemática 40%, Legislação 60%, Português 75%, História 90%.
-   - Simula: acerto em Matemática (streak=1) → continua Matemática.
-   - Acerto novamente (streak=2) → alterna para Legislação.
-   - Erro em Legislação → fica em Legislação.
-   - Acerto isolado em Legislação (streak=1) → continua Legislação (Mat segue como pior, troca pra Mat).
-   - Acertos até Matemática passar de 80% → fila reorganiza, prioriza Legislação/Português.
-10. **Padrão alternado A-E-A-E-A** em uma única matéria fraca → sempre fica nela (porque erros e streak nunca chegam a 2).
-11. **Padrão A-A-A-A-A** em uma única matéria fraca com outras fortes → após streak ≥ 2, alterna para a fraca seguinte (ou continua se não houver).
-12. **Padrão E-E-E-E** → sempre reforça a matéria atual.
+Tela de resumo no mesmo estilo da Home:
 
-## Como rodar
+- Cabeçalho com gradient: "Treino encerrado" + tempo total.
+- Card grande de acerto: `X de Y acertos` + percentual.
+- Cards:
+  - **Foco agora**: matéria com PIOR % na sessão (destaque vermelho, ícone alvo).
+  - **Mandando bem**: matéria com MELHOR % na sessão (destaque verde, ícone troféu).
+  - Se só houve 1 matéria, mostra apenas o desempenho dela.
+- Lista compacta de todas as matérias da sessão com seu %.
+- Frase de feedback dinâmica:
+  - `≥80%` → "Excelente, soldado! Mantenha o ritmo."
+  - `50–79%` → "Bom desempenho. Foque em {pior} para subir o índice."
+  - `<50%` → "Hora de reforçar a base. Comece por {pior}."
+- Dois CTAs:
+  - **"Treinar a matéria fraca"** → `/questao/{slug-da-pior}`.
+  - **"Voltar para o início"** → `/`.
 
-`npm run test` ou via ferramenta `run-tests`. O setup já existe (vitest + jsdom configurados).
+Se acessada sem `location.state` → redireciona para `/`.
 
-## Saída esperada
+### 3. `src/App.tsx`
 
-Suite com ~10–12 `it()` cobrindo regras, branches do `pickNextSubject` e uma simulação de fluxo. Sem alteração no código de produção.
+Registrar `<Route path="/treino/resumo" element={<TrainingSummary />} />` no bloco autenticado.
+
+## Dados passados no `navigate(state)`
+
+```
+{
+  durationSeconds: number,
+  totalCorrect: number,
+  totalWrong: number,
+  bySubject: [{ id, name, slug, correct, wrong, accuracy }]
+}
+```
+
+## O que NÃO muda
+
+- Banco de dados (sem migração).
+- Lógica de `pickNextSubject`.
+- Layout do enunciado e das alternativas.

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, CheckCircle2, XCircle, Flame, Lightbulb } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Flame, Lightbulb, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { QuestionImage } from "@/components/QuestionImage";
@@ -35,8 +35,8 @@ const Question = () => {
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
   const [correctStreak, setCorrectStreak] = useState(0);
-  const [sessionCorrect, setSessionCorrect] = useState(0);
-  const [sessionWrong, setSessionWrong] = useState(0);
+  const [sessionBySubject, setSessionBySubject] = useState<Record<string, { id: string; name: string; slug: string; correct: number; wrong: number }>>({});
+  const sessionStartRef = useRef<number>(Date.now());
   const startRef = useRef<number>(Date.now());
 
   const current = questions[index];
@@ -86,14 +86,51 @@ const Question = () => {
     return `${m}:${s}`;
   }, [seconds]);
 
+  const sessionTotals = useMemo(() => {
+    const list = Object.values(sessionBySubject);
+    const totalCorrect = list.reduce((acc, s) => acc + s.correct, 0);
+    const totalWrong = list.reduce((acc, s) => acc + s.wrong, 0);
+    return { totalCorrect, totalWrong, totalAnswered: totalCorrect + totalWrong };
+  }, [sessionBySubject]);
+
+  const endTraining = () => {
+    const bySubject = Object.values(sessionBySubject).map((s) => ({
+      ...s,
+      accuracy: s.correct + s.wrong > 0
+        ? Math.round((s.correct / (s.correct + s.wrong)) * 100)
+        : 0,
+    }));
+    const durationSeconds = Math.round((Date.now() - sessionStartRef.current) / 1000);
+    refresh();
+    navigate("/treino/resumo", {
+      state: {
+        bySubject,
+        totalCorrect: sessionTotals.totalCorrect,
+        totalWrong: sessionTotals.totalWrong,
+        durationSeconds,
+      },
+    });
+  };
+
   const confirm = async () => {
     if (!selected || !current || !user) return;
     const isCorrect = selected === current.correct_answer;
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
     setCorrectStreak((s) => (isCorrect ? s + 1 : 0));
-    if (isCorrect) setSessionCorrect((n) => n + 1);
-    else setSessionWrong((n) => n + 1);
+    if (subject) {
+      setSessionBySubject((prev) => {
+        const cur = prev[subject.id] ?? { id: subject.id, name: subject.name, slug: subject.slug, correct: 0, wrong: 0 };
+        return {
+          ...prev,
+          [subject.id]: {
+            ...cur,
+            correct: cur.correct + (isCorrect ? 1 : 0),
+            wrong: cur.wrong + (isCorrect ? 0 : 1),
+          },
+        };
+      });
+    }
     await Promise.all([
       supabase.from("attempts").insert({
         user_id: user.id,
@@ -157,7 +194,7 @@ const Question = () => {
   if (questions.length === 0) {
     return (
       <div className="app-shell bg-background flex flex-col">
-        <TopBar onBack={() => navigate("/materias")} title={subject?.name ?? ""} />
+        <TopBar title={subject?.name ?? ""} />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center text-muted-foreground">
           Ainda não há questões nesta matéria.
         </div>
@@ -168,7 +205,6 @@ const Question = () => {
   return (
     <div className="app-shell bg-background flex flex-col min-h-screen">
       <TopBar
-        onBack={() => navigate("/materias")}
         title={subject?.name ?? ""}
         right={
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground stencil text-xs">
@@ -182,12 +218,12 @@ const Question = () => {
           <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
             <CheckCircle2 className="w-4 h-4 text-success" />
             <span className="stencil text-[11px] text-muted-foreground tracking-widest">Acertos</span>
-            <span className="font-display font-bold text-success">{sessionCorrect}</span>
+            <span className="font-display font-bold text-success">{sessionTotals.totalCorrect}</span>
           </div>
           <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
             <XCircle className="w-4 h-4 text-destructive" />
             <span className="stencil text-[11px] text-muted-foreground tracking-widest">Erros</span>
-            <span className="font-display font-bold text-destructive">{sessionWrong}</span>
+            <span className="font-display font-bold text-destructive">{sessionTotals.totalWrong}</span>
           </div>
         </div>
       </div>
@@ -253,8 +289,8 @@ const Question = () => {
         )}
       </main>
 
-      {/* Botão fixo */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent">
+      {/* Botões fixos */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent space-y-2.5">
         {!confirmed ? (
           <Button onClick={confirm} disabled={!selected}
             className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50">
@@ -266,16 +302,23 @@ const Question = () => {
             Próxima questão →
           </Button>
         )}
+        {sessionTotals.totalAnswered > 0 && (
+          <Button
+            onClick={endTraining}
+            variant="outline"
+            className="w-full h-12 py-3 border-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-display text-sm stencil"
+          >
+            <LogOut className="w-4 h-4 mr-2" /> Encerrar treino
+          </Button>
+        )}
       </div>
     </div>
   );
 };
 
-const TopBar = ({ onBack, title, right }: { onBack: () => void; title: string; right?: React.ReactNode }) => (
+const TopBar = ({ title, right }: { title: string; right?: React.ReactNode }) => (
   <header className="flex items-center justify-between px-4 pt-12 pb-3 bg-card border-b border-border sticky top-0 z-30">
-    <button onClick={onBack} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-muted">
-      <ArrowLeft className="w-5 h-5" />
-    </button>
+    <div className="min-w-[80px]" />
     <h1 className="font-display font-bold truncate flex-1 text-center px-2">{title}</h1>
     <div className="min-w-[80px] flex justify-end">{right}</div>
   </header>

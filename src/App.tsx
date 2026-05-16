@@ -10,6 +10,7 @@ import Auth from "./pages/Auth.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import Subjects from "./pages/Subjects.tsx";
 import Question from "./pages/Question.tsx";
+import TrainingSummary from "./pages/TrainingSummary.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Plans from "./pages/Plans.tsx";
 import Profile from "./pages/Profile.tsx";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
             <Route path="/questao/:slug" element={<ProtectedRoute><Question /></ProtectedRoute>} />
+            <Route path="/treino/resumo" element={<ProtectedRoute><TrainingSummary /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
