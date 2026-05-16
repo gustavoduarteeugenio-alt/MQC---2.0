@@ -178,19 +178,21 @@ const Diagnostico = () => {
           <div className="inline-flex self-center items-center justify-center w-20 h-20 rounded-2xl bg-gradient-flame shadow-flame mb-6">
             <Target className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
-          <p className="stencil text-xs text-primary">Diagnóstico gratuito · CFSd CBMMG</p>
+          <p className="stencil text-xs text-primary">Diagnóstico oficial · CFSd CBMMG</p>
           <h1 className="text-3xl font-display font-bold mt-2 leading-tight">
-            Descubra suas matérias fracas em <span className="text-primary">5 minutos</span>
+            Se a prova do CFSd fosse <span className="text-primary">hoje</span>, você passaria?
           </h1>
-          <p className="text-sm text-white/75 mt-4 leading-relaxed">
-            {TOTAL_QUESTIONS} questões no padrão IDECAN. Ao final, você verá seu
-            percentual de acerto por matéria e quais estão abaixo da meta de {MASTERY_TARGET}%.
+          <p className="text-sm text-white/80 mt-3 font-medium">
+            Descubra em 5 minutos seu nível real de preparo.
+          </p>
+          <p className="text-sm text-white/70 mt-3 leading-relaxed">
+            {TOTAL_QUESTIONS} questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
           </p>
 
           <ul className="mt-6 space-y-2 text-left text-sm">
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Sem cadastro para começar</li>
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Diagnóstico personalizado por matéria</li>
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Recomendação de foco para a reta final</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Comece agora, sem cadastro</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Percentual de acerto matéria por matéria</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Veja se você está na zona de aprovação (≥ {MASTERY_TARGET}%)</li>
           </ul>
 
           <Button
@@ -198,8 +200,9 @@ const Diagnostico = () => {
             disabled={loading}
             className="mt-8 h-14 bg-gradient-flame text-white font-display text-base stencil shadow-flame"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Começar diagnóstico <ChevronRight className="w-5 h-5 ml-1" /></>}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Quero saber se passaria <ChevronRight className="w-5 h-5 ml-1" /></>}
           </Button>
+
 
           <Link to="/auth" className="mt-4 text-xs text-white/50 hover:text-white">
             Já tenho conta · Entrar
