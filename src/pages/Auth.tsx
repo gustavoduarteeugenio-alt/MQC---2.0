@@ -78,7 +78,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [origem, setOrigem] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(() => localStorage.getItem("pending_approval_email"));
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
