@@ -3,12 +3,10 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, CheckCircle2, XCircle, Lock, Flame, Lightbulb, Crown } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle2, XCircle, Flame, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 import { QuestionImage } from "@/components/QuestionImage";
 import { RichText } from "@/components/RichText";
 import { getSubjectStats, pickNextSubject } from "@/lib/training";
@@ -27,8 +25,7 @@ const Question = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isPremium, canAnswerMore, dailyCount, dailyLimit, incrementDaily, refresh } = useProfile();
-  const { fullExplanations } = usePremiumFeatures();
+  const { incrementDaily, refresh } = useProfile();
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -89,10 +86,6 @@ const Question = () => {
 
   const confirm = async () => {
     if (!selected || !current || !user) return;
-    if (!canAnswerMore) {
-      toast.error("Você atingiu o limite diário do plano básico.");
-      return;
-    }
     const isCorrect = selected === current.correct_answer;
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
@@ -157,34 +150,6 @@ const Question = () => {
     );
   }
 
-  if (!canAnswerMore && !confirmed) {
-    return (
-      <div className="app-shell bg-background flex flex-col">
-        <TopBar onBack={() => navigate("/materias")} title={subject?.name ?? ""} />
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full text-center shadow-flame animate-fade-in">
-            <div className="w-14 h-14 mx-auto rounded-full bg-gradient-flame flex items-center justify-center shadow-flame mb-4">
-              <Lock className="w-7 h-7 text-white" />
-            </div>
-            <h2 className="font-display text-2xl font-bold">Limite atingido</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Você já respondeu {dailyCount}/{dailyLimit} questões hoje no plano básico.
-              O contador reinicia à meia-noite.
-            </p>
-            <PlanSelectionDialog>
-              <button className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-flame text-white rounded-xl py-3 font-display stencil shadow-flame">
-                <Crown className="w-4 h-4" /> Tornar-se Premium para questões ilimitadas
-              </button>
-            </PlanSelectionDialog>
-            <button onClick={() => navigate("/materias")} className="mt-3 w-full text-xs stencil text-muted-foreground hover:text-foreground">
-              Voltar para matérias
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (questions.length === 0) {
     return (
       <div className="app-shell bg-background flex flex-col">
@@ -211,9 +176,6 @@ const Question = () => {
       <div className="px-5 pt-3">
         <div className="flex items-center justify-between text-xs stencil text-muted-foreground">
           <span>Questão {index + 1}</span>
-          {!isPremium && Number.isFinite(dailyLimit) && (
-            <span>Diário: {dailyCount}/{dailyLimit}</span>
-          )}
         </div>
       </div>
 
@@ -265,27 +227,14 @@ const Question = () => {
         {confirmed && (
           <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
             <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
-              <Lightbulb className="w-4 h-4" /> Gabarito {fullExplanations ? "comentado" : "(resumido)"}
+              <Lightbulb className="w-4 h-4" /> Gabarito comentado
             </div>
             <div className="text-sm leading-relaxed">
               <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
-              {fullExplanations ? (
-                <RichText content={current.explanation} />
-              ) : (
-                <span className="opacity-80">
-                  Comentário completo do professor disponível apenas no Premium.
-                </span>
-              )}
+              <RichText content={current.explanation} />
             </div>
-            {fullExplanations && current.comment_image_url && (
+            {current.comment_image_url && (
               <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
-            )}
-            {!fullExplanations && (
-              <PlanSelectionDialog>
-                <button className="mt-3 w-full flex items-center justify-center gap-1.5 bg-gradient-flame text-white rounded-xl py-2.5 font-display stencil text-xs shadow-flame">
-                  <Crown className="w-4 h-4" /> Desbloquear gabarito comentado
-                </button>
-              </PlanSelectionDialog>
             )}
           </div>
         )}
