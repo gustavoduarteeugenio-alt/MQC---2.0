@@ -380,16 +380,6 @@ const Diagnostico = () => {
             Pagamento seguro pela Kiwify
           </p>
         </div>
-          <Button
-            onClick={() => navigate("/auth?signup=1&from=diag")}
-            className="w-full h-12 mt-4 bg-white text-foreground hover:bg-white/90 font-display stencil"
-          >
-            Liberar meu treino focado <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-          <p className="text-[11px] text-white/70 mt-2 text-center">
-            Pagamento seguro pela Kiwify
-          </p>
-        </div>
 
 
         <div className="text-center">
