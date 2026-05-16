@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Flame, Shield, Loader2, Eye, EyeOff } from "lucide-react";
+import { Flame, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const signUpSchema = z
@@ -77,6 +78,10 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [origem, setOrigem] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportSending, setSupportSending] = useState(false);
+  const [supportSent, setSupportSent] = useState(false);
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
@@ -170,7 +175,9 @@ const Auth = () => {
             .maybeSingle();
           if (!prof || (prof as any).approved !== true) {
             await supabase.auth.signOut();
-            toast.error("Sua conta ainda não foi liberada pelo administrador.");
+            setPendingEmail(parsed.data.email);
+            setSupportSent(false);
+            setSupportMessage("");
             return;
           }
           await linkPendingDiagnostic(signInData.user.id);
