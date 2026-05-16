@@ -293,20 +293,6 @@ const Diagnostico = () => {
           </div>
         </header>
 
-        <div className="px-5 pt-3 max-w-xl mx-auto w-full">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
-              <CheckCircle2 className="w-4 h-4 text-success" />
-              <span className="stencil text-[11px] text-muted-foreground tracking-widest">Acertos</span>
-              <span className="font-display font-bold text-success">{sessionCorrect}</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
-              <XCircle className="w-4 h-4 text-destructive" />
-              <span className="stencil text-[11px] text-muted-foreground tracking-widest">Erros</span>
-              <span className="font-display font-bold text-destructive">{sessionWrong}</span>
-            </div>
-          </div>
-        </div>
 
         <main className="px-5 py-5 flex-1 max-w-xl mx-auto w-full pb-32">
           <div className="bg-card rounded-2xl border border-border p-5 shadow-card">
