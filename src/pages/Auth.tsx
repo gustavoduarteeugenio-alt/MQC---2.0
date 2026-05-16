@@ -91,6 +91,31 @@ const Auth = () => {
       ? "As senhas não coincidem."
       : null;
 
+  const linkPendingDiagnostic = async (userId: string) => {
+    const token = localStorage.getItem("diag_pending_token");
+    if (!token) return;
+    const { data: ses } = await supabase
+      .from("diagnostic_sessions")
+      .select("id, results, completed_at")
+      .eq("client_token", token)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!ses) { localStorage.removeItem("diag_pending_token"); return; }
+
+    await supabase.from("diagnostic_sessions").update({ user_id: userId }).eq("id", ses.id);
+    if (ses.results) {
+      await supabase
+        .from("profiles")
+        .update({
+          diagnostic_results: ses.results as any,
+          diagnostic_completed_at: ses.completed_at ?? new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+    }
+    localStorage.removeItem("diag_pending_token");
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -101,7 +126,7 @@ const Auth = () => {
           toast.error(parsed.error.issues[0].message);
           return;
         }
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
@@ -114,6 +139,7 @@ const Auth = () => {
           else toast.error(error.message);
           return;
         }
+        if (signUpData.user) await linkPendingDiagnostic(signUpData.user.id);
         toast.success("Conta criada! Bem-vindo, recruta.");
         navigate("/", { replace: true });
       } else {
@@ -122,7 +148,7 @@ const Auth = () => {
           toast.error(parsed.error.issues[0].message);
           return;
         }
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
           email: parsed.data.email,
           password: parsed.data.password,
         });
@@ -130,6 +156,7 @@ const Auth = () => {
           toast.error("Credenciais inválidas.");
           return;
         }
+        if (signInData.user) await linkPendingDiagnostic(signInData.user.id);
         navigate("/", { replace: true });
       }
     } finally {
