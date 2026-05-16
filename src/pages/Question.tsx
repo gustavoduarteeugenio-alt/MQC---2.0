@@ -209,12 +209,11 @@ const Question = () => {
       />
 
       <div className="px-5 pt-3">
-        <div className="flex items-center justify-between text-xs stencil text-muted-foreground mb-2">
-          <span>Questão {index + 1}/{questions.length}</span>
-          {!isPremium && <span>Diário: {dailyCount}/{dailyLimit}</span>}
-        </div>
-        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-flame transition-all" style={{ width: `${((index + 1) / questions.length) * 100}%` }} />
+        <div className="flex items-center justify-between text-xs stencil text-muted-foreground">
+          <span>Questão {index + 1}</span>
+          {!isPremium && Number.isFinite(dailyLimit) && (
+            <span>Diário: {dailyCount}/{dailyLimit}</span>
+          )}
         </div>
       </div>
 
@@ -302,7 +301,7 @@ const Question = () => {
         ) : (
           <Button onClick={next}
             className="w-full h-13 py-3.5 bg-secondary text-secondary-foreground font-display text-base stencil shadow-card">
-            {index + 1 >= questions.length ? "Finalizar treino" : "Próxima questão →"}
+            Próxima questão →
           </Button>
         )}
       </div>
