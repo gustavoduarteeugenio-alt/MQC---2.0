@@ -172,8 +172,8 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-flame shadow-flame mb-5">
             <Flame className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="text-3xl font-display font-bold tracking-wide">CFSd CBMMG 2027</h1>
-          <p className="stencil text-xs text-primary mt-1">Banca IDECAN · Quartel virtual</p>
+          <h1 className="text-3xl font-display font-bold tracking-wide">Método Questão Certa</h1>
+          <p className="stencil text-xs text-primary mt-1">CFSd CBMMG 2027 · Banca IDECAN</p>
           <p className="text-sm text-white/70 mt-3 max-w-xs mx-auto">
             O caminho até a farda começa aqui. Treine com questões inéditas no estilo da banca.
           </p>
