@@ -223,7 +223,7 @@ const Diagnostico = () => {
             Descubra em 5 minutos seu nível real de preparo.
           </p>
           <p className="text-sm text-white/70 mt-3 leading-relaxed">
-            {TOTAL_QUESTIONS} questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
+            12 questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
           </p>
 
           <ul className="mt-6 space-y-2 text-left text-sm">
