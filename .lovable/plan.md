@@ -1,45 +1,38 @@
 ## Objetivo
 
-Fazer a lógica de treino direcionado funcionar também **dentro da página de questão**, ou seja, ao avançar de uma questão para a próxima, sem o aluno precisar voltar para a home.
+Criar testes automatizados para a função `pickNextSubject` em `src/lib/training.ts`, validando a lógica de seleção da próxima matéria em diversas combinações de acertos/erros.
 
-## Como vai funcionar
+## Arquivo
 
-1. **Botão "Treinar agora" (home)** — escolhe a matéria mais fraca (abaixo de 80%) e abre a primeira questão dessa matéria. Mesma regra já planejada.
+- **`src/lib/training.test.ts`** (novo) — suite Vitest puramente lógica, sem mock de rede (a função `pickNextSubject` já é pura).
 
-2. **Dentro da página de questão (`/questao/:slug`)** — ao clicar em "Próxima questão":
-   - Se o aluno **errou** a questão atual → próxima questão é da **mesma matéria** (reforço).
-   - Se o aluno **acertou** → o sistema recalcula o ranking de matérias e:
-     - Se a matéria atual ainda está abaixo de 80%, pode continuar nela, mas **alterna** ocasionalmente para outra matéria fraca.
-     - Se houver outra matéria com desempenho **pior** que a atual, troca para ela.
-     - Se a matéria atual já passou de 80%, prioriza outra matéria abaixo de 80%.
-   - Quando o aluno muda de matéria, a URL muda para `/questao/{novo-slug}` e a próxima questão (não respondida ainda) daquela matéria aparece.
+## Cenários cobertos
 
-3. **Filtro de questões já respondidas** — ao carregar questões de uma matéria, excluir as que o usuário já respondeu (consulta `attempts` por `user_id` + `question_id`), para não repetir. Se acabarem as inéditas da matéria, libera repetição (modo revisão).
+Cada teste monta um array de `SubjectStat` simulando o estado atual do aluno e verifica qual matéria é escolhida.
 
-## Regra resumida da alternância (acertou)
+1. **Sem dados** — nenhum subject → retorna `null`.
+2. **Matérias inéditas têm prioridade** — uma sem `hasAttempts` vence qualquer matéria com `<80%`.
+3. **Errou a última** — retorna a matéria atual, ignorando ranking (modo reforço).
+4. **Acertou e existe matéria mais fraca que a atual** — troca para a pior.
+5. **Acertou e a atual é a mais fraca, sem streak** — continua na atual.
+6. **Acertou em sequência (`streakOnCurrent >= 2`) na pior matéria** — alterna para a 2ª pior, mesmo sendo melhor (variedade).
+7. **Streak alto mas só existe uma matéria fraca** — continua na atual (não há para onde alternar).
+8. **Todas as matérias ≥ 80%** — modo revisão: escolhe a de menor acerto entre as fortes.
+9. **Sequência de chamadas simulando treino real**:
+   - Estado: Matemática 40%, Legislação 60%, Português 75%, História 90%.
+   - Simula: acerto em Matemática (streak=1) → continua Matemática.
+   - Acerto novamente (streak=2) → alterna para Legislação.
+   - Erro em Legislação → fica em Legislação.
+   - Acerto isolado em Legislação (streak=1) → continua Legislação (Mat segue como pior, troca pra Mat).
+   - Acertos até Matemática passar de 80% → fila reorganiza, prioriza Legislação/Português.
+10. **Padrão alternado A-E-A-E-A** em uma única matéria fraca → sempre fica nela (porque erros e streak nunca chegam a 2).
+11. **Padrão A-A-A-A-A** em uma única matéria fraca com outras fortes → após streak ≥ 2, alterna para a fraca seguinte (ou continua se não houver).
+12. **Padrão E-E-E-E** → sempre reforça a matéria atual.
 
-- Monta ranking ao vivo: matérias < 80% ordenadas da pior para a melhor.
-- Pega o **topo da fila**. Se for diferente da matéria atual → troca.
-- Se for a mesma → continua mais 1–2 questões nela, depois força um "respiro" indo para a 2ª pior, para manter variedade (evita monotonia).
-- Sem matérias < 80% → modo revisão: rotaciona entre as matérias com menor acerto recente.
+## Como rodar
 
-## Arquivos a editar
+`npm run test` ou via ferramenta `run-tests`. O setup já existe (vitest + jsdom configurados).
 
-- **`src/lib/training.ts`** (novo) — funções puras: `getSubjectStats(userId)`, `pickNextSubject({ stats, currentSubjectId, lastWasCorrect })`, `pickNextQuestion(subjectId, userId)`. Centraliza a lógica para ser reusada na home e na página de questão.
-- **`src/pages/Index.tsx`** — botão "Treinar agora" chama `pickNextSubject` + `navigate('/questao/{slug}')`. Remove badge "Plano Básico".
-- **`src/pages/Question.tsx`** — função `next()` passa a:
-  1. Recalcular stats (incluindo a tentativa que acabou de ser salva).
-  2. Decidir próxima matéria via `pickNextSubject` usando `lastWasCorrect`.
-  3. Se mudou de matéria → `navigate('/questao/{novo-slug}')`.
-  4. Se mesma matéria → avança no array local (recarregando se necessário para excluir respondidas).
-  - Também ajustar o carregamento inicial para filtrar questões já respondidas.
+## Saída esperada
 
-## O que NÃO muda
-
-- Estrutura visual da página de questão, layout, animações.
-- Tabelas do banco (sem migração).
-- Página `/materias` continua existindo como navegação livre.
-
-## Resultado para o aluno
-
-O aluno clica em "Treinar agora" uma vez e pode responder dezenas de questões seguidas — o app vai automaticamente puxando da matéria onde ele está pior, reforçando quando erra e alternando quando acerta, sem precisar voltar para a home.
+Suite com ~10–12 `it()` cobrindo regras, branches do `pickNextSubject` e uma simulação de fluxo. Sem alteração no código de produção.
