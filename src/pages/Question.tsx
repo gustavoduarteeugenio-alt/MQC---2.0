@@ -205,7 +205,6 @@ const Question = () => {
   return (
     <div className="app-shell bg-background flex flex-col min-h-screen">
       <TopBar
-        onBack={() => navigate("/materias")}
         title={subject?.name ?? ""}
         right={
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground stencil text-xs">
