@@ -1,21 +1,42 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Flame, Crown, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { getSubjectStats, pickNextSubject } from "@/lib/training";
+import { toast } from "sonner";
 
 type SubjectStat = { name: string; total: number; correct: number; accuracy: number };
 
 const MIN_ATTEMPTS = 3; // mínimo de questões pra entrar no ranking
 
 const Index = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, isPremium } = useProfile();
   const [stats, setStats] = useState({ total: 0, correct: 0 });
   const [best, setBest] = useState<SubjectStat | null>(null);
   const [worst, setWorst] = useState<SubjectStat | null>(null);
+  const [training, setTraining] = useState(false);
+
+  const handleTrainNow = async () => {
+    if (!user || training) return;
+    setTraining(true);
+    try {
+      const subjectStats = await getSubjectStats(user.id);
+      const next = pickNextSubject({ stats: subjectStats });
+      if (!next) {
+        toast.error("Nenhuma matéria disponível ainda.");
+        navigate("/materias");
+        return;
+      }
+      navigate(`/questao/${next.slug}`);
+    } finally {
+      setTraining(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -77,13 +98,11 @@ const Index = () => {
             </div>
           </div>
 
-          <div
-            className={`mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] stencil tracking-wide ${
-              isPremium ? "bg-warning text-warning-foreground" : "bg-white/10 text-white/80"
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5" /> Plano {isPremium ? "Premium" : "Básico"}
-          </div>
+          {isPremium && (
+            <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] stencil tracking-wide bg-warning text-warning-foreground">
+              <Crown className="w-3.5 h-3.5" /> Plano Premium
+            </div>
+          )}
         </div>
       </header>
 
@@ -119,21 +138,21 @@ const Index = () => {
         </section>
 
         {/* CTA principal */}
-        <Link to="/materias" className="block group">
+        <button onClick={handleTrainNow} disabled={training} className="block w-full text-left group disabled:opacity-70">
           <div className="bg-gradient-flame rounded-3xl p-6 shadow-flame text-white relative overflow-hidden">
             <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
             <div className="relative flex items-center justify-between">
               <div>
                 <p className="stencil text-[11px] opacity-90 tracking-widest">Próxima missão</p>
                 <h3 className="font-display text-2xl font-bold mt-1.5">Treinar agora</h3>
-                <p className="text-sm opacity-90 mt-1">Escolha uma matéria e enfrente o gabarito.</p>
+                <p className="text-sm opacity-90 mt-1">Vamos direto pra matéria que mais precisa de você.</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center group-hover:translate-x-1 transition">
                 <ChevronRight className="w-6 h-6" />
               </div>
             </div>
           </div>
-        </Link>
+        </button>
       </main>
     </AppShell>
   );

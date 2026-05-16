@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 import { QuestionImage } from "@/components/QuestionImage";
 import { RichText } from "@/components/RichText";
+import { getSubjectStats, pickNextSubject } from "@/lib/training";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
@@ -36,22 +37,42 @@ const Question = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [correctStreak, setCorrectStreak] = useState(0);
   const startRef = useRef<number>(Date.now());
 
   const current = questions[index];
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const { data: sub } = await supabase.from("subjects").select("*").eq("slug", slug!).maybeSingle();
       if (!sub) { navigate("/materias"); return; }
       setSubject(sub as Subject);
-      const { data: qs } = await supabase.from("questions").select("*").eq("subject_id", sub.id).limit(50);
-      // shuffle
-      const shuffled = (qs ?? []).sort(() => Math.random() - 0.5);
+
+      const { data: qs } = await supabase.from("questions").select("*").eq("subject_id", sub.id).limit(100);
+
+      // Excluir questões já respondidas pelo usuário
+      let pool = qs ?? [];
+      if (user && pool.length > 0) {
+        const { data: doneRows } = await supabase
+          .from("attempts")
+          .select("question_id")
+          .eq("user_id", user.id)
+          .in("question_id", pool.map((q: any) => q.id));
+        const done = new Set((doneRows ?? []).map((r: any) => r.question_id));
+        const fresh = pool.filter((q: any) => !done.has(q.id));
+        // se sobraram inéditas, usa só elas; senão libera repetição (modo revisão)
+        if (fresh.length > 0) pool = fresh;
+      }
+
+      const shuffled = pool.sort(() => Math.random() - 0.5);
       setQuestions(shuffled as Question[]);
+      setIndex(0);
+      setSelected(null);
+      setConfirmed(false);
       setLoading(false);
     })();
-  }, [slug, navigate]);
+  }, [slug, navigate, user]);
 
   useEffect(() => {
     startRef.current = Date.now();
@@ -75,6 +96,7 @@ const Question = () => {
     const isCorrect = selected === current.correct_answer;
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
+    setCorrectStreak((s) => (isCorrect ? s + 1 : 0));
     await Promise.all([
       supabase.from("attempts").insert({
         user_id: user.id,
@@ -89,15 +111,42 @@ const Question = () => {
     else toast.error("Resposta incorreta. Estude o gabarito.");
   };
 
-  const next = () => {
-    if (index + 1 >= questions.length) {
+  const next = async () => {
+    if (!user || !subject || !current) {
       refresh();
       navigate("/dashboard");
       return;
     }
-    setIndex(index + 1);
-    setSelected(null);
-    setConfirmed(false);
+    const lastWasCorrect = selected === current.correct_answer;
+
+    // Recalcula stats e decide próxima matéria
+    const subjectStats = await getSubjectStats(user.id);
+    const nextSubject = pickNextSubject({
+      stats: subjectStats,
+      currentSubjectId: subject.id,
+      lastWasCorrect,
+      streakOnCurrent: lastWasCorrect ? correctStreak + 1 : 0,
+    });
+
+    // Trocou de matéria → navega para a nova
+    if (nextSubject && nextSubject.id !== subject.id) {
+      setCorrectStreak(0);
+      navigate(`/questao/${nextSubject.slug}`);
+      return;
+    }
+
+    // Mesma matéria: avança no array local
+    if (index + 1 < questions.length) {
+      setIndex(index + 1);
+      setSelected(null);
+      setConfirmed(false);
+      return;
+    }
+
+    // Acabaram as questões inéditas desta matéria → volta pro dashboard
+    refresh();
+    toast.success("Você concluiu todas as questões inéditas desta matéria!");
+    navigate("/dashboard");
   };
 
   if (loading) {
