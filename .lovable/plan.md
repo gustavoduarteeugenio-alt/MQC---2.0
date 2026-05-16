@@ -1,56 +1,84 @@
-## Problema
+## Objetivo
+Bloquear o login de usuários ainda não aprovados (`profiles.approved = false`), mostrar um card de alerta na própria tela de login com um canal direto de suporte, persistir as mensagens em uma nova tabela `tickets_suporte` e dar ao admin uma aba para listar e aprovar com 1 clique.
 
-Hoje o resultado do diagnóstico calcula `overallPct` como **média das porcentagens por matéria** (`sum(pct)/n_subjects`). Isso distorce o número real: se uma matéria tem 2 questões e outra 1, todas pesam igual. O feedback final ("você passaria/reprovaria") usa esse valor enviesado, então não reflete o acerto real do aluno no banco de questões.
+---
 
-Além disso, o card de erros/acertos da tela de quiz já mostra contagem real, mas a tela de resultado nunca exibe o total de **acertos vs erros absolutos** — só percentual por matéria. O usuário quer que o feedback final seja baseado no **percentual real de acertos** sobre o total respondido.
+## 1. Banco de dados (nova migração)
 
-## Plano
+Criar tabela `public.tickets_suporte`:
 
-### 1. `src/pages/Diagnostico.tsx` — cálculo correto
+- `id uuid pk default gen_random_uuid()`
+- `user_id uuid null` (pode ser null porque o usuário está deslogado no momento do envio)
+- `email_usuario text not null`
+- `mensagem text not null` (limite ~2000)
+- `status_resolvido boolean not null default false`
+- `created_at timestamptz default now()`
+- `resolved_at timestamptz null`
+- `resolved_by uuid null`
 
-Substituir, no bloco RESULT (linha 381):
+RLS:
+- `INSERT` liberado para `anon` e `authenticated` (`with check true`) — necessário porque o aluno envia sem sessão ativa.
+- `SELECT` / `UPDATE` apenas para `has_role(auth.uid(), 'admin')`.
+- Sem `DELETE`.
 
-```ts
-const overall = results.reduce((s, r) => s + r.pct, 0) / Math.max(1, results.length);
-```
+Índice em `created_at desc` e `status_resolvido`.
 
-por cálculo baseado em totais absolutos:
+> Observação: já existe `support_messages`, mas ela exige `auth.uid() = user_id`. Como o usuário não-aprovado é deslogado, criamos a nova tabela conforme especificado, dedicada a pedidos de liberação.
 
-```ts
-const totalQuestions = results.reduce((s, r) => s + r.total, 0);
-const totalCorrect   = results.reduce((s, r) => s + r.correct, 0);
-const totalWrong     = totalQuestions - totalCorrect;
-const overallPct     = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-```
+---
 
-### 2. Faixas de feedback baseadas em % real
+## 2. Tela de Login (`src/pages/Auth.tsx`)
 
-Manter 3 faixas, agora ancoradas no percentual real:
+Fluxo:
+1. Ao logar, se `profiles.approved !== true`, **NÃO** mostrar mais um `toast.error` simples. Em vez disso:
+   - `supabase.auth.signOut()` (mantém comportamento atual de bloqueio).
+   - Guardar `pendingEmail` em estado local e ativar `showPendingCard = true`.
+2. Quando `showPendingCard` for true, substituir o formulário pelo **Card de Alerta** centralizado:
+   - Borda `border-2 border-amber-400/70`, fundo `bg-amber-500/10`, ícone `AlertTriangle` âmbar pulsante.
+   - Título: **⚠️ Aguardando liberação do administrador**
+   - Corpo (texto exato do briefing): *"Seu cadastro foi realizado com sucesso! Nossa equipe está validando seu acesso junto à plataforma de pagamento. Em breve suas frentes de combate estarão liberadas. Se preferir, envie uma mensagem direto para o nosso suporte abaixo."*
+   - `Textarea` (placeholder: *"Digite sua mensagem ou informe o e-mail cadastrado na Kiwifi..."*, maxLength 2000, com validação zod min 3).
+   - Botão **"Enviar para o Suporte"** (gradient flame).
+   - Link discreto **"Voltar para o login"** para reabrir o form.
+3. Ao clicar em enviar:
+   - Validar com zod (`email_usuario` = `pendingEmail`, `mensagem` ≥ 3 chars).
+   - `supabase.from("tickets_suporte").insert({ email_usuario, mensagem, user_id: null })`.
+   - Toast: *"Mensagem enviada! Analisaremos seu acesso prioritariamente."*
+   - Desabilitar o botão e mostrar estado "Mensagem enviada ✓" (impede spam imediato).
 
-- **≥ 80%** → "Prontidão: X% — você passaria hoje." (verde)
-- **60–79%** → "Prontidão: X% — você está perto, mas ainda reprovaria." (amarelo)
-- **< 60%** → "Prontidão: X% — se a prova fosse hoje, você não passaria." (vermelho)
+Nada mais é alterado no fluxo de signup/signin existente.
 
-Subtexto usa `totalCorrect`/`totalWrong` para ficar concreto:
-"Você acertou **{totalCorrect} de {totalQuestions}** ({overallPct}%). {weak.length} matéria(s) abaixo da meta."
+---
 
-### 3. Card-resumo no topo do resultado
+## 3. Painel Admin (`src/pages/Admin.tsx` + novo componente)
 
-Adicionar no header do estágio `result`, logo abaixo do título, um par de chips (mesmo visual do quiz) com:
-- Acertos: `{totalCorrect}` (verde)
-- Erros: `{totalWrong}` (vermelho)
-- % geral: barra de progresso colorida conforme a faixa (verde/amarelo/vermelho)
+Criar `src/components/admin/AccessRequests.tsx`:
+- Lista `tickets_suporte` (ordem: pendentes primeiro, depois `created_at desc`).
+- Cada item exibe: e-mail, mensagem, data formatada PT-BR, badge de status.
+- Botão **"Aprovar Usuário"**:
+  1. Busca `profiles` por `email = email_usuario` (case-insensitive).
+  2. Se encontrado: `update profiles set approved = true, plan = 'premium', premium_since = now(), premium_until = now() + interval '1 year'` (alinhado com fluxo premium atual; ajustável se preferir só `approved=true`).
+  3. `update tickets_suporte set status_resolvido = true, resolved_at = now(), resolved_by = auth.uid()` para o ticket.
+  4. Toast de sucesso + refresh da lista.
+  - Se e-mail não bate com nenhum `profiles`, toast de erro com instrução.
+- Botão secundário **"Marcar como resolvido"** (só fecha o ticket sem aprovar).
+- Filtro: Pendentes / Resolvidos / Todos.
+- Realtime opcional (mesmo padrão de `SupportMessages.tsx`).
 
-### 4. Persistência consistente
+No `Admin.tsx`, dentro da aba/menu **Suporte**, adicionar uma sub-seção (Tabs ou seção acima de `SupportMessages`) chamada **"Liberações pendentes"** que renderiza `AccessRequests`.
 
-No `next()` (linha 205), já gravamos `correct: totalCorrect`. Garantir que esse total venha do mesmo cálculo (soma dos `correct` por matéria, não de `sessionCorrect` que poderia divergir se o usuário trocar respostas — hoje não troca, mas blindar). Nenhuma mudança de schema.
+---
 
-### 5. Sem mudança em
+## 4. Detalhes técnicos
 
-- Seleção de 2 questões por matéria (já correto).
-- RLS, tabela `diagnostic_sessions`, fluxo de intro/quiz.
-- Lista de matérias fracas/fortes (continua usando `MASTERY_TARGET = 80`).
+- Reutilizar tokens do design system existente (`bg-gradient-night`, `text-primary`, `stencil`, `shadow-flame`); âmbar via `amber-400/500` (já presente nas hints do Auth).
+- Validação client-side com `zod` (já usado em Auth).
+- Sem alteração em `ProtectedRoute` / `useProfile` — o bloqueio continua sendo feito no submit do login.
+- Sem mudanças no schema de `profiles`; usa o campo `approved` já existente.
 
-## Arquivos
+---
 
-- `src/pages/Diagnostico.tsx` (apenas bloco RESULT + pequeno ajuste no `next()`)
+## Fora de escopo
+- Mudanças em `support_messages` / `support_replies`.
+- Envio de e-mail automático para o aluno (pode ser adicionado depois via edge function).
+- Auto-criação de profile a partir do ticket (admin precisa que o usuário já tenha se cadastrado).
