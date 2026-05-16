@@ -96,6 +96,7 @@ const Question = () => {
     const isCorrect = selected === current.correct_answer;
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
+    setCorrectStreak((s) => (isCorrect ? s + 1 : 0));
     await Promise.all([
       supabase.from("attempts").insert({
         user_id: user.id,
@@ -110,15 +111,42 @@ const Question = () => {
     else toast.error("Resposta incorreta. Estude o gabarito.");
   };
 
-  const next = () => {
-    if (index + 1 >= questions.length) {
+  const next = async () => {
+    if (!user || !subject || !current) {
       refresh();
       navigate("/dashboard");
       return;
     }
-    setIndex(index + 1);
-    setSelected(null);
-    setConfirmed(false);
+    const lastWasCorrect = selected === current.correct_answer;
+
+    // Recalcula stats e decide próxima matéria
+    const subjectStats = await getSubjectStats(user.id);
+    const nextSubject = pickNextSubject({
+      stats: subjectStats,
+      currentSubjectId: subject.id,
+      lastWasCorrect,
+      streakOnCurrent: lastWasCorrect ? correctStreak + 1 : 0,
+    });
+
+    // Trocou de matéria → navega para a nova
+    if (nextSubject && nextSubject.id !== subject.id) {
+      setCorrectStreak(0);
+      navigate(`/questao/${nextSubject.slug}`);
+      return;
+    }
+
+    // Mesma matéria: avança no array local
+    if (index + 1 < questions.length) {
+      setIndex(index + 1);
+      setSelected(null);
+      setConfirmed(false);
+      return;
+    }
+
+    // Acabaram as questões inéditas desta matéria → volta pro dashboard
+    refresh();
+    toast.success("Você concluiu todas as questões inéditas desta matéria!");
+    navigate("/dashboard");
   };
 
   if (loading) {
