@@ -289,6 +289,15 @@ const Auth = () => {
             <p className="text-center text-[11px] text-white/50 stencil pt-1">
               Esta mensagem permanecerá visível até a liberação do seu acesso.
             </p>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={backToLogin}
+              className="w-full h-11 mt-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white stencil"
+            >
+              Voltar para o login
+            </Button>
           </div>
         ) : (
         <form onSubmit={submit} className="space-y-3 animate-fade-in">
