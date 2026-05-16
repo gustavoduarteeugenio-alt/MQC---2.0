@@ -178,19 +178,21 @@ const Diagnostico = () => {
           <div className="inline-flex self-center items-center justify-center w-20 h-20 rounded-2xl bg-gradient-flame shadow-flame mb-6">
             <Target className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
-          <p className="stencil text-xs text-primary">Diagnóstico gratuito · CFSd CBMMG</p>
+          <p className="stencil text-xs text-primary">Diagnóstico oficial · CFSd CBMMG</p>
           <h1 className="text-3xl font-display font-bold mt-2 leading-tight">
-            Descubra suas matérias fracas em <span className="text-primary">5 minutos</span>
+            Se a prova do CFSd fosse <span className="text-primary">hoje</span>, você passaria?
           </h1>
-          <p className="text-sm text-white/75 mt-4 leading-relaxed">
-            {TOTAL_QUESTIONS} questões no padrão IDECAN. Ao final, você verá seu
-            percentual de acerto por matéria e quais estão abaixo da meta de {MASTERY_TARGET}%.
+          <p className="text-sm text-white/80 mt-3 font-medium">
+            Descubra em 5 minutos seu nível real de preparo.
+          </p>
+          <p className="text-sm text-white/70 mt-3 leading-relaxed">
+            {TOTAL_QUESTIONS} questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
           </p>
 
           <ul className="mt-6 space-y-2 text-left text-sm">
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Sem cadastro para começar</li>
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Diagnóstico personalizado por matéria</li>
-            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Recomendação de foco para a reta final</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Comece agora, sem cadastro</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Percentual de acerto matéria por matéria</li>
+            <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" /> Veja se você está na zona de aprovação (≥ {MASTERY_TARGET}%)</li>
           </ul>
 
           <Button
@@ -198,8 +200,9 @@ const Diagnostico = () => {
             disabled={loading}
             className="mt-8 h-14 bg-gradient-flame text-white font-display text-base stencil shadow-flame"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Começar diagnóstico <ChevronRight className="w-5 h-5 ml-1" /></>}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Quero saber se passaria <ChevronRight className="w-5 h-5 ml-1" /></>}
           </Button>
+
 
           <Link to="/auth" className="mt-4 text-xs text-white/50 hover:text-white">
             Já tenho conta · Entrar
@@ -276,19 +279,23 @@ const Diagnostico = () => {
   const weak = results.filter((r) => r.pct < MASTERY_TARGET);
   const strong = results.filter((r) => r.pct >= MASTERY_TARGET);
 
+  const overallPct = Math.round(overall);
+  const verdict =
+    overallPct >= MASTERY_TARGET
+      ? { label: `Prontidão: ${overallPct}% — você passaria hoje.`, sub: "Você está dentro da meta. Hora de blindar o resultado até a prova." }
+      : overallPct >= 60
+      ? { label: `Prontidão: ${overallPct}% — você está perto, mas ainda reprovaria.`, sub: `${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar. Veja quais e foque nelas agora.` }
+      : { label: `Prontidão: ${overallPct}% — se a prova fosse hoje, você não passaria.`, sub: `${weak.length} matéria${weak.length > 1 ? "s" : ""} estão abaixo da meta. Você precisa virar o jogo na reta final.` };
+
   return (
     <div className="app-shell bg-background flex flex-col">
       <header className="bg-gradient-night text-white px-5 pt-10 pb-6">
         <div className="max-w-xl mx-auto">
-          <p className="stencil text-xs text-primary">Seu diagnóstico</p>
-          <h1 className="text-2xl font-display font-bold mt-1">
-            Você acertou {Math.round(overall)}% no geral
+          <p className="stencil text-xs text-primary">Seu Índice de Prontidão</p>
+          <h1 className="text-2xl font-display font-bold mt-1 leading-tight">
+            {verdict.label}
           </h1>
-          <p className="text-sm text-white/75 mt-2">
-            {weak.length > 0
-              ? `${weak.length} matéria${weak.length > 1 ? "s" : ""} abaixo da meta de ${MASTERY_TARGET}%.`
-              : "Parabéns — todas as matérias acima da meta!"}
-          </p>
+          <p className="text-sm text-white/75 mt-2">{verdict.sub}</p>
         </div>
       </header>
 
@@ -296,7 +303,7 @@ const Diagnostico = () => {
         {weak.length > 0 && (
           <section>
             <h2 className="stencil text-xs text-destructive mb-2 flex items-center gap-2">
-              <XCircle className="w-4 h-4" /> Prioridade · abaixo de {MASTERY_TARGET}%
+              <XCircle className="w-4 h-4" /> Podem te reprovar · abaixo de {MASTERY_TARGET}%
             </h2>
             <div className="space-y-2">
               {weak.map((r) => <ResultRow key={r.subject_id} r={r} weak />)}
@@ -307,7 +314,7 @@ const Diagnostico = () => {
         {strong.length > 0 && (
           <section>
             <h2 className="stencil text-xs text-success mb-2 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Dentro da meta
+              <CheckCircle2 className="w-4 h-4" /> Zona de aprovação
             </h2>
             <div className="space-y-2">
               {strong.map((r) => <ResultRow key={r.subject_id} r={r} />)}
@@ -318,12 +325,12 @@ const Diagnostico = () => {
         <div className="rounded-2xl bg-gradient-flame text-white p-5 shadow-flame mt-4">
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5 text-warning" />
-            <p className="stencil text-[11px] opacity-90">Acesso completo até a prova</p>
+            <p className="stencil text-[11px] opacity-90">Plano único · Até o dia da prova</p>
           </div>
-          <h3 className="font-display text-2xl font-bold mt-1">Treine com foco · R$ 97</h3>
+          <h3 className="font-display text-2xl font-bold mt-1">Garanta sua aprovação — R$ 97</h3>
           <ul className="text-sm mt-3 space-y-1.5 opacity-95">
             <li>✓ Questões ilimitadas até o dia da prova</li>
-            <li>✓ Priorização automática das matérias fracas</li>
+            <li>✓ O app escolhe a próxima questão pela sua matéria mais fraca</li>
             <li>✓ Meta de {MASTERY_TARGET}% por matéria</li>
             <li>✓ IDECAN real + Estilo IDECAN</li>
           </ul>
@@ -331,12 +338,13 @@ const Diagnostico = () => {
             onClick={() => navigate("/auth?signup=1&from=diag")}
             className="w-full h-12 mt-4 bg-white text-foreground hover:bg-white/90 font-display stencil"
           >
-            Criar conta e liberar acesso <ChevronRight className="w-4 h-4 ml-1" />
+            Liberar meu treino focado <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
           <p className="text-[11px] text-white/70 mt-2 text-center">
             Pagamento seguro pela Kiwify
           </p>
         </div>
+
 
         <div className="text-center">
           <button
