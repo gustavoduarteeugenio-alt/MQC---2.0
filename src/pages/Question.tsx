@@ -35,8 +35,8 @@ const Question = () => {
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
   const [correctStreak, setCorrectStreak] = useState(0);
-  const [sessionCorrect, setSessionCorrect] = useState(0);
-  const [sessionWrong, setSessionWrong] = useState(0);
+  const [sessionBySubject, setSessionBySubject] = useState<Record<string, { id: string; name: string; slug: string; correct: number; wrong: number }>>({});
+  const sessionStartRef = useRef<number>(Date.now());
   const startRef = useRef<number>(Date.now());
 
   const current = questions[index];
