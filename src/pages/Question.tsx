@@ -86,6 +86,32 @@ const Question = () => {
     return `${m}:${s}`;
   }, [seconds]);
 
+  const sessionTotals = useMemo(() => {
+    const list = Object.values(sessionBySubject);
+    const totalCorrect = list.reduce((acc, s) => acc + s.correct, 0);
+    const totalWrong = list.reduce((acc, s) => acc + s.wrong, 0);
+    return { totalCorrect, totalWrong, totalAnswered: totalCorrect + totalWrong };
+  }, [sessionBySubject]);
+
+  const endTraining = () => {
+    const bySubject = Object.values(sessionBySubject).map((s) => ({
+      ...s,
+      accuracy: s.correct + s.wrong > 0
+        ? Math.round((s.correct / (s.correct + s.wrong)) * 100)
+        : 0,
+    }));
+    const durationSeconds = Math.round((Date.now() - sessionStartRef.current) / 1000);
+    refresh();
+    navigate("/treino/resumo", {
+      state: {
+        bySubject,
+        totalCorrect: sessionTotals.totalCorrect,
+        totalWrong: sessionTotals.totalWrong,
+        durationSeconds,
+      },
+    });
+  };
+
   const confirm = async () => {
     if (!selected || !current || !user) return;
     const isCorrect = selected === current.correct_answer;
