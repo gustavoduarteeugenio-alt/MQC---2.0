@@ -7,7 +7,7 @@ import { Flame, Target, ChevronRight, Loader2, CheckCircle2, XCircle, Lock, Crow
 import { RichText } from "@/components/RichText";
 import { toast } from "sonner";
 
-const TOTAL_QUESTIONS = 12;
+const PER_SUBJECT = 2;
 const MASTERY_TARGET = 80;
 const TOKEN_KEY = "diag_client_token";
 const PENDING_KEY = "diag_pending_token";
@@ -75,25 +75,62 @@ const Diagnostico = () => {
         return;
       }
 
-      // ~2 questões por matéria até atingir TOTAL_QUESTIONS
-      const perSubject = Math.max(1, Math.ceil(TOTAL_QUESTIONS / subs.length));
-      const picks: Question[] = [];
+      // 1) Para cada matéria, lista todos os IDs e sorteia PER_SUBJECT
+      const pickedIds: string[] = [];
+      const insufficient: string[] = [];
       for (const s of subs) {
-        const { data: qs } = await supabase
+        const { data: ids } = await supabase
           .from("questions")
-          .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, subjects:subject_id(id,name)")
-          .eq("subject_id", s.id)
-          .limit(20);
-        if (!qs?.length) continue;
-        // sorteia
-        const shuffled = [...qs].sort(() => Math.random() - 0.5);
-        picks.push(...(shuffled.slice(0, perSubject) as any));
+          .select("id")
+          .eq("subject_id", s.id);
+        if (!ids || ids.length < PER_SUBJECT) {
+          insufficient.push(s.name);
+          // pega o que tiver, mesmo abaixo do alvo
+          if (ids?.length) {
+            const shuffled = [...ids].sort(() => Math.random() - 0.5);
+            pickedIds.push(...shuffled.map((q) => q.id));
+          }
+          continue;
+        }
+        const shuffled = [...ids].sort(() => Math.random() - 0.5);
+        pickedIds.push(...shuffled.slice(0, PER_SUBJECT).map((q) => q.id));
       }
 
-      const final = picks.sort(() => Math.random() - 0.5).slice(0, TOTAL_QUESTIONS);
-      if (final.length < 5) {
+      if (insufficient.length) {
+        console.warn("Matérias com menos de", PER_SUBJECT, "questões:", insufficient);
+      }
+      if (pickedIds.length < 5) {
         toast.error("Banco de questões insuficiente para o diagnóstico.");
         return;
+      }
+
+      // 2) Busca as questões completas em uma única query
+      const { data: full } = await supabase
+        .from("questions")
+        .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, subjects:subject_id(id,name)")
+        .in("id", pickedIds);
+
+      if (!full?.length) {
+        toast.error("Falha ao carregar as questões.");
+        return;
+      }
+
+      // 3) Intercala matérias para não cair 2 da mesma seguidas
+      const bySubject = new Map<string, Question[]>();
+      for (const q of full as any[]) {
+        const arr = bySubject.get(q.subject_id) ?? [];
+        arr.push(q);
+        bySubject.set(q.subject_id, arr);
+      }
+      bySubject.forEach((arr) => arr.sort(() => Math.random() - 0.5));
+      const final: Question[] = [];
+      let added = true;
+      while (added) {
+        added = false;
+        for (const arr of bySubject.values()) {
+          const next = arr.shift();
+          if (next) { final.push(next); added = true; }
+        }
       }
       setQuestions(final);
       setIdx(0);
@@ -186,7 +223,7 @@ const Diagnostico = () => {
             Descubra em 5 minutos seu nível real de preparo.
           </p>
           <p className="text-sm text-white/70 mt-3 leading-relaxed">
-            {TOTAL_QUESTIONS} questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
+            12 questões no padrão IDECAN da banca. Ao final, você recebe seu <strong className="text-white">Índice de Prontidão</strong> e vê exatamente quais matérias podem te reprovar.
           </p>
 
           <ul className="mt-6 space-y-2 text-left text-sm">
