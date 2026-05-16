@@ -34,6 +34,7 @@ const App = () => (
           <OnboardingTour />
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
