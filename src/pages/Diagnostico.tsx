@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Target, ChevronRight, Loader2, CheckCircle2, XCircle, Crown, Lightbulb } from "lucide-react";
+import { Target, ChevronRight, Loader2, CheckCircle2, XCircle, Crown, Lightbulb, AlertTriangle } from "lucide-react";
 import { RichText } from "@/components/RichText";
 import { QuestionImage } from "@/components/QuestionImage";
 import { toast } from "sonner";
