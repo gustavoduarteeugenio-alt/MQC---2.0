@@ -10,7 +10,8 @@ const BENEFITS = [
   "Simulados ilimitados",
 ];
 
-const KIWIFY_URL = "https://pay.kiwify.com.br/PMLV49m";
+const MONTHLY_URL = "https://pay.kiwify.com.br/PMLV49m";
+const EXAM_URL = "https://pay.kiwify.com.br/5kq1jdL";
 
 interface PlanSelectionDialogProps {
   children: ReactNode;
