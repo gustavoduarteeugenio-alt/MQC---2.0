@@ -22,6 +22,7 @@ import { ManageUsers } from "@/components/admin/ManageUsers";
 import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
 import { SupportMessages } from "@/components/admin/SupportMessages";
+import { AccessRequests } from "@/components/admin/AccessRequests";
 
 type Subject = { id: string; name: string; slug: string };
 type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support";
@@ -73,7 +74,14 @@ const Admin = () => {
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
       case "admins": return <ManageAdmins />;
-      case "support": return <SupportMessages />;
+      case "support": return (
+        <div className="space-y-8">
+          <AccessRequests />
+          <div className="border-t border-border pt-6">
+            <SupportMessages />
+          </div>
+        </div>
+      );
       default: return null;
     }
   };
