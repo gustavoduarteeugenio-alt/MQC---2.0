@@ -13,11 +13,30 @@ type SubjectStat = { name: string; total: number; correct: number; accuracy: num
 const MIN_ATTEMPTS = 3; // mínimo de questões pra entrar no ranking
 
 const Index = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, isPremium } = useProfile();
   const [stats, setStats] = useState({ total: 0, correct: 0 });
   const [best, setBest] = useState<SubjectStat | null>(null);
   const [worst, setWorst] = useState<SubjectStat | null>(null);
+  const [training, setTraining] = useState(false);
+
+  const handleTrainNow = async () => {
+    if (!user || training) return;
+    setTraining(true);
+    try {
+      const subjectStats = await getSubjectStats(user.id);
+      const next = pickNextSubject({ stats: subjectStats });
+      if (!next) {
+        toast.error("Nenhuma matéria disponível ainda.");
+        navigate("/materias");
+        return;
+      }
+      navigate(`/questao/${next.slug}`);
+    } finally {
+      setTraining(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
