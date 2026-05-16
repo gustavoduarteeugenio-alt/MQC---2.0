@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Target, ChevronRight, Loader2, CheckCircle2, XCircle, Crown, Lightbulb } from "lucide-react";
+import { Target, ChevronRight, Loader2, CheckCircle2, XCircle, Crown, Lightbulb, AlertTriangle } from "lucide-react";
 import { RichText } from "@/components/RichText";
 import { QuestionImage } from "@/components/QuestionImage";
 import { toast } from "sonner";
@@ -167,8 +167,10 @@ const Diagnostico = () => {
 
   const confirm = () => {
     if (!selected || !current || confirmed) return;
-    const isCorrect = selected === current.correct_answer;
-    setAnswers((prev) => ({ ...prev, [current.id]: selected }));
+    const correct = (current.correct_answer || "").toUpperCase();
+    const sel = selected.toUpperCase();
+    const isCorrect = sel === correct;
+    setAnswers((prev) => ({ ...prev, [current.id]: sel }));
     setConfirmed(true);
     if (isCorrect) setSessionCorrect((n) => n + 1);
     else setSessionWrong((n) => n + 1);
@@ -193,16 +195,19 @@ const Diagnostico = () => {
       if (!sub) continue;
       const cur = bySub.get(sub.id) ?? { subject_id: sub.id, subject_name: sub.name, total: 0, correct: 0, pct: 0 };
       cur.total += 1;
-      if (finalAnswers[q.id] === q.correct_answer) cur.correct += 1;
+      const correctLetter = (q.correct_answer || "").toUpperCase();
+      const givenLetter = (finalAnswers[q.id] || "").toUpperCase();
+      if (givenLetter && givenLetter === correctLetter) cur.correct += 1;
       bySub.set(sub.id, cur);
     }
     const finalRes: SubjectResult[] = Array.from(bySub.values())
-      .map((r) => ({ ...r, pct: Math.round((r.correct / r.total) * 100) }))
+      .map((r) => ({ ...r, pct: r.total ? Math.round((r.correct / r.total) * 100) : 0 }))
       .sort((a, b) => a.pct - b.pct);
 
     setResults(finalRes);
 
     const totalCorrect = finalRes.reduce((s, r) => s + r.correct, 0);
+    const totalQ = finalRes.reduce((s, r) => s + r.total, 0);
     if (sessionId) {
       await supabase
         .from("diagnostic_sessions")
@@ -210,10 +215,23 @@ const Diagnostico = () => {
           answers: Object.entries(finalAnswers).map(([qid, ans]) => ({ qid, ans })) as any,
           results: finalRes as any,
           correct: totalCorrect,
+          total: totalQ,
           completed_at: new Date().toISOString(),
         })
         .eq("id", sessionId);
       localStorage.setItem(PENDING_KEY, getToken());
+    }
+
+    // Se já tem usuário logado, persiste no profile para não refazer
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      await supabase
+        .from("profiles")
+        .update({
+          diagnostic_completed_at: new Date().toISOString(),
+          diagnostic_results: { results: finalRes, correct: totalCorrect, total: totalQ } as any,
+        })
+        .eq("user_id", userData.user.id);
     }
 
     setStage("result");
@@ -305,8 +323,9 @@ const Diagnostico = () => {
           <div className="mt-4 space-y-2.5">
             {options.map((o) => {
               const letter = o.letter.toUpperCase();
-              const isCorrect = o.letter === current.correct_answer.toLowerCase() || letter === current.correct_answer;
-              const isSel = selected === o.letter;
+              const correctUp = (current.correct_answer || "").toUpperCase();
+              const isCorrect = letter === correctUp;
+              const isSel = selected?.toUpperCase() === letter;
               const showResult = confirmed;
               return (
                 <button
@@ -385,6 +404,13 @@ const Diagnostico = () => {
   const weak = results.filter((r) => r.pct < MASTERY_TARGET);
   const strong = results.filter((r) => r.pct >= MASTERY_TARGET);
 
+  // Pior matéria — desempate prioriza Proteção e Defesa Civil (diferencial do edital)
+  const worstPct = results.length ? Math.min(...results.map((r) => r.pct)) : 0;
+  const worstTied = results.filter((r) => r.pct === worstPct);
+  const worst =
+    worstTied.find((r) => /prote/i.test(r.subject_name) && /defesa civil/i.test(r.subject_name)) ||
+    worstTied[Math.floor(Math.random() * worstTied.length)];
+
   const tone: "success" | "warning" | "destructive" =
     overallPct >= MASTERY_TARGET ? "success" : overallPct >= 60 ? "warning" : "destructive";
 
@@ -441,6 +467,17 @@ const Diagnostico = () => {
       </header>
 
       <main className="px-5 py-5 max-w-xl mx-auto w-full space-y-4">
+        {worst && (
+          <section className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4">
+            <div className="flex items-center gap-2 stencil text-destructive text-xs">
+              <AlertTriangle className="w-4 h-4" /> Matéria mais crítica
+            </div>
+            <h3 className="font-display text-lg font-bold mt-1">{worst.subject_name}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Você acertou <strong className="text-foreground">{worst.correct} de {worst.total}</strong> ({worst.pct}%) nessa disciplina. É por aqui que seu treino precisa começar.
+            </p>
+          </section>
+        )}
         {weak.length > 0 && (
           <section>
             <h2 className="stencil text-xs text-destructive mb-2 flex items-center gap-2">
