@@ -138,21 +138,21 @@ const Index = () => {
         </section>
 
         {/* CTA principal */}
-        <Link to="/materias" className="block group">
+        <button onClick={handleTrainNow} disabled={training} className="block w-full text-left group disabled:opacity-70">
           <div className="bg-gradient-flame rounded-3xl p-6 shadow-flame text-white relative overflow-hidden">
             <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
             <div className="relative flex items-center justify-between">
               <div>
                 <p className="stencil text-[11px] opacity-90 tracking-widest">Próxima missão</p>
                 <h3 className="font-display text-2xl font-bold mt-1.5">Treinar agora</h3>
-                <p className="text-sm opacity-90 mt-1">Escolha uma matéria e enfrente o gabarito.</p>
+                <p className="text-sm opacity-90 mt-1">Vamos direto pra matéria que mais precisa de você.</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center group-hover:translate-x-1 transition">
                 <ChevronRight className="w-6 h-6" />
               </div>
             </div>
           </div>
-        </Link>
+        </button>
       </main>
     </AppShell>
   );
