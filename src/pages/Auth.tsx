@@ -141,8 +141,12 @@ const Auth = () => {
           return;
         }
         if (signUpData.user) await linkPendingDiagnostic(signUpData.user.id);
-        toast.success("Conta criada! Bem-vindo, recruta.");
-        navigate("/selecionar-plano", { replace: true });
+        // Conta criada mas precisa de aprovação do admin
+        await supabase.auth.signOut();
+        toast.success("Conta criada! Aguarde a liberação do administrador para acessar.");
+        setMode("signin");
+        setPassword("");
+        setConfirmPassword("");
       } else {
         const parsed = signInSchema.safeParse({ email, password });
         if (!parsed.success) {
@@ -157,7 +161,20 @@ const Auth = () => {
           toast.error("Credenciais inválidas.");
           return;
         }
-        if (signInData.user) await linkPendingDiagnostic(signInData.user.id);
+        // Checar se a conta foi aprovada pelo admin
+        if (signInData.user) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("approved" as any)
+            .eq("user_id", signInData.user.id)
+            .maybeSingle();
+          if (!prof || (prof as any).approved !== true) {
+            await supabase.auth.signOut();
+            toast.error("Sua conta ainda não foi liberada pelo administrador.");
+            return;
+          }
+          await linkPendingDiagnostic(signInData.user.id);
+        }
         navigate("/", { replace: true });
       }
     } finally {

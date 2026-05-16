@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Crown, ShieldOff, Loader2, Users, Calendar, RotateCcw } from "lucide-react";
+import { Search, Crown, ShieldOff, Loader2, Users, Calendar, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -20,6 +20,7 @@ type UserRow = {
   premium_since: string | null;
   origem: string | null;
   trial_started_at: string | null;
+  approved: boolean;
 };
 
 const PLAN_LABEL: Record<PlanType, string> = {
@@ -45,7 +46,7 @@ export const ManageUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, plan, premium_until, premium_since, origem, trial_started_at" as any)
+      .select("user_id, full_name, email, plan, premium_until, premium_since, origem, trial_started_at, approved" as any)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
@@ -133,6 +134,22 @@ export const ManageUsers = () => {
     setResetTarget(null);
   };
 
+  const toggleApproval = async (u: UserRow) => {
+    setUpdatingId(u.user_id);
+    const newVal = !u.approved;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ approved: newVal } as any)
+      .eq("user_id", u.user_id);
+    setUpdatingId(null);
+    if (error) {
+      toast.error("Falha ao atualizar acesso: " + error.message);
+      return;
+    }
+    toast.success(newVal ? `${u.email ?? "Usuário"} liberado para entrar.` : `Acesso revogado para ${u.email ?? "usuário"}.`);
+    setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, approved: newVal } : x)));
+  };
+
   return (
     <div className="bg-card border border-border rounded-2xl p-4 shadow-card space-y-4">
       <div className="flex items-center gap-2">
@@ -216,6 +233,15 @@ export const ManageUsers = () => {
                       </span>
                     </p>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      {u.approved ? (
+                        <Badge className="bg-success text-success-foreground stencil text-[10px]">
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Liberado
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive" className="stencil text-[10px]">
+                          <XCircle className="w-3 h-3 mr-1" /> Aguardando liberação
+                        </Badge>
+                      )}
                       {isPremium ? (
                         <Badge className="bg-primary text-primary-foreground stencil text-[10px]">
                           <Crown className="w-3 h-3 mr-1" /> {PLAN_LABEL[u.plan]}
@@ -236,6 +262,16 @@ export const ManageUsers = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => toggleApproval(u)}
+                    className={u.approved
+                      ? "bg-muted hover:bg-muted/80 text-foreground stencil text-[11px]"
+                      : "bg-success hover:bg-success/90 text-success-foreground stencil text-[11px]"}
+                  >
+                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : u.approved ? <><XCircle className="w-3 h-3 mr-1" /> Revogar acesso</> : <><CheckCircle2 className="w-3 h-3 mr-1" /> Liberar acesso</>}
+                  </Button>
                   <Button
                     size="sm"
                     disabled={busy}
