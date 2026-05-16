@@ -301,7 +301,7 @@ const Question = () => {
         ) : (
           <Button onClick={next}
             className="w-full h-13 py-3.5 bg-secondary text-secondary-foreground font-display text-base stencil shadow-card">
-            {index + 1 >= questions.length ? "Finalizar treino" : "Próxima questão →"}
+            Próxima questão →
           </Button>
         )}
       </div>
