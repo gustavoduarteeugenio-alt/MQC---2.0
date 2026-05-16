@@ -189,6 +189,35 @@ const Auth = () => {
     }
   };
 
+  const sendSupport = async () => {
+    if (!pendingEmail) return;
+    const msg = supportMessage.trim();
+    if (msg.length < 3) {
+      toast.error("Escreva uma mensagem antes de enviar.");
+      return;
+    }
+    setSupportSending(true);
+    const { error } = await (supabase as any).from("tickets_suporte").insert({
+      user_id: null,
+      email_usuario: pendingEmail,
+      mensagem: msg,
+    });
+    setSupportSending(false);
+    if (error) {
+      toast.error("Não foi possível enviar agora. Tente novamente em instantes.");
+      return;
+    }
+    setSupportSent(true);
+    setSupportMessage("");
+    toast.success("Mensagem enviada! Analisaremos seu acesso prioritariamente.");
+  };
+
+  const backToLogin = () => {
+    setPendingEmail(null);
+    setSupportSent(false);
+    setSupportMessage("");
+  };
+
   return (
     <div className="app-shell bg-gradient-night text-white flex flex-col">
       <div className="flex-1 flex flex-col justify-between px-6 pt-12 pb-6">
