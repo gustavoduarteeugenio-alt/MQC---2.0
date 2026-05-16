@@ -4,7 +4,7 @@ import * as LucideIcons from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { ChevronRight } from "lucide-react";
-import { AdBanner } from "@/components/AdBanner";
+
 
 type Subject = { id: string; name: string; slug: string; icon: string | null; questionCount?: number };
 
