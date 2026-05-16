@@ -265,27 +265,14 @@ const Question = () => {
         {confirmed && (
           <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
             <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
-              <Lightbulb className="w-4 h-4" /> Gabarito {fullExplanations ? "comentado" : "(resumido)"}
+              <Lightbulb className="w-4 h-4" /> Gabarito comentado
             </div>
             <div className="text-sm leading-relaxed">
               <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
-              {fullExplanations ? (
-                <RichText content={current.explanation} />
-              ) : (
-                <span className="opacity-80">
-                  Comentário completo do professor disponível apenas no Premium.
-                </span>
-              )}
+              <RichText content={current.explanation} />
             </div>
-            {fullExplanations && current.comment_image_url && (
+            {current.comment_image_url && (
               <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
-            )}
-            {!fullExplanations && (
-              <PlanSelectionDialog>
-                <button className="mt-3 w-full flex items-center justify-center gap-1.5 bg-gradient-flame text-white rounded-xl py-2.5 font-display stencil text-xs shadow-flame">
-                  <Crown className="w-4 h-4" /> Desbloquear gabarito comentado
-                </button>
-              </PlanSelectionDialog>
             )}
           </div>
         )}
