@@ -1,55 +1,56 @@
-## Objetivo
+## Problema
 
-Permitir que o aluno encerre o treino a qualquer momento e veja uma tela de resumo com feedback baseado no que respondeu na sessão.
+Hoje o resultado do diagnóstico calcula `overallPct` como **média das porcentagens por matéria** (`sum(pct)/n_subjects`). Isso distorce o número real: se uma matéria tem 2 questões e outra 1, todas pesam igual. O feedback final ("você passaria/reprovaria") usa esse valor enviesado, então não reflete o acerto real do aluno no banco de questões.
 
-## Mudanças
+Além disso, o card de erros/acertos da tela de quiz já mostra contagem real, mas a tela de resultado nunca exibe o total de **acertos vs erros absolutos** — só percentual por matéria. O usuário quer que o feedback final seja baseado no **percentual real de acertos** sobre o total respondido.
 
-### 1. `src/pages/Question.tsx`
+## Plano
 
-- **Remover o botão de voltar** (seta `←`) do `TopBar`. O título da matéria fica centralizado e o cronômetro à direita.
-- Trocar `sessionCorrect`/`sessionWrong` por um mapa `sessionBySubject: { [subjectId]: { name, slug, correct, wrong } }` atualizado a cada `confirm()`. O totalizador no topo continua mostrando acertos/erros somados.
-- Adicionar um botão **"Encerrar treino"** grande, largura total, **logo abaixo** do botão "Próxima questão" (e também abaixo do "Confirmar resposta" quando ainda não confirmou). Visual secundário/outline para não competir com o CTA principal.
-- Visível só depois da 1ª resposta na sessão (`totalAnswered > 0`).
-- Ao clicar: `navigate("/treino/resumo", { state: { bySubject: [...], totalCorrect, totalWrong, durationSeconds } })`.
+### 1. `src/pages/Diagnostico.tsx` — cálculo correto
 
-### 2. `src/pages/TrainingSummary.tsx` (novo)
+Substituir, no bloco RESULT (linha 381):
 
-Tela de resumo no mesmo estilo da Home:
-
-- Cabeçalho com gradient: "Treino encerrado" + tempo total.
-- Card grande de acerto: `X de Y acertos` + percentual.
-- Cards:
-  - **Foco agora**: matéria com PIOR % na sessão (destaque vermelho, ícone alvo).
-  - **Mandando bem**: matéria com MELHOR % na sessão (destaque verde, ícone troféu).
-  - Se só houve 1 matéria, mostra apenas o desempenho dela.
-- Lista compacta de todas as matérias da sessão com seu %.
-- Frase de feedback dinâmica:
-  - `≥80%` → "Excelente, soldado! Mantenha o ritmo."
-  - `50–79%` → "Bom desempenho. Foque em {pior} para subir o índice."
-  - `<50%` → "Hora de reforçar a base. Comece por {pior}."
-- Dois CTAs:
-  - **"Treinar a matéria fraca"** → `/questao/{slug-da-pior}`.
-  - **"Voltar para o início"** → `/`.
-
-Se acessada sem `location.state` → redireciona para `/`.
-
-### 3. `src/App.tsx`
-
-Registrar `<Route path="/treino/resumo" element={<TrainingSummary />} />` no bloco autenticado.
-
-## Dados passados no `navigate(state)`
-
-```
-{
-  durationSeconds: number,
-  totalCorrect: number,
-  totalWrong: number,
-  bySubject: [{ id, name, slug, correct, wrong, accuracy }]
-}
+```ts
+const overall = results.reduce((s, r) => s + r.pct, 0) / Math.max(1, results.length);
 ```
 
-## O que NÃO muda
+por cálculo baseado em totais absolutos:
 
-- Banco de dados (sem migração).
-- Lógica de `pickNextSubject`.
-- Layout do enunciado e das alternativas.
+```ts
+const totalQuestions = results.reduce((s, r) => s + r.total, 0);
+const totalCorrect   = results.reduce((s, r) => s + r.correct, 0);
+const totalWrong     = totalQuestions - totalCorrect;
+const overallPct     = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+```
+
+### 2. Faixas de feedback baseadas em % real
+
+Manter 3 faixas, agora ancoradas no percentual real:
+
+- **≥ 80%** → "Prontidão: X% — você passaria hoje." (verde)
+- **60–79%** → "Prontidão: X% — você está perto, mas ainda reprovaria." (amarelo)
+- **< 60%** → "Prontidão: X% — se a prova fosse hoje, você não passaria." (vermelho)
+
+Subtexto usa `totalCorrect`/`totalWrong` para ficar concreto:
+"Você acertou **{totalCorrect} de {totalQuestions}** ({overallPct}%). {weak.length} matéria(s) abaixo da meta."
+
+### 3. Card-resumo no topo do resultado
+
+Adicionar no header do estágio `result`, logo abaixo do título, um par de chips (mesmo visual do quiz) com:
+- Acertos: `{totalCorrect}` (verde)
+- Erros: `{totalWrong}` (vermelho)
+- % geral: barra de progresso colorida conforme a faixa (verde/amarelo/vermelho)
+
+### 4. Persistência consistente
+
+No `next()` (linha 205), já gravamos `correct: totalCorrect`. Garantir que esse total venha do mesmo cálculo (soma dos `correct` por matéria, não de `sessionCorrect` que poderia divergir se o usuário trocar respostas — hoje não troca, mas blindar). Nenhuma mudança de schema.
+
+### 5. Sem mudança em
+
+- Seleção de 2 questões por matéria (já correto).
+- RLS, tabela `diagnostic_sessions`, fluxo de intro/quiz.
+- Lista de matérias fracas/fortes (continua usando `MASTERY_TARGET = 80`).
+
+## Arquivos
+
+- `src/pages/Diagnostico.tsx` (apenas bloco RESULT + pequeno ajuste no `next()`)

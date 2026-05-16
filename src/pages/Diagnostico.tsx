@@ -378,17 +378,33 @@ const Diagnostico = () => {
   }
 
   // ---------------- RESULT ----------------
-  const overall = results.reduce((s, r) => s + r.pct, 0) / Math.max(1, results.length);
+  const totalQuestions = results.reduce((s, r) => s + r.total, 0);
+  const totalCorrect = results.reduce((s, r) => s + r.correct, 0);
+  const totalWrong = totalQuestions - totalCorrect;
+  const overallPct = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
   const weak = results.filter((r) => r.pct < MASTERY_TARGET);
   const strong = results.filter((r) => r.pct >= MASTERY_TARGET);
 
-  const overallPct = Math.round(overall);
+  const tone: "success" | "warning" | "destructive" =
+    overallPct >= MASTERY_TARGET ? "success" : overallPct >= 60 ? "warning" : "destructive";
+
   const verdict =
     overallPct >= MASTERY_TARGET
-      ? { label: `Prontidão: ${overallPct}% — você passaria hoje.`, sub: "Você está dentro da meta. Hora de blindar o resultado até a prova." }
+      ? {
+          label: `Prontidão: ${overallPct}% — você passaria hoje.`,
+          sub: `Você acertou ${totalCorrect} de ${totalQuestions} questões. Hora de blindar o resultado até a prova.`,
+        }
       : overallPct >= 60
-      ? { label: `Prontidão: ${overallPct}% — você está perto, mas ainda reprovaria.`, sub: `${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar. Veja quais e foque nelas agora.` }
-      : { label: `Prontidão: ${overallPct}% — se a prova fosse hoje, você não passaria.`, sub: `${weak.length} matéria${weak.length > 1 ? "s" : ""} estão abaixo da meta. Você precisa virar o jogo na reta final.` };
+      ? {
+          label: `Prontidão: ${overallPct}% — você está perto, mas ainda reprovaria.`,
+          sub: `Você acertou ${totalCorrect} de ${totalQuestions} (${totalWrong} erro${totalWrong === 1 ? "" : "s"}). ${weak.length} matéria${weak.length > 1 ? "s" : ""} podem te derrubar.`,
+        }
+      : {
+          label: `Prontidão: ${overallPct}% — se a prova fosse hoje, você não passaria.`,
+          sub: `Você acertou ${totalCorrect} de ${totalQuestions} (${totalWrong} erro${totalWrong === 1 ? "" : "s"}). ${weak.length} matéria${weak.length > 1 ? "s" : ""} abaixo da meta — você precisa virar o jogo na reta final.`,
+        };
+
+  const barColor = tone === "success" ? "bg-success" : tone === "warning" ? "bg-warning" : "bg-destructive";
 
   return (
     <div className="app-shell bg-background flex flex-col">
@@ -399,6 +415,28 @@ const Diagnostico = () => {
             {verdict.label}
           </h1>
           <p className="text-sm text-white/75 mt-2">{verdict.sub}</p>
+
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
+              <CheckCircle2 className="w-4 h-4 text-success" />
+              <span className="stencil text-[11px] text-white/70 tracking-widest">Acertos</span>
+              <span className="font-display font-bold text-success">{totalCorrect}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
+              <XCircle className="w-4 h-4 text-destructive" />
+              <span className="stencil text-[11px] text-white/70 tracking-widest">Erros</span>
+              <span className="font-display font-bold text-destructive">{totalWrong}</span>
+            </div>
+          </div>
+
+          <div className="mt-3 h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className={`h-full ${barColor} transition-all`} style={{ width: `${overallPct}%` }} />
+          </div>
+          <div className="flex justify-between text-[11px] text-white/60 mt-1 stencil">
+            <span>0%</span>
+            <span>Meta {MASTERY_TARGET}%</span>
+            <span>100%</span>
+          </div>
         </div>
       </header>
 
