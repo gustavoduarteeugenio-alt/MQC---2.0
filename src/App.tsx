@@ -21,7 +21,7 @@ import Support from "./pages/Support.tsx";
 import Diagnostico from "./pages/Diagnostico.tsx";
 import SelecionarPlano from "./pages/SelecionarPlano.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import { OnboardingTour } from "@/components/OnboardingTour";
+
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,7 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <AuthProvider>
-          <OnboardingTour />
+          
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/diagnostico" element={<Diagnostico />} />
