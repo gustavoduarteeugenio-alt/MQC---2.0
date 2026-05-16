@@ -35,6 +35,8 @@ const Question = () => {
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
   const [correctStreak, setCorrectStreak] = useState(0);
+  const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [sessionWrong, setSessionWrong] = useState(0);
   const startRef = useRef<number>(Date.now());
 
   const current = questions[index];
@@ -90,6 +92,8 @@ const Question = () => {
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
     setCorrectStreak((s) => (isCorrect ? s + 1 : 0));
+    if (isCorrect) setSessionCorrect((n) => n + 1);
+    else setSessionWrong((n) => n + 1);
     await Promise.all([
       supabase.from("attempts").insert({
         user_id: user.id,
@@ -174,8 +178,17 @@ const Question = () => {
       />
 
       <div className="px-5 pt-3">
-        <div className="flex items-center justify-between text-xs stencil text-muted-foreground">
-          <span>Questão {index + 1}</span>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
+            <CheckCircle2 className="w-4 h-4 text-success" />
+            <span className="stencil text-[11px] text-muted-foreground tracking-widest">Acertos</span>
+            <span className="font-display font-bold text-success">{sessionCorrect}</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
+            <XCircle className="w-4 h-4 text-destructive" />
+            <span className="stencil text-[11px] text-muted-foreground tracking-widest">Erros</span>
+            <span className="font-display font-bold text-destructive">{sessionWrong}</span>
+          </div>
         </div>
       </div>
 
