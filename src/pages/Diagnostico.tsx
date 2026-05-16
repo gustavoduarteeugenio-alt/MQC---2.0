@@ -459,10 +459,12 @@ const Diagnostico = () => {
             <li className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> Diagnósticos e simulados no padrão IDECAN</li>
           </ul>
           <Button
-            onClick={() => navigate("/auth?signup=1&from=diag")}
+            asChild
             className="w-full h-12 mt-4 bg-white text-foreground hover:bg-white/90 font-display stencil"
           >
-            Liberar meu treino focado <ChevronRight className="w-4 h-4 ml-1" />
+            <a href="https://pay.kiwify.com.br/5kq1jdL" target="_blank" rel="noopener noreferrer">
+              Liberar meu treino focado <ChevronRight className="w-4 h-4 ml-1" />
+            </a>
           </Button>
         </div>
 
