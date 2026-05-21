@@ -126,6 +126,7 @@ export type Database = {
           plan: Database["public"]["Enums"]["plan_type"]
           premium_since: string | null
           premium_until: string | null
+          show_in_ranking: boolean
           trial_started_at: string | null
           updated_at: string
           user_id: string
@@ -143,6 +144,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
+          show_in_ranking?: boolean
           trial_started_at?: string | null
           updated_at?: string
           user_id: string
@@ -160,6 +162,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
+          show_in_ranking?: boolean
           trial_started_at?: string | null
           updated_at?: string
           user_id?: string
@@ -511,6 +514,24 @@ export type Database = {
     }
     Functions: {
       expire_premium_users: { Args: never; Returns: undefined }
+      get_my_training_rank: {
+        Args: never
+        Returns: {
+          correct_count: number
+          rank_position: number
+          total_users: number
+        }[]
+      }
+      get_training_ranking: {
+        Args: { _limit?: number }
+        Returns: {
+          correct_count: number
+          display_name: string
+          is_anonymous: boolean
+          rank_position: number
+          user_id: string
+        }[]
+      }
       grant_admin_by_email: { Args: { _email: string }; Returns: Json }
       grant_role_by_email: {
         Args: { _email: string; _role: Database["public"]["Enums"]["app_role"] }

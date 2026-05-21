@@ -28,6 +28,7 @@ import TrialExpired from "./pages/TrialExpired.tsx";
 import Support from "./pages/Support.tsx";
 import Diagnostico from "./pages/Diagnostico.tsx";
 import SelecionarPlano from "./pages/SelecionarPlano.tsx";
+import Ranking from "./pages/Ranking.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/simulados" element={<ProtectedRoute><Simulados /></ProtectedRoute>} />
             <Route path="/simulado/:id" element={<ProtectedRoute><SimuladoRunner /></ProtectedRoute>} />
             <Route path="/simulado/:id/revisar" element={<ProtectedRoute><SimuladoRunner /></ProtectedRoute>} />
+            <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
