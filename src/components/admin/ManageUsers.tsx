@@ -38,8 +38,6 @@ export const ManageUsers = () => {
   const [query, setQuery] = useState("");
   const [originFilter, setOriginFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
-  const [resetting, setResetting] = useState(false);
 
   const load = async () => {
     setLoading(true);
