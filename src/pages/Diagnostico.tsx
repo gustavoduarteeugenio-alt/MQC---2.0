@@ -305,75 +305,40 @@ const Diagnostico = () => {
           <div className="mt-4 space-y-2.5">
             {options.map((o) => {
               const letter = o.letter.toUpperCase();
-              const correctUp = (current.correct_answer || "").toUpperCase();
-              const isCorrect = letter === correctUp;
               const isSel = selected?.toUpperCase() === letter;
-              const showResult = confirmed;
               return (
                 <button
                   key={o.letter}
                   type="button"
-                  disabled={confirmed}
                   onClick={() => setSelected(o.letter)}
                   className={cn(
                     "w-full text-left flex items-start gap-3 p-4 rounded-xl border-2 transition-all",
-                    !showResult && isSel && "border-primary bg-primary/5",
-                    !showResult && !isSel && "border-border bg-card hover:border-primary/40",
-                    showResult && isCorrect && "border-success bg-success/10",
-                    showResult && !isCorrect && isSel && "border-destructive bg-destructive/10",
-                    showResult && !isCorrect && !isSel && "border-border bg-card opacity-60"
+                    isSel ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
                   )}
                 >
                   <span className={cn(
                     "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold",
-                    !showResult && isSel && "bg-primary text-primary-foreground",
-                    !showResult && !isSel && "bg-muted text-foreground",
-                    showResult && isCorrect && "bg-success text-success-foreground",
-                    showResult && !isCorrect && isSel && "bg-destructive text-destructive-foreground",
+                    isSel ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                   )}>
-                    {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
-                     showResult && !isCorrect && isSel ? <XCircle className="w-4 h-4" /> : letter}
+                    {letter}
                   </span>
                   <RichText content={o.text!} className="text-sm leading-snug pt-1 flex-1" />
                 </button>
               );
             })}
           </div>
-
-          {confirmed && (
-            <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
-              <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
-                <Lightbulb className="w-4 h-4" /> Gabarito comentado
-              </div>
-              <div className="text-sm leading-relaxed">
-                <strong className="font-display">Resposta correta: {current.correct_answer.toUpperCase()}.</strong>{" "}
-                <RichText content={current.explanation} />
-              </div>
-              {current.comment_image_url && (
-                <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
-              )}
-            </div>
-          )}
         </main>
 
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent">
-          {!confirmed ? (
-            <Button
-              onClick={confirm}
-              disabled={!selected}
-              className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50"
-            >
-              Confirmar resposta
-            </Button>
-          ) : (
-            <Button
-              onClick={next}
-              className="w-full h-13 py-3.5 bg-secondary text-secondary-foreground font-display text-base stencil shadow-card"
-            >
-              {isLast ? "Ver meu resultado" : "Próxima questão →"}
-            </Button>
-          )}
+          <Button
+            onClick={confirm}
+            disabled={!selected}
+            className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50"
+          >
+            {isLast ? "Ver meu resultado" : "Próxima questão →"}
+          </Button>
         </div>
+
       </div>
     );
   }
