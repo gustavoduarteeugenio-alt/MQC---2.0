@@ -181,7 +181,7 @@ const Diagnostico = () => {
       return;
     }
 
-    // Última: calcula resultado e persiste
+    // Última: calcula resultado e persiste, mas abre tela de captura de lead antes de exibir
     const finalAnswers = answers;
     const bySub = new Map<string, SubjectResult>();
     for (const q of questions) {
@@ -216,7 +216,6 @@ const Diagnostico = () => {
       localStorage.setItem(PENDING_KEY, getToken());
     }
 
-    // Se já tem usuário logado, persiste no profile para não refazer
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
       await supabase
@@ -226,9 +225,12 @@ const Diagnostico = () => {
           diagnostic_results: { results: finalRes, correct: totalCorrect, total: totalQ } as any,
         })
         .eq("user_id", userData.user.id);
+      // Usuário logado pula a captura
+      setStage("result");
+      return;
     }
 
-    setStage("result");
+    setStage("lead");
   };
 
   // ---------------- INTRO ----------------
