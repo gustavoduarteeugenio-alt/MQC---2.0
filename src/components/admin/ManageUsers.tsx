@@ -4,10 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Crown, ShieldOff, Loader2, Users, Calendar, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Crown, Loader2, Users, Calendar, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type PlanType = "basic" | "premium" | "monthly" | "quarterly";
 
@@ -39,8 +37,6 @@ export const ManageUsers = () => {
   const [query, setQuery] = useState("");
   const [originFilter, setOriginFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
-  const [resetting, setResetting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -117,22 +113,6 @@ export const ManageUsers = () => {
     );
   };
 
-  const resetTrial = async (u: UserRow) => {
-    setResetting(true);
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ trial_started_at: now, plan: u.plan === "basic" ? "basic" : u.plan, premium_until: u.plan === "basic" ? null : u.premium_until } as any)
-      .eq("user_id", u.user_id);
-    setResetting(false);
-    if (error) {
-      toast.error("Falha ao reiniciar teste: " + error.message);
-      return;
-    }
-    toast.success("Período de teste reiniciado com sucesso!");
-    setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, trial_started_at: now } : x)));
-    setResetTarget(null);
-  };
 
   const toggleApproval = async (u: UserRow) => {
     setUpdatingId(u.user_id);
@@ -288,54 +268,12 @@ export const ManageUsers = () => {
                   >
                     {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Crown className="w-3 h-3 mr-1" /> Tornar Trimestral</>}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !isPremium}
-                    onClick={() => setPlan(u, "basic", null)}
-                    className="stencil text-[11px]"
-                  >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ShieldOff className="w-3 h-3 mr-1" /> Restringir p/ Básico</>}
-                  </Button>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => setResetTarget(u)}
-                          className="stencil text-[11px]"
-                        >
-                          <RotateCcw className="w-3 h-3 mr-1" /> Reiniciar Trial
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Reiniciar 5 dias de teste</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-
-      <AlertDialog open={!!resetTarget} onOpenChange={(o) => !o && setResetTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reiniciar período de teste</AlertDialogTitle>
-            <AlertDialogDescription>
-              Deseja conceder mais 5 dias de acesso gratuito para {resetTarget?.email ?? "este usuário"}?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction disabled={resetting} onClick={(e) => { e.preventDefault(); resetTarget && resetTrial(resetTarget); }}>
-              {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
