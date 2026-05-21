@@ -38,7 +38,7 @@ type SubjectResult = {
   pct: number;
 };
 
-type Stage = "intro" | "quiz" | "result";
+type Stage = "intro" | "quiz" | "lead" | "result";
 
 const getToken = () => {
   let t = localStorage.getItem(TOKEN_KEY);
