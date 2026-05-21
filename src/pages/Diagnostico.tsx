@@ -84,20 +84,21 @@ const Diagnostico = () => {
         return;
       }
 
-      // Para cada matéria, sorteia exatamente PER_SUBJECT. Pula matérias sem banco suficiente.
+      // Seleção DETERMINÍSTICA: sempre as mesmas PER_SUBJECT questões por matéria,
+      // ordenadas por id, para garantir que todos os candidatos respondam o mesmo diagnóstico.
       const pickedIds: string[] = [];
       const insufficient: string[] = [];
       for (const s of subs) {
         const { data: ids } = await supabase
           .from("questions")
           .select("id")
-          .eq("subject_id", s.id);
+          .eq("subject_id", s.id)
+          .order("id", { ascending: true });
         if (!ids || ids.length < PER_SUBJECT) {
           insufficient.push(s.name);
           continue;
         }
-        const shuffled = [...ids].sort(() => Math.random() - 0.5);
-        pickedIds.push(...shuffled.slice(0, PER_SUBJECT).map((q) => q.id));
+        pickedIds.push(...ids.slice(0, PER_SUBJECT).map((q) => q.id));
       }
 
       if (insufficient.length) {
@@ -118,14 +119,14 @@ const Diagnostico = () => {
         return;
       }
 
-      // Intercala matérias
+      // Intercala matérias de forma determinística (sem shuffle)
       const bySubject = new Map<string, Question[]>();
       for (const q of full as any[]) {
         const arr = bySubject.get(q.subject_id) ?? [];
         arr.push(q);
         bySubject.set(q.subject_id, arr);
       }
-      bySubject.forEach((arr) => arr.sort(() => Math.random() - 0.5));
+      bySubject.forEach((arr) => arr.sort((a, b) => a.id.localeCompare(b.id)));
       const final: Question[] = [];
       let added = true;
       while (added) {
@@ -135,6 +136,7 @@ const Diagnostico = () => {
           if (next) { final.push(next); added = true; }
         }
       }
+
       setQuestions(final);
       setIdx(0);
       setAnswers({});
