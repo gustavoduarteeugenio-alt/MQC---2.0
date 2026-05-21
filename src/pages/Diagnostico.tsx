@@ -84,20 +84,21 @@ const Diagnostico = () => {
         return;
       }
 
-      // Para cada matéria, sorteia exatamente PER_SUBJECT. Pula matérias sem banco suficiente.
+      // Seleção DETERMINÍSTICA: sempre as mesmas PER_SUBJECT questões por matéria,
+      // ordenadas por id, para garantir que todos os candidatos respondam o mesmo diagnóstico.
       const pickedIds: string[] = [];
       const insufficient: string[] = [];
       for (const s of subs) {
         const { data: ids } = await supabase
           .from("questions")
           .select("id")
-          .eq("subject_id", s.id);
+          .eq("subject_id", s.id)
+          .order("id", { ascending: true });
         if (!ids || ids.length < PER_SUBJECT) {
           insufficient.push(s.name);
           continue;
         }
-        const shuffled = [...ids].sort(() => Math.random() - 0.5);
-        pickedIds.push(...shuffled.slice(0, PER_SUBJECT).map((q) => q.id));
+        pickedIds.push(...ids.slice(0, PER_SUBJECT).map((q) => q.id));
       }
 
       if (insufficient.length) {
@@ -118,14 +119,14 @@ const Diagnostico = () => {
         return;
       }
 
-      // Intercala matérias
+      // Intercala matérias de forma determinística (sem shuffle)
       const bySubject = new Map<string, Question[]>();
       for (const q of full as any[]) {
         const arr = bySubject.get(q.subject_id) ?? [];
         arr.push(q);
         bySubject.set(q.subject_id, arr);
       }
-      bySubject.forEach((arr) => arr.sort(() => Math.random() - 0.5));
+      bySubject.forEach((arr) => arr.sort((a, b) => a.id.localeCompare(b.id)));
       const final: Question[] = [];
       let added = true;
       while (added) {
@@ -135,6 +136,7 @@ const Diagnostico = () => {
           if (next) { final.push(next); added = true; }
         }
       }
+
       setQuestions(final);
       setIdx(0);
       setAnswers({});
@@ -165,27 +167,22 @@ const Diagnostico = () => {
   }, [current]);
 
   const confirm = () => {
-    if (!selected || !current || confirmed) return;
-    const correct = (current.correct_answer || "").toUpperCase();
+    if (!selected || !current) return;
     const sel = selected.toUpperCase();
-    const isCorrect = sel === correct;
     setAnswers((prev) => ({ ...prev, [current.id]: sel }));
-    setConfirmed(true);
-  };
-
-  const next = async () => {
-    if (!current) return;
-
-    // Não é a última: avança
+    // Avança imediatamente — sem revelar gabarito durante o diagnóstico
     if (idx + 1 < questions.length) {
       setIdx(idx + 1);
       setSelected(null);
       setConfirmed(false);
       return;
     }
+    // Última questão: dispara o fluxo de finalização com a resposta atual já incluída
+    void finalize({ ...answers, [current.id]: sel });
+  };
 
-    // Última: calcula resultado e persiste, mas abre tela de captura de lead antes de exibir
-    const finalAnswers = answers;
+
+  const finalize = async (finalAnswers: Record<string, string>) => {
     const bySub = new Map<string, SubjectResult>();
     for (const q of questions) {
       const sub = q.subjects;
@@ -228,13 +225,13 @@ const Diagnostico = () => {
           diagnostic_results: { results: finalRes, correct: totalCorrect, total: totalQ } as any,
         })
         .eq("user_id", userData.user.id);
-      // Usuário logado pula a captura
       setStage("result");
       return;
     }
 
     setStage("lead");
   };
+
 
   // ---------------- INTRO ----------------
   if (stage === "intro") {
@@ -308,75 +305,40 @@ const Diagnostico = () => {
           <div className="mt-4 space-y-2.5">
             {options.map((o) => {
               const letter = o.letter.toUpperCase();
-              const correctUp = (current.correct_answer || "").toUpperCase();
-              const isCorrect = letter === correctUp;
               const isSel = selected?.toUpperCase() === letter;
-              const showResult = confirmed;
               return (
                 <button
                   key={o.letter}
                   type="button"
-                  disabled={confirmed}
                   onClick={() => setSelected(o.letter)}
                   className={cn(
                     "w-full text-left flex items-start gap-3 p-4 rounded-xl border-2 transition-all",
-                    !showResult && isSel && "border-primary bg-primary/5",
-                    !showResult && !isSel && "border-border bg-card hover:border-primary/40",
-                    showResult && isCorrect && "border-success bg-success/10",
-                    showResult && !isCorrect && isSel && "border-destructive bg-destructive/10",
-                    showResult && !isCorrect && !isSel && "border-border bg-card opacity-60"
+                    isSel ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
                   )}
                 >
                   <span className={cn(
                     "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold",
-                    !showResult && isSel && "bg-primary text-primary-foreground",
-                    !showResult && !isSel && "bg-muted text-foreground",
-                    showResult && isCorrect && "bg-success text-success-foreground",
-                    showResult && !isCorrect && isSel && "bg-destructive text-destructive-foreground",
+                    isSel ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                   )}>
-                    {showResult && isCorrect ? <CheckCircle2 className="w-4 h-4" /> :
-                     showResult && !isCorrect && isSel ? <XCircle className="w-4 h-4" /> : letter}
+                    {letter}
                   </span>
                   <RichText content={o.text!} className="text-sm leading-snug pt-1 flex-1" />
                 </button>
               );
             })}
           </div>
-
-          {confirmed && (
-            <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
-              <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
-                <Lightbulb className="w-4 h-4" /> Gabarito comentado
-              </div>
-              <div className="text-sm leading-relaxed">
-                <strong className="font-display">Resposta correta: {current.correct_answer.toUpperCase()}.</strong>{" "}
-                <RichText content={current.explanation} />
-              </div>
-              {current.comment_image_url && (
-                <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
-              )}
-            </div>
-          )}
         </main>
 
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent">
-          {!confirmed ? (
-            <Button
-              onClick={confirm}
-              disabled={!selected}
-              className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50"
-            >
-              Confirmar resposta
-            </Button>
-          ) : (
-            <Button
-              onClick={next}
-              className="w-full h-13 py-3.5 bg-secondary text-secondary-foreground font-display text-base stencil shadow-card"
-            >
-              {isLast ? "Ver meu resultado" : "Próxima questão →"}
-            </Button>
-          )}
+          <Button
+            onClick={confirm}
+            disabled={!selected}
+            className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50"
+          >
+            {isLast ? "Ver meu resultado" : "Próxima questão →"}
+          </Button>
         </div>
+
       </div>
     );
   }
