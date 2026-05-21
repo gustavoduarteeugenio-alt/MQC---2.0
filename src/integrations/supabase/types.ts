@@ -126,6 +126,7 @@ export type Database = {
           plan: Database["public"]["Enums"]["plan_type"]
           premium_since: string | null
           premium_until: string | null
+          ranking_name: string | null
           show_in_ranking: boolean
           trial_started_at: string | null
           updated_at: string
@@ -144,6 +145,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
+          ranking_name?: string | null
           show_in_ranking?: boolean
           trial_started_at?: string | null
           updated_at?: string
@@ -162,6 +164,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_type"]
           premium_since?: string | null
           premium_until?: string | null
+          ranking_name?: string | null
           show_in_ranking?: boolean
           trial_started_at?: string | null
           updated_at?: string

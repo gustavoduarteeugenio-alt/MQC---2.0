@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { LogOut, Mail, Zap, Shield, ChevronRight, PlayCircle, Radio, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +15,30 @@ const Profile = () => {
   const { profile, isAdmin, dailyCount, refresh } = useProfile();
   const initialShow = (profile as any)?.show_in_ranking ?? true;
   const [showInRanking, setShowInRanking] = useState<boolean>(initialShow);
+  const [rankingName, setRankingName] = useState<string>((profile as any)?.ranking_name ?? "");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     setShowInRanking((profile as any)?.show_in_ranking ?? true);
+    setRankingName((profile as any)?.ranking_name ?? "");
   }, [profile]);
+
+  const saveRankingName = async () => {
+    if (!user) return;
+    const trimmed = rankingName.trim().slice(0, 40);
+    setSavingName(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ ranking_name: trimmed || null } as any)
+      .eq("user_id", user.id);
+    setSavingName(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Nome no ranking atualizado", description: trimmed ? `Você aparecerá como "${trimmed}".` : "Voltaremos a usar seu nome completo." });
+    refresh();
+  };
 
   const toggleRanking = async (value: boolean) => {
     if (!user) return;
@@ -105,6 +126,31 @@ const Profile = () => {
             </div>
             <Switch checked={showInRanking} onCheckedChange={toggleRanking} />
           </div>
+          {showInRanking && (
+            <div className="mt-3 pt-3 border-t border-border space-y-2">
+              <label className="stencil text-[10px] text-muted-foreground">
+                Nome exibido no ranking
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={rankingName}
+                  onChange={(e) => setRankingName(e.target.value)}
+                  placeholder="Ex.: Recruta João"
+                  maxLength={40}
+                />
+                <Button
+                  size="sm"
+                  onClick={saveRankingName}
+                  disabled={savingName || rankingName === ((profile as any)?.ranking_name ?? "")}
+                >
+                  Salvar
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Deixe em branco para usar seu nome completo. Máx. 40 caracteres.
+              </p>
+            </div>
+          )}
         </Card>
 
         <button onClick={replayTutorial} className="w-full text-left">
