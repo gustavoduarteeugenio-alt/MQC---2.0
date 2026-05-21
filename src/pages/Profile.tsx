@@ -2,14 +2,41 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { LogOut, Mail, Zap, Shield, ChevronRight, PlayCircle, Radio } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { LogOut, Mail, Zap, Shield, ChevronRight, PlayCircle, Radio, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 const Profile = () => {
   const { signOut, user } = useAuth();
   const { profile, isAdmin, dailyCount, refresh } = useProfile();
+  const initialShow = (profile as any)?.show_in_ranking ?? true;
+  const [showInRanking, setShowInRanking] = useState<boolean>(initialShow);
+
+  useEffect(() => {
+    setShowInRanking((profile as any)?.show_in_ranking ?? true);
+  }, [profile]);
+
+  const toggleRanking = async (value: boolean) => {
+    if (!user) return;
+    setShowInRanking(value);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ show_in_ranking: value } as any)
+      .eq("user_id", user.id);
+    if (error) {
+      setShowInRanking(!value);
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: value ? "Nome visível no ranking" : "Você ficará anônimo",
+      description: value ? "Seu nome aparecerá para outros candidatos." : "Seu nome aparecerá como 'Anônimo'.",
+    });
+    refresh();
+  };
 
   const replayTutorial = async () => {
     if (!user) return;
@@ -64,6 +91,21 @@ const Profile = () => {
             </div>
           </Card>
         </Link>
+
+        <Card>
+          <div className="flex items-center justify-between p-1 gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Trophy className="w-5 h-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="font-display font-semibold">Exibir meu nome no Ranking</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Se desativado, seu nome aparecerá como "Anônimo" (LGPD).
+                </p>
+              </div>
+            </div>
+            <Switch checked={showInRanking} onCheckedChange={toggleRanking} />
+          </div>
+        </Card>
 
         <button onClick={replayTutorial} className="w-full text-left">
           <Card>
