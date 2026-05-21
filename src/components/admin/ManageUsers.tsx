@@ -269,31 +269,6 @@ export const ManageUsers = () => {
                   >
                     {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Crown className="w-3 h-3 mr-1" /> Tornar Trimestral</>}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !isPremium}
-                    onClick={() => setPlan(u, "basic", null)}
-                    className="stencil text-[11px]"
-                  >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ShieldOff className="w-3 h-3 mr-1" /> Restringir p/ Básico</>}
-                  </Button>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => setResetTarget(u)}
-                          className="stencil text-[11px]"
-                        >
-                          <RotateCcw className="w-3 h-3 mr-1" /> Reiniciar Trial
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Reiniciar 5 dias de teste</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
               </div>
             );
