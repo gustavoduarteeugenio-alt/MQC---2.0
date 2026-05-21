@@ -35,6 +35,7 @@ const sectionLabels: Record<Section, string> = {
   users: "Usuários",
   admins: "Administradores",
   support: "Mensagens de Suporte",
+  diagnostics: "Diagnósticos",
 };
 
 const Admin = () => {
