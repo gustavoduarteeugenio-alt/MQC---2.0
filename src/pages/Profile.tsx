@@ -15,10 +15,30 @@ const Profile = () => {
   const { profile, isAdmin, dailyCount, refresh } = useProfile();
   const initialShow = (profile as any)?.show_in_ranking ?? true;
   const [showInRanking, setShowInRanking] = useState<boolean>(initialShow);
+  const [rankingName, setRankingName] = useState<string>((profile as any)?.ranking_name ?? "");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     setShowInRanking((profile as any)?.show_in_ranking ?? true);
+    setRankingName((profile as any)?.ranking_name ?? "");
   }, [profile]);
+
+  const saveRankingName = async () => {
+    if (!user) return;
+    const trimmed = rankingName.trim().slice(0, 40);
+    setSavingName(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ ranking_name: trimmed || null } as any)
+      .eq("user_id", user.id);
+    setSavingName(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Nome no ranking atualizado", description: trimmed ? `Você aparecerá como "${trimmed}".` : "Voltaremos a usar seu nome completo." });
+    refresh();
+  };
 
   const toggleRanking = async (value: boolean) => {
     if (!user) return;
