@@ -167,13 +167,20 @@ const Diagnostico = () => {
   }, [current]);
 
   const confirm = () => {
-    if (!selected || !current || confirmed) return;
-    const correct = (current.correct_answer || "").toUpperCase();
+    if (!selected || !current) return;
     const sel = selected.toUpperCase();
-    const isCorrect = sel === correct;
     setAnswers((prev) => ({ ...prev, [current.id]: sel }));
-    setConfirmed(true);
+    // Avança imediatamente — sem revelar gabarito durante o diagnóstico
+    if (idx + 1 < questions.length) {
+      setIdx(idx + 1);
+      setSelected(null);
+      setConfirmed(false);
+      return;
+    }
+    // Última questão: dispara o fluxo de finalização com a resposta atual já incluída
+    void finalize({ ...answers, [current.id]: sel });
   };
+
 
   const next = async () => {
     if (!current) return;
