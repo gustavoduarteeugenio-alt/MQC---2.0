@@ -81,6 +81,8 @@ export type Database = {
           correct: number
           created_at: string
           id: string
+          instagram_handle: string | null
+          lead_name: string | null
           results: Json | null
           total: number
           updated_at: string
@@ -93,6 +95,8 @@ export type Database = {
           correct?: number
           created_at?: string
           id?: string
+          instagram_handle?: string | null
+          lead_name?: string | null
           results?: Json | null
           total?: number
           updated_at?: string
@@ -105,6 +109,8 @@ export type Database = {
           correct?: number
           created_at?: string
           id?: string
+          instagram_handle?: string | null
+          lead_name?: string | null
           results?: Json | null
           total?: number
           updated_at?: string
@@ -521,6 +527,7 @@ export type Database = {
         Returns: boolean
       }
       expire_premium_users: { Args: never; Returns: undefined }
+      get_diagnostic_overview: { Args: never; Returns: Json }
       get_my_training_rank: {
         Args: never
         Returns: {
@@ -557,6 +564,22 @@ export type Database = {
           email: string
           full_name: string
           granted_at: string
+          user_id: string
+        }[]
+      }
+      list_diagnostic_sessions: {
+        Args: { _filter?: string; _limit?: number; _offset?: number }
+        Returns: {
+          completed_at: string
+          correct: number
+          created_at: string
+          id: string
+          instagram_handle: string
+          lead_name: string
+          profile_email: string
+          profile_name: string
+          total: number
+          total_count: number
           user_id: string
         }[]
       }
