@@ -516,6 +516,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_account_approved: {
+        Args: { email_input: string }
+        Returns: boolean
+      }
       expire_premium_users: { Args: never; Returns: undefined }
       get_my_training_rank: {
         Args: never

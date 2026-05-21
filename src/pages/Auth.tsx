@@ -82,10 +82,24 @@ const Auth = () => {
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
+  const [accessReleased, setAccessReleased] = useState(false);
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
+
+  // Poll approval status while waiting for admin
+  useEffect(() => {
+    if (!pendingEmail || accessReleased) return;
+    let cancelled = false;
+    const check = async () => {
+      const { data, error } = await (supabase as any).rpc("check_account_approved", { email_input: pendingEmail });
+      if (!cancelled && !error && data === true) setAccessReleased(true);
+    };
+    check();
+    const id = setInterval(check, 8000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [pendingEmail, accessReleased]);
 
   const passwordHint =
     mode === "signup" && password.length > 0 && password.length < 6
@@ -215,9 +229,13 @@ const Auth = () => {
   };
 
   const backToLogin = () => {
+    if (pendingEmail) setEmail(pendingEmail);
+    localStorage.removeItem("pending_approval_email");
     setPendingEmail(null);
+    setAccessReleased(false);
     setSupportSent(false);
     setSupportMessage("");
+    setMode("signin");
   };
 
   return (
@@ -234,7 +252,32 @@ const Auth = () => {
           </p>
         </header>
 
-        {pendingEmail ? (
+        {pendingEmail && accessReleased ? (
+          <div className="animate-fade-in">
+            <div className="bg-success/10 border-2 border-success/60 rounded-2xl p-6 shadow-flame backdrop-blur space-y-4">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="w-16 h-16 rounded-full bg-success/20 border border-success/60 flex items-center justify-center">
+                  <CheckCircle2 className="w-9 h-9 text-success" />
+                </div>
+                <h2 className="font-display text-xl font-bold text-success">
+                  ✅ Acesso liberado!
+                </h2>
+                <p className="text-sm text-white/85 leading-relaxed">
+                  Seu acesso foi aprovado pelo administrador. Faça login para iniciar sua preparação.
+                </p>
+                <p className="text-[11px] text-white/60 stencil mt-1">E-mail: {pendingEmail}</p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={backToLogin}
+                className="w-full h-12 bg-gradient-flame hover:opacity-95 text-white font-display tracking-wider shadow-flame stencil"
+              >
+                Ir para o login
+              </Button>
+            </div>
+          </div>
+        ) : pendingEmail ? (
           <div className="animate-fade-in">
             <div className="bg-amber-500/10 border-2 border-amber-400/70 rounded-2xl p-5 shadow-flame backdrop-blur space-y-4">
               <div className="flex flex-col items-center text-center gap-2">
