@@ -182,19 +182,7 @@ const Diagnostico = () => {
   };
 
 
-  const next = async () => {
-    if (!current) return;
-
-    // Não é a última: avança
-    if (idx + 1 < questions.length) {
-      setIdx(idx + 1);
-      setSelected(null);
-      setConfirmed(false);
-      return;
-    }
-
-    // Última: calcula resultado e persiste, mas abre tela de captura de lead antes de exibir
-    const finalAnswers = answers;
+  const finalize = async (finalAnswers: Record<string, string>) => {
     const bySub = new Map<string, SubjectResult>();
     for (const q of questions) {
       const sub = q.subjects;
@@ -237,13 +225,13 @@ const Diagnostico = () => {
           diagnostic_results: { results: finalRes, correct: totalCorrect, total: totalQ } as any,
         })
         .eq("user_id", userData.user.id);
-      // Usuário logado pula a captura
       setStage("result");
       return;
     }
 
     setStage("lead");
   };
+
 
   // ---------------- INTRO ----------------
   if (stage === "intro") {
