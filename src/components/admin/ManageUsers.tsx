@@ -275,23 +275,6 @@ export const ManageUsers = () => {
           })}
         </div>
       )}
-
-      <AlertDialog open={!!resetTarget} onOpenChange={(o) => !o && setResetTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reiniciar período de teste</AlertDialogTitle>
-            <AlertDialogDescription>
-              Deseja conceder mais 5 dias de acesso gratuito para {resetTarget?.email ?? "este usuário"}?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction disabled={resetting} onClick={(e) => { e.preventDefault(); resetTarget && resetTrial(resetTarget); }}>
-              {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
