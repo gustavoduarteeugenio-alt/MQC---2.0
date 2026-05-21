@@ -126,6 +126,31 @@ const Profile = () => {
             </div>
             <Switch checked={showInRanking} onCheckedChange={toggleRanking} />
           </div>
+          {showInRanking && (
+            <div className="mt-3 pt-3 border-t border-border space-y-2">
+              <label className="stencil text-[10px] text-muted-foreground">
+                Nome exibido no ranking
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={rankingName}
+                  onChange={(e) => setRankingName(e.target.value)}
+                  placeholder="Ex.: Recruta João"
+                  maxLength={40}
+                />
+                <Button
+                  size="sm"
+                  onClick={saveRankingName}
+                  disabled={savingName || rankingName === ((profile as any)?.ranking_name ?? "")}
+                >
+                  Salvar
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Deixe em branco para usar seu nome completo. Máx. 40 caracteres.
+              </p>
+            </div>
+          )}
         </Card>
 
         <button onClick={replayTutorial} className="w-full text-left">
