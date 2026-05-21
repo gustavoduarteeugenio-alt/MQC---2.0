@@ -555,6 +555,23 @@ const Diagnostico = () => {
           </Button>
         </div>
 
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card mt-4">
+          <h3 className="font-display text-lg font-bold leading-tight">
+            Salve seu resultado
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Crie uma conta gratuita para acompanhar sua evolução, acessar questões ilimitadas e subir no ranking.
+          </p>
+          <Button
+            asChild
+            className="w-full h-12 mt-4 bg-gradient-flame text-white font-display stencil shadow-flame"
+          >
+            <Link to="/auth">
+              Criar conta / Entrar <ChevronRight className="w-4 h-4 ml-1" />
+            </Link>
+          </Button>
+        </div>
+
         <div className="text-center">
           <button
             onClick={() => { setStage("intro"); setResults([]); }}
