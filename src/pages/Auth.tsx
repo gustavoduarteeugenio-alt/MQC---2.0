@@ -229,9 +229,13 @@ const Auth = () => {
   };
 
   const backToLogin = () => {
+    if (pendingEmail) setEmail(pendingEmail);
+    localStorage.removeItem("pending_approval_email");
     setPendingEmail(null);
+    setAccessReleased(false);
     setSupportSent(false);
     setSupportMessage("");
+    setMode("signin");
   };
 
   return (
