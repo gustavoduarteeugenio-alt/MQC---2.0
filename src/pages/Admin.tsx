@@ -263,6 +263,16 @@ const Admin = () => {
               )}
               {isAdmin && (
                 <button
+                  onClick={() => handleNav("diagnostics")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    active === "diagnostics" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Diagnósticos
+                </button>
+              )}
+                <button
                   onClick={() => handleNav("admins")}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
