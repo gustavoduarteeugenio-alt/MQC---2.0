@@ -60,6 +60,9 @@ const Diagnostico = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [results, setResults] = useState<SubjectResult[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [leadName, setLeadName] = useState("");
+  const [leadInsta, setLeadInsta] = useState("");
+  const [savingLead, setSavingLead] = useState(false);
 
   // Se já tem usuário logado, vai para Home
   useEffect(() => {
