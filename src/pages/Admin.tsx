@@ -75,6 +75,7 @@ const Admin = () => {
       case "bulk": return <BulkImport subjects={subjects} onImported={() => {}} />;
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
+      case "diagnostics": return <ManageDiagnostics />;
       case "admins": return <ManageAdmins />;
       case "support": return (
         <div className="space-y-8">
