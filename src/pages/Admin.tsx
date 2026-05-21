@@ -165,6 +165,14 @@ const Admin = () => {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "diagnostics"} onClick={() => handleNav("diagnostics")}>
+                        <button className={cn("flex items-center gap-2", active === "diagnostics" && "bg-primary/10 text-primary")}>
+                          <Target className="h-4 w-4" />
+                          <span>Diagnósticos</span>
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={active === "admins"} onClick={() => handleNav("admins")}>
                         <button className={cn("flex items-center gap-2", active === "admins" && "bg-primary/10 text-primary")}>
                           <UserCog className="h-4 w-4" />
