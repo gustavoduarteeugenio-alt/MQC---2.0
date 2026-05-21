@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare } from "lucide-react";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
@@ -23,9 +23,10 @@ import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
 import { SupportMessages } from "@/components/admin/SupportMessages";
 import { AccessRequests } from "@/components/admin/AccessRequests";
+import { ManageDiagnostics } from "@/components/admin/ManageDiagnostics";
 
 type Subject = { id: string; name: string; slug: string };
-type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support";
+type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support" | "diagnostics";
 
 const sectionLabels: Record<Section, string> = {
   questions: "Questões",
