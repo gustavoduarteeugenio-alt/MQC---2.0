@@ -82,10 +82,24 @@ const Auth = () => {
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSending, setSupportSending] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
+  const [accessReleased, setAccessReleased] = useState(false);
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
+
+  // Poll approval status while waiting for admin
+  useEffect(() => {
+    if (!pendingEmail || accessReleased) return;
+    let cancelled = false;
+    const check = async () => {
+      const { data, error } = await (supabase as any).rpc("check_account_approved", { email_input: pendingEmail });
+      if (!cancelled && !error && data === true) setAccessReleased(true);
+    };
+    check();
+    const id = setInterval(check, 8000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [pendingEmail, accessReleased]);
 
   const passwordHint =
     mode === "signup" && password.length > 0 && password.length < 6
