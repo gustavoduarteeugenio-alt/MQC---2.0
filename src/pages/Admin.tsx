@@ -272,6 +272,7 @@ const Admin = () => {
                   Diagnósticos
                 </button>
               )}
+              {isAdmin && (
                 <button
                   onClick={() => handleNav("admins")}
                   className={cn(
