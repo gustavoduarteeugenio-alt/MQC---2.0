@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare } from "lucide-react";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
@@ -23,9 +23,10 @@ import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
 import { SupportMessages } from "@/components/admin/SupportMessages";
 import { AccessRequests } from "@/components/admin/AccessRequests";
+import { ManageDiagnostics } from "@/components/admin/ManageDiagnostics";
 
 type Subject = { id: string; name: string; slug: string };
-type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support";
+type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support" | "diagnostics";
 
 const sectionLabels: Record<Section, string> = {
   questions: "Questões",
@@ -34,6 +35,7 @@ const sectionLabels: Record<Section, string> = {
   users: "Usuários",
   admins: "Administradores",
   support: "Mensagens de Suporte",
+  diagnostics: "Diagnósticos",
 };
 
 const Admin = () => {
@@ -73,6 +75,7 @@ const Admin = () => {
       case "bulk": return <BulkImport subjects={subjects} onImported={() => {}} />;
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
+      case "diagnostics": return <ManageDiagnostics />;
       case "admins": return <ManageAdmins />;
       case "support": return (
         <div className="space-y-8">
@@ -158,6 +161,14 @@ const Admin = () => {
                         <button className={cn("flex items-center gap-2", active === "users" && "bg-primary/10 text-primary")}>
                           <Users className="h-4 w-4" />
                           <span>Usuários</span>
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={active === "diagnostics"} onClick={() => handleNav("diagnostics")}>
+                        <button className={cn("flex items-center gap-2", active === "diagnostics" && "bg-primary/10 text-primary")}>
+                          <Target className="h-4 w-4" />
+                          <span>Diagnósticos</span>
                         </button>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -248,6 +259,17 @@ const Admin = () => {
                   )}
                 >
                   Usuários
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => handleNav("diagnostics")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    active === "diagnostics" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  Diagnósticos
                 </button>
               )}
               {isAdmin && (

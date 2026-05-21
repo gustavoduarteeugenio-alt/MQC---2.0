@@ -38,7 +38,7 @@ type SubjectResult = {
   pct: number;
 };
 
-type Stage = "intro" | "quiz" | "result";
+type Stage = "intro" | "quiz" | "lead" | "result";
 
 const getToken = () => {
   let t = localStorage.getItem(TOKEN_KEY);
@@ -60,6 +60,9 @@ const Diagnostico = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [results, setResults] = useState<SubjectResult[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [leadName, setLeadName] = useState("");
+  const [leadInsta, setLeadInsta] = useState("");
+  const [savingLead, setSavingLead] = useState(false);
 
   // Se já tem usuário logado, vai para Home
   useEffect(() => {
@@ -181,7 +184,7 @@ const Diagnostico = () => {
       return;
     }
 
-    // Última: calcula resultado e persiste
+    // Última: calcula resultado e persiste, mas abre tela de captura de lead antes de exibir
     const finalAnswers = answers;
     const bySub = new Map<string, SubjectResult>();
     for (const q of questions) {
@@ -216,7 +219,6 @@ const Diagnostico = () => {
       localStorage.setItem(PENDING_KEY, getToken());
     }
 
-    // Se já tem usuário logado, persiste no profile para não refazer
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
       await supabase
@@ -226,9 +228,12 @@ const Diagnostico = () => {
           diagnostic_results: { results: finalRes, correct: totalCorrect, total: totalQ } as any,
         })
         .eq("user_id", userData.user.id);
+      // Usuário logado pula a captura
+      setStage("result");
+      return;
     }
 
-    setStage("result");
+    setStage("lead");
   };
 
   // ---------------- INTRO ----------------
@@ -371,6 +376,88 @@ const Diagnostico = () => {
               {isLast ? "Ver meu resultado" : "Próxima questão →"}
             </Button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------- LEAD CAPTURE ----------------
+  if (stage === "lead") {
+    const submitLead = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const name = leadName.trim();
+      const insta = leadInsta.trim().replace(/^@/, "");
+      if (name.length < 2) { toast.error("Informe seu nome."); return; }
+      if (insta.length < 2) { toast.error("Informe seu @ do Instagram."); return; }
+      setSavingLead(true);
+      try {
+        if (sessionId) {
+          await supabase
+            .from("diagnostic_sessions")
+            .update({ lead_name: name, instagram_handle: insta } as any)
+            .eq("id", sessionId);
+        }
+        setStage("result");
+      } finally {
+        setSavingLead(false);
+      }
+    };
+
+    return (
+      <div className="app-shell bg-gradient-night text-white flex flex-col">
+        <div className="flex-1 flex flex-col justify-center px-6 py-10 max-w-md mx-auto w-full">
+          <div className="inline-flex self-center items-center justify-center w-16 h-16 rounded-2xl bg-gradient-flame shadow-flame mb-5">
+            <Target className="w-8 h-8 text-white" strokeWidth={2.5} />
+          </div>
+          <p className="stencil text-xs text-primary text-center">Quase lá, recruta</p>
+          <h1 className="text-2xl font-display font-bold mt-2 text-center leading-tight">
+            Seu resultado está pronto.
+          </h1>
+          <p className="text-sm text-white/75 mt-2 text-center">
+            Preencha rapidinho para liberar seu <strong className="text-white">Índice de Prontidão</strong> completo.
+          </p>
+
+          <form onSubmit={submitLead} className="mt-6 space-y-3">
+            <div>
+              <label className="stencil text-[10px] text-white/60">Seu nome</label>
+              <input
+                type="text"
+                value={leadName}
+                onChange={(e) => setLeadName(e.target.value)}
+                maxLength={80}
+                placeholder="Ex.: João Silva"
+                className="w-full mt-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-primary"
+                required
+              />
+            </div>
+            <div>
+              <label className="stencil text-[10px] text-white/60">@ do Instagram</label>
+              <div className="mt-1 flex items-center h-12 rounded-xl bg-white/10 border border-white/20 focus-within:border-primary">
+                <span className="pl-4 text-white/50">@</span>
+                <input
+                  type="text"
+                  value={leadInsta}
+                  onChange={(e) => setLeadInsta(e.target.value.replace(/^@/, ""))}
+                  maxLength={40}
+                  placeholder="seu.perfil"
+                  className="flex-1 h-full px-2 bg-transparent text-white placeholder:text-white/40 focus:outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={savingLead}
+              className="w-full h-13 mt-4 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame"
+            >
+              {savingLead ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Liberar meu resultado <ChevronRight className="w-5 h-5 ml-1" /></>}
+            </Button>
+
+            <p className="text-[11px] text-white/50 text-center mt-3">
+              Usamos seus dados apenas para te enviar dicas sobre o concurso. Sem spam.
+            </p>
+          </form>
         </div>
       </div>
     );
