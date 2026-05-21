@@ -157,7 +157,7 @@ const Ranking = () => {
         )}
 
         <p className="text-[10px] text-muted-foreground text-center">
-          Você pode ocultar seu nome completo no ranking pelo Perfil (LGPD).
+          Você pode escolher o nome exibido ou ficar anônimo pelo Perfil (LGPD).
         </p>
       </main>
     </AppShell>
