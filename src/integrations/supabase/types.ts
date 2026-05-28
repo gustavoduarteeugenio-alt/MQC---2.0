@@ -118,6 +118,36 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_leads: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          instagram_handle: string | null
+          name: string
+          phone: string | null
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          instagram_handle?: string | null
+          name: string
+          phone?: string | null
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          instagram_handle?: string | null
+          name?: string
+          phone?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approved: boolean
