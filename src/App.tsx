@@ -29,6 +29,7 @@ import Support from "./pages/Support.tsx";
 import Diagnostico from "./pages/Diagnostico.tsx";
 import SelecionarPlano from "./pages/SelecionarPlano.tsx";
 import Ranking from "./pages/Ranking.tsx";
+import LandingPage from "./pages/LandingPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 
