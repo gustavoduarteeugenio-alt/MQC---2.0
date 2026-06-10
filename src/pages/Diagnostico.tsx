@@ -168,38 +168,31 @@ const Diagnostico = () => {
 
 
   const finalize = async (finalAnswers: Record<string, string>) => {
-    const bySub = new Map<string, SubjectResult>();
-    for (const q of questions) {
-      const sub = q.subjects;
-      if (!sub) continue;
-      const cur = bySub.get(sub.id) ?? { subject_id: sub.id, subject_name: sub.name, total: 0, correct: 0, pct: 0 };
-      cur.total += 1;
-      const correctLetter = (q.correct_answer || "").toUpperCase();
-      const givenLetter = (finalAnswers[q.id] || "").toUpperCase();
-      if (givenLetter && givenLetter === correctLetter) cur.correct += 1;
-      bySub.set(sub.id, cur);
+    const token = getToken();
+    const answersArray = Object.entries(finalAnswers).map(([qid, ans]) => ({ qid, ans }));
+
+    let finalRes: SubjectResult[] = [];
+    let totalCorrect = 0;
+    let totalQ = 0;
+
+    if (sessionId) {
+      const { data, error } = await (supabase as any).rpc("submit_diagnostic_answers", {
+        _session_id: sessionId,
+        _client_token: token,
+        _answers: answersArray,
+      });
+      if (error) {
+        console.error(error);
+        toast.error("Falha ao salvar o diagnóstico.");
+      } else if (data) {
+        finalRes = ((data as any).results as SubjectResult[]) ?? [];
+        totalCorrect = (data as any).correct ?? 0;
+        totalQ = (data as any).total ?? 0;
+        localStorage.setItem(PENDING_KEY, token);
+      }
     }
-    const finalRes: SubjectResult[] = Array.from(bySub.values())
-      .map((r) => ({ ...r, pct: r.total ? Math.round((r.correct / r.total) * 100) : 0 }))
-      .sort((a, b) => a.pct - b.pct);
 
     setResults(finalRes);
-
-    const totalCorrect = finalRes.reduce((s, r) => s + r.correct, 0);
-    const totalQ = finalRes.reduce((s, r) => s + r.total, 0);
-    if (sessionId) {
-      await supabase
-        .from("diagnostic_sessions")
-        .update({
-          answers: Object.entries(finalAnswers).map(([qid, ans]) => ({ qid, ans })) as any,
-          results: finalRes as any,
-          correct: totalCorrect,
-          total: totalQ,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", sessionId);
-      localStorage.setItem(PENDING_KEY, getToken());
-    }
 
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
@@ -216,6 +209,7 @@ const Diagnostico = () => {
 
     setStage("lead");
   };
+
 
 
   // ---------------- INTRO ----------------
