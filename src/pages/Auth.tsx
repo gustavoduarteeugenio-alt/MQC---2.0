@@ -114,22 +114,16 @@ const Auth = () => {
   const linkPendingDiagnostic = async (userId: string) => {
     const token = localStorage.getItem("diag_pending_token");
     if (!token) return;
-    const { data: ses } = await supabase
-      .from("diagnostic_sessions")
-      .select("id, results, completed_at")
-      .eq("client_token", token)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!ses) { localStorage.removeItem("diag_pending_token"); return; }
-
-    await supabase.from("diagnostic_sessions").update({ user_id: userId }).eq("id", ses.id);
-    if (ses.results) {
+    const { data, error } = await (supabase as any).rpc("claim_diagnostic_session", {
+      _client_token: token,
+    });
+    if (error || !data?.ok) { localStorage.removeItem("diag_pending_token"); return; }
+    if (data.results) {
       await supabase
         .from("profiles")
         .update({
-          diagnostic_results: ses.results as any,
-          diagnostic_completed_at: ses.completed_at ?? new Date().toISOString(),
+          diagnostic_results: data.results as any,
+          diagnostic_completed_at: data.completed_at ?? new Date().toISOString(),
         } as any)
         .eq("user_id", userId);
     }
