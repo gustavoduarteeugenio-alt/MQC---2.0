@@ -74,56 +74,41 @@ const Diagnostico = () => {
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      const { data: subs } = await supabase
-        .from("subjects")
-        .select("id, name, display_order")
-        .order("display_order", { ascending: true });
-
-      if (!subs?.length) {
-        toast.error("Nenhuma matéria cadastrada.");
+      const { data: rpcData, error: rpcErr } = await (supabase as any).rpc(
+        "get_diagnostic_questions",
+        { _per_subject: PER_SUBJECT }
+      );
+      if (rpcErr) {
+        console.error(rpcErr);
+        toast.error("Falha ao carregar o diagnóstico.");
         return;
       }
-
-      // Seleção DETERMINÍSTICA: sempre as mesmas PER_SUBJECT questões por matéria,
-      // ordenadas por id, para garantir que todos os candidatos respondam o mesmo diagnóstico.
-      const pickedIds: string[] = [];
-      const insufficient: string[] = [];
-      for (const s of subs) {
-        const { data: ids } = await supabase
-          .from("questions")
-          .select("id")
-          .eq("subject_id", s.id)
-          .order("id", { ascending: true });
-        if (!ids || ids.length < PER_SUBJECT) {
-          insufficient.push(s.name);
-          continue;
-        }
-        pickedIds.push(...ids.slice(0, PER_SUBJECT).map((q) => q.id));
-      }
-
-      if (insufficient.length) {
-        console.warn("Matérias ignoradas por falta de questões:", insufficient);
-      }
-      if (pickedIds.length < PER_SUBJECT) {
+      const list = (rpcData as any[]) ?? [];
+      if (list.length < PER_SUBJECT) {
         toast.error("Banco de questões insuficiente para o diagnóstico.");
-        return;
-      }
-
-      const { data: full } = await supabase
-        .from("questions")
-        .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, image_url, comment_image_url, subjects:subject_id(id,name)")
-        .in("id", pickedIds);
-
-      if (!full?.length) {
-        toast.error("Falha ao carregar as questões.");
         return;
       }
 
       // Intercala matérias de forma determinística (sem shuffle)
       const bySubject = new Map<string, Question[]>();
-      for (const q of full as any[]) {
+      for (const q of list) {
+        const mapped: Question = {
+          id: q.id,
+          subject_id: q.subject_id,
+          statement: q.statement,
+          option_a: q.option_a,
+          option_b: q.option_b,
+          option_c: q.option_c,
+          option_d: q.option_d,
+          option_e: q.option_e,
+          correct_answer: "",
+          explanation: "",
+          image_url: q.image_url,
+          comment_image_url: null,
+          subjects: { id: q.subject_id, name: q.subject_name },
+        };
         const arr = bySubject.get(q.subject_id) ?? [];
-        arr.push(q);
+        arr.push(mapped);
         bySubject.set(q.subject_id, arr);
       }
       bySubject.forEach((arr) => arr.sort((a, b) => a.id.localeCompare(b.id)));
@@ -144,19 +129,19 @@ const Diagnostico = () => {
       setConfirmed(false);
 
       const token = getToken();
-      const { data: ses, error } = await supabase
-        .from("diagnostic_sessions")
-        .insert({ client_token: token, total: final.length })
-        .select("id")
-        .single();
+      const { data: newId, error } = await (supabase as any).rpc(
+        "create_diagnostic_session",
+        { _client_token: token, _total: final.length }
+      );
       if (error) console.error(error);
-      else setSessionId(ses.id);
+      else setSessionId(newId as string);
 
       setStage("quiz");
     } finally {
       setLoading(false);
     }
   };
+
 
   const current = questions[idx];
   const options = useMemo(() => {
@@ -183,38 +168,31 @@ const Diagnostico = () => {
 
 
   const finalize = async (finalAnswers: Record<string, string>) => {
-    const bySub = new Map<string, SubjectResult>();
-    for (const q of questions) {
-      const sub = q.subjects;
-      if (!sub) continue;
-      const cur = bySub.get(sub.id) ?? { subject_id: sub.id, subject_name: sub.name, total: 0, correct: 0, pct: 0 };
-      cur.total += 1;
-      const correctLetter = (q.correct_answer || "").toUpperCase();
-      const givenLetter = (finalAnswers[q.id] || "").toUpperCase();
-      if (givenLetter && givenLetter === correctLetter) cur.correct += 1;
-      bySub.set(sub.id, cur);
+    const token = getToken();
+    const answersArray = Object.entries(finalAnswers).map(([qid, ans]) => ({ qid, ans }));
+
+    let finalRes: SubjectResult[] = [];
+    let totalCorrect = 0;
+    let totalQ = 0;
+
+    if (sessionId) {
+      const { data, error } = await (supabase as any).rpc("submit_diagnostic_answers", {
+        _session_id: sessionId,
+        _client_token: token,
+        _answers: answersArray,
+      });
+      if (error) {
+        console.error(error);
+        toast.error("Falha ao salvar o diagnóstico.");
+      } else if (data) {
+        finalRes = ((data as any).results as SubjectResult[]) ?? [];
+        totalCorrect = (data as any).correct ?? 0;
+        totalQ = (data as any).total ?? 0;
+        localStorage.setItem(PENDING_KEY, token);
+      }
     }
-    const finalRes: SubjectResult[] = Array.from(bySub.values())
-      .map((r) => ({ ...r, pct: r.total ? Math.round((r.correct / r.total) * 100) : 0 }))
-      .sort((a, b) => a.pct - b.pct);
 
     setResults(finalRes);
-
-    const totalCorrect = finalRes.reduce((s, r) => s + r.correct, 0);
-    const totalQ = finalRes.reduce((s, r) => s + r.total, 0);
-    if (sessionId) {
-      await supabase
-        .from("diagnostic_sessions")
-        .update({
-          answers: Object.entries(finalAnswers).map(([qid, ans]) => ({ qid, ans })) as any,
-          results: finalRes as any,
-          correct: totalCorrect,
-          total: totalQ,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", sessionId);
-      localStorage.setItem(PENDING_KEY, getToken());
-    }
 
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
@@ -231,6 +209,7 @@ const Diagnostico = () => {
 
     setStage("lead");
   };
+
 
 
   // ---------------- INTRO ----------------
@@ -354,10 +333,12 @@ const Diagnostico = () => {
       setSavingLead(true);
       try {
         if (sessionId) {
-          await supabase
-            .from("diagnostic_sessions")
-            .update({ lead_name: name, instagram_handle: insta } as any)
-            .eq("id", sessionId);
+          await (supabase as any).rpc("set_diagnostic_lead", {
+            _session_id: sessionId,
+            _client_token: getToken(),
+            _lead_name: name,
+            _instagram_handle: insta,
+          });
         }
         setStage("result");
       } finally {

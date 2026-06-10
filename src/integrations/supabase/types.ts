@@ -556,8 +556,20 @@ export type Database = {
         Args: { email_input: string }
         Returns: boolean
       }
+      claim_diagnostic_session: {
+        Args: { _client_token: string }
+        Returns: Json
+      }
+      create_diagnostic_session: {
+        Args: { _client_token: string; _total: number }
+        Returns: string
+      }
       expire_premium_users: { Args: never; Returns: undefined }
       get_diagnostic_overview: { Args: never; Returns: Json }
+      get_diagnostic_questions: {
+        Args: { _per_subject?: number }
+        Returns: Json
+      }
       get_my_training_rank: {
         Args: never
         Returns: {
@@ -629,6 +641,19 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: Json
+      }
+      set_diagnostic_lead: {
+        Args: {
+          _client_token: string
+          _instagram_handle: string
+          _lead_name: string
+          _session_id: string
+        }
+        Returns: undefined
+      }
+      submit_diagnostic_answers: {
+        Args: { _answers: Json; _client_token: string; _session_id: string }
         Returns: Json
       }
     }
