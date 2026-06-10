@@ -15,10 +15,18 @@ const Subjects = () => {
   useEffect(() => {
     (async () => {
       const { data: subs } = await supabase.from("subjects").select("*").order("display_order");
-      const { data: counts } = await supabase.from("questions").select("subject_id");
-      const counted: Record<string, number> = {};
-      (counts ?? []).forEach((q: any) => { counted[q.subject_id] = (counted[q.subject_id] ?? 0) + 1; });
-      setSubjects((subs ?? []).map((s: any) => ({ ...s, questionCount: counted[s.id] ?? 0 })));
+      const list = subs ?? [];
+      const counts = await Promise.all(
+        list.map(async (s: any) => {
+          const { count } = await supabase
+            .from("questions")
+            .select("id", { count: "exact", head: true })
+            .eq("subject_id", s.id);
+          return [s.id, count ?? 0] as const;
+        })
+      );
+      const counted: Record<string, number> = Object.fromEntries(counts);
+      setSubjects(list.map((s: any) => ({ ...s, questionCount: counted[s.id] ?? 0 })));
       setLoading(false);
     })();
   }, []);
