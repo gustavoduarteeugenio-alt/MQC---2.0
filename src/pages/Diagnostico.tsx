@@ -333,10 +333,12 @@ const Diagnostico = () => {
       setSavingLead(true);
       try {
         if (sessionId) {
-          await supabase
-            .from("diagnostic_sessions")
-            .update({ lead_name: name, instagram_handle: insta } as any)
-            .eq("id", sessionId);
+          await (supabase as any).rpc("set_diagnostic_lead", {
+            _session_id: sessionId,
+            _client_token: getToken(),
+            _lead_name: name,
+            _instagram_handle: insta,
+          });
         }
         setStage("result");
       } finally {
