@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/AppShell";
+import { fetchDedupedAttempts } from "@/lib/stats";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { Trophy, Target, Flame as FlameIcon, TrendingUp, Swords, AlertTriangle, ShieldCheck, BookOpen, Quote } from "lucide-react";
 
