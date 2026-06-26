@@ -48,7 +48,7 @@ const Question = () => {
       if (!sub) { navigate("/materias"); return; }
       setSubject(sub as Subject);
 
-      const { data: qs } = await supabase.from("questions").select("*").eq("subject_id", sub.id).limit(100);
+      const { data: qs } = await supabase.from("questions").select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, image_url").eq("subject_id", sub.id).limit(100);
 
       // Excluir questões já respondidas pelo usuário
       let pool = qs ?? [];
