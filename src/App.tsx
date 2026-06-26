@@ -30,6 +30,7 @@ import Diagnostico from "./pages/Diagnostico.tsx";
 import SelecionarPlano from "./pages/SelecionarPlano.tsx";
 import Ranking from "./pages/Ranking.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
+import UltimaChamada from "./pages/UltimaChamada.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/reta-final" element={<LandingPage />} />
+            <Route path="/ultima-chamada" element={<UltimaChamada />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
             <Route path="/selecionar-plano" element={<SelecionarPlano />} />
