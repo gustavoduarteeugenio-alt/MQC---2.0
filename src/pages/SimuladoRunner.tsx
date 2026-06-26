@@ -121,11 +121,28 @@ const SimuladoRunner = () => {
   const finish = async (auto = false) => {
     if (!attempt || finishedRef.current) return;
     finishedRef.current = true;
+    // Busca gabaritos de todas as questões via RPC segura
+    const ids = questions.map((q) => q.id);
+    const { data: reveal } = await (supabase as any).rpc("reveal_questions_answers", { _ids: ids });
+    const answerMap: Record<string, { c: Letter; e: string; img: string | null }> = {};
+    ((reveal as any[]) ?? []).forEach((r: any) => {
+      answerMap[r.id] = {
+        c: ((r.correct_answer ?? "") as string).toUpperCase() as Letter,
+        e: r.explanation ?? "",
+        img: r.comment_image_url ?? null,
+      };
+    });
+    // Atualiza as questões em memória para permitir a revisão
+    setQuestions((prev) => prev.map((q) => answerMap[q.id]
+      ? { ...q, correct_answer: answerMap[q.id].c, explanation: answerMap[q.id].e, comment_image_url: answerMap[q.id].img }
+      : q
+    ));
     let correct = 0;
     const bySubject: Record<string, { name: string; correct: number; total: number }> = {};
     questions.forEach((q) => {
       const ans = answers.find((a) => a.question_id === q.id);
-      const ok = ans?.selected === q.correct_answer;
+      const correctLetter = answerMap[q.id]?.c;
+      const ok = !!correctLetter && ans?.selected === correctLetter;
       if (ok) correct++;
       const subjName = subjectsMap[q.subject_id] ?? "Outros";
       if (!bySubject[q.subject_id]) bySubject[q.subject_id] = { name: subjName, correct: 0, total: 0 };
@@ -139,11 +156,12 @@ const SimuladoRunner = () => {
       const rows = questions.map((q) => {
         const ans = answers.find((a) => a.question_id === q.id);
         if (!ans?.selected) return null;
+        const correctLetter = answerMap[q.id]?.c;
         return {
           user_id: user.id,
           question_id: q.id,
           selected_answer: ans.selected as string,
-          is_correct: ans.selected === q.correct_answer,
+          is_correct: !!correctLetter && ans.selected === correctLetter,
           time_seconds: 0,
         };
       }).filter(Boolean) as any[];
