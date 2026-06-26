@@ -552,6 +552,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_questions: {
+        Args: never
+        Returns: {
+          banca: string
+          comment_image_url: string | null
+          correct_answer: string
+          created_at: string
+          difficulty: string
+          explanation: string
+          id: string
+          image_url: string | null
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          option_e: string | null
+          statement: string
+          subject_id: string
+          subtopic: string | null
+          updated_at: string
+          year: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       check_account_approved: {
         Args: { email_input: string }
         Returns: boolean
@@ -635,6 +664,8 @@ export type Database = {
           user_id: string
         }[]
       }
+      reveal_question_answer: { Args: { _qid: string }; Returns: Json }
+      reveal_questions_answers: { Args: { _ids: string[] }; Returns: Json }
       revoke_admin: { Args: { _user_id: string }; Returns: Json }
       revoke_role: {
         Args: {
