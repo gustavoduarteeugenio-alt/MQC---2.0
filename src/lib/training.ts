@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchDedupedAttempts } from "@/lib/stats";
 
 export type SubjectInfo = { id: string; name: string; slug: string };
 export type SubjectStat = SubjectInfo & {
@@ -10,20 +11,17 @@ export type SubjectStat = SubjectInfo & {
 
 const TARGET_ACCURACY = 80;
 
-/** Carrega todas as matérias + estatísticas de acerto do usuário por matéria. */
+/** Carrega todas as matérias + estatísticas de acerto do usuário por matéria.
+ *  Usa attempts deduplicados (apenas resposta mais recente por questão). */
 export async function getSubjectStats(userId: string): Promise<SubjectStat[]> {
-  const [{ data: subjects }, { data: attempts }] = await Promise.all([
+  const [{ data: subjects }, attempts] = await Promise.all([
     supabase.from("subjects").select("id, name, slug").order("display_order"),
-    supabase
-      .from("attempts")
-      .select("is_correct, questions(subject_id)")
-      .eq("user_id", userId)
-      .limit(5000),
+    fetchDedupedAttempts(userId),
   ]);
 
   const stats: Record<string, { total: number; correct: number }> = {};
-  (attempts ?? []).forEach((a: any) => {
-    const sid = a.questions?.subject_id;
+  attempts.forEach((a) => {
+    const sid = a.subject_id;
     if (!sid) return;
     stats[sid] = stats[sid] ?? { total: 0, correct: 0 };
     stats[sid].total++;
