@@ -78,13 +78,10 @@ export const ManageQuestions = ({ subjects, onChanged }: Props) => {
   const reload = async (subjectId: string) => {
     if (!subjectId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("questions")
-      .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, difficulty, year, banca, subtopic, image_url, comment_image_url")
-      .eq("subject_id", subjectId)
-      .order("created_at", { ascending: false });
+    const { data, error } = await (supabase as any).rpc("admin_list_questions");
     if (error) toast.error(error.message);
-    setQuestions((data ?? []) as QRow[]);
+    const filtered = ((data ?? []) as QRow[]).filter((q) => q.subject_id === subjectId);
+    setQuestions(filtered);
     setLoading(false);
   };
 
