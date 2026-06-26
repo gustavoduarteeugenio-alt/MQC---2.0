@@ -24,12 +24,6 @@ const UltimaChamada = () => {
         </div>
 
         <div className="max-w-2xl mx-auto text-center relative">
-          <div className="inline-flex items-center gap-2 bg-accent/20 border border-accent/40 text-accent px-3 py-1.5 rounded-full mb-5">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span className="stencil text-[10px] tracking-widest font-bold">
-              ÚLTIMA CHAMADA — RETA FINAL
-            </span>
-          </div>
 
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-flame shadow-flame mb-5">
             <Flame className="w-8 h-8 text-white" strokeWidth={2.5} />
