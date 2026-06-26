@@ -116,7 +116,14 @@ const Question = () => {
 
   const confirm = async () => {
     if (!selected || !current || !user) return;
-    const isCorrect = selected === current.correct_answer;
+    // Busca o gabarito de forma segura (RPC SECURITY DEFINER)
+    const { data: reveal } = await (supabase as any).rpc("reveal_question_answer", { _qid: current.id });
+    const correct = ((reveal?.correct_answer as string) ?? "").toUpperCase() as Letter;
+    const explanation = (reveal?.explanation as string) ?? "";
+    const commentImg = (reveal?.comment_image_url as string | null) ?? null;
+    // Atualiza a questão atual com os campos sensíveis somente após a resposta
+    setQuestions((prev) => prev.map((q, i) => i === index ? { ...q, correct_answer: correct, explanation, comment_image_url: commentImg } : q));
+    const isCorrect = selected === correct;
     const elapsed = Math.round((Date.now() - startRef.current) / 1000);
     setConfirmed(true);
     setCorrectStreak((s) => (isCorrect ? s + 1 : 0));
