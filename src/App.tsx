@@ -49,7 +49,7 @@ const App = () => (
             <Route path="/reta-final" element={<LandingPage />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/trial-expirado" element={<ProtectedRoute><TrialExpired /></ProtectedRoute>} />
-            <Route path="/selecionar-plano" element={<ProtectedRoute><SelecionarPlano /></ProtectedRoute>} />
+            <Route path="/selecionar-plano" element={<SelecionarPlano />} />
             <Route path="/" element={<RootRedirect />} />
             <Route path="/inicio" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
