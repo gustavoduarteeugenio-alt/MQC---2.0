@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/AppShell";
+import { fetchDedupedAttempts } from "@/lib/stats";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { Trophy, Target, Flame as FlameIcon, TrendingUp, Swords, AlertTriangle, ShieldCheck, BookOpen, Quote } from "lucide-react";
 
@@ -49,68 +50,74 @@ const Dashboard = () => {
     []
   );
 
-  useEffect(() => {
-    (async () => {
-      if (!user) return;
-      const { data: subs } = await supabase.from("subjects").select("id, name, slug").order("display_order");
-      const { data: attempts } = await supabase
-        .from("attempts")
-        .select("question_id, is_correct, created_at, questions(subject_id)")
-        .eq("user_id", user.id)
-        .limit(2000);
+  const load = useCallback(async () => {
+    if (!user) return;
+    const { data: subs } = await supabase.from("subjects").select("id, name, slug").order("display_order");
+    const attempts = await fetchDedupedAttempts(user.id);
 
-      const bySubject: Record<string, { total: number; correct: number }> = {};
-      (attempts ?? []).forEach((a: any) => {
-        const sid = a.questions?.subject_id;
-        if (!sid) return;
-        bySubject[sid] = bySubject[sid] ?? { total: 0, correct: 0 };
-        bySubject[sid].total++;
-        if (a.is_correct) bySubject[sid].correct++;
-      });
+    const bySubject: Record<string, { total: number; correct: number }> = {};
+    attempts.forEach((a) => {
+      const sid = a.subject_id;
+      if (!sid) return;
+      bySubject[sid] = bySubject[sid] ?? { total: 0, correct: 0 };
+      bySubject[sid].total++;
+      if (a.is_correct) bySubject[sid].correct++;
+    });
 
-      const built: Row[] = (subs ?? []).map((s: any) => {
-        const stat = bySubject[s.id] ?? { total: 0, correct: 0 };
-        const accuracy = stat.total ? Math.round((stat.correct / stat.total) * 100) : 0;
-        const weight = WEIGHTS[s.slug] ?? 10;
-        const target = weight === 5 ? TARGET_LIGHT : TARGET_HEAVY;
-        let status: Row["status"] = "ready";
-        if (stat.total >= 5) {
-          if (accuracy < target) status = "critical";
-          else if (accuracy < target + 10) status = "review";
-        }
-        // Índice de vulnerabilidade: gap até a meta x peso (5q valem mais por questão)
-        const gap = Math.max(0, target - accuracy);
-        const weightFactor = weight === 5 ? 2 : 1; // cada erro nas leves dói mais
-        const vulnerability = stat.total >= 5 ? gap * weightFactor : -1;
-
-        return {
-          subject: s.name.length > 16 ? s.name.split(" ").slice(0, 2).join(" ") : s.name,
-          fullName: s.name,
-          slug: s.slug,
-          total: stat.total,
-          correct: stat.correct,
-          accuracy,
-          weight,
-          target,
-          status,
-          vulnerability,
-        };
-      });
-      setRows(built);
-      setHasEligible(built.some((r) => r.total >= 5));
-
-      const total = (attempts ?? []).length;
-      const correct = (attempts ?? []).filter((a: any) => a.is_correct).length;
-      const days = new Set((attempts ?? []).map((a: any) => new Date(a.created_at).toISOString().slice(0, 10)));
-      let streak = 0;
-      const d = new Date();
-      while (days.has(d.toISOString().slice(0, 10))) {
-        streak++;
-        d.setDate(d.getDate() - 1);
+    const built: Row[] = (subs ?? []).map((s: any) => {
+      const stat = bySubject[s.id] ?? { total: 0, correct: 0 };
+      const accuracy = stat.total ? Math.round((stat.correct / stat.total) * 100) : 0;
+      const weight = WEIGHTS[s.slug] ?? 10;
+      const target = weight === 5 ? TARGET_LIGHT : TARGET_HEAVY;
+      let status: Row["status"] = "ready";
+      if (stat.total >= 5) {
+        if (accuracy < target) status = "critical";
+        else if (accuracy < target + 10) status = "review";
       }
-      setOverall({ total, correct, streak });
-    })();
+      const gap = Math.max(0, target - accuracy);
+      const weightFactor = weight === 5 ? 2 : 1;
+      const vulnerability = stat.total >= 5 ? gap * weightFactor : -1;
+
+      return {
+        subject: s.name.length > 16 ? s.name.split(" ").slice(0, 2).join(" ") : s.name,
+        fullName: s.name,
+        slug: s.slug,
+        total: stat.total,
+        correct: stat.correct,
+        accuracy,
+        weight,
+        target,
+        status,
+        vulnerability,
+      };
+    });
+    setRows(built);
+    setHasEligible(built.some((r) => r.total >= 5));
+
+    const total = attempts.length;
+    const correct = attempts.filter((a) => a.is_correct).length;
+    const days = new Set(attempts.map((a) => new Date(a.created_at).toISOString().slice(0, 10)));
+    let streak = 0;
+    const d = new Date();
+    while (days.has(d.toISOString().slice(0, 10))) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    setOverall({ total, correct, streak });
   }, [user]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Re-busca ao retornar à aba (bloco de treino recém-concluído)
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", load);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", load);
+    };
+  }, [load]);
 
   const accuracy = overall.total ? Math.round((overall.correct / overall.total) * 100) : 0;
 

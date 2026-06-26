@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Flame, Crown, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getSubjectStats, pickNextSubject } from "@/lib/training";
+import { fetchDedupedAttempts } from "@/lib/stats";
 import { toast } from "sonner";
 
 type SubjectStat = { name: string; total: number; correct: number; accuracy: number };
@@ -38,40 +38,45 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    (async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("attempts")
-        .select("is_correct, questions(subject_id, subjects(name))")
-        .eq("user_id", user.id)
-        .limit(2000);
+  const load = useCallback(async () => {
+    if (!user) return;
+    const data = await fetchDedupedAttempts(user.id);
 
-      if (!data) return;
+    const total = data.length;
+    const correct = data.filter((a) => a.is_correct).length;
+    setStats({ total, correct });
 
-      const total = data.length;
-      const correct = data.filter((a: any) => a.is_correct).length;
-      setStats({ total, correct });
+    const bySubject: Record<string, SubjectStat> = {};
+    data.forEach((a) => {
+      const name = a.subject_name;
+      if (!name) return;
+      bySubject[name] = bySubject[name] ?? { name, total: 0, correct: 0, accuracy: 0 };
+      bySubject[name].total++;
+      if (a.is_correct) bySubject[name].correct++;
+    });
 
-      const bySubject: Record<string, SubjectStat> = {};
-      data.forEach((a: any) => {
-        const name = a.questions?.subjects?.name;
-        if (!name) return;
-        bySubject[name] = bySubject[name] ?? { name, total: 0, correct: 0, accuracy: 0 };
-        bySubject[name].total++;
-        if (a.is_correct) bySubject[name].correct++;
-      });
+    const ranked = Object.values(bySubject)
+      .map((s) => ({ ...s, accuracy: Math.round((s.correct / s.total) * 100) }))
+      .filter((s) => s.total >= MIN_ATTEMPTS);
 
-      const ranked = Object.values(bySubject)
-        .map((s) => ({ ...s, accuracy: Math.round((s.correct / s.total) * 100) }))
-        .filter((s) => s.total >= MIN_ATTEMPTS);
-
-      if (ranked.length === 0) { setBest(null); setWorst(null); return; }
-      const sorted = [...ranked].sort((a, b) => b.accuracy - a.accuracy);
-      setBest(sorted[0]);
-      setWorst(sorted[sorted.length - 1]);
-    })();
+    if (ranked.length === 0) { setBest(null); setWorst(null); return; }
+    const sorted = [...ranked].sort((a, b) => b.accuracy - a.accuracy);
+    setBest(sorted[0]);
+    setWorst(sorted[sorted.length - 1]);
   }, [user]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Atualiza ao voltar para a aba (após terminar um bloco de treino)
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", load);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", load);
+    };
+  }, [load]);
 
   const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
   const firstName = profile?.full_name?.split(" ")[0] ?? "Recruta";
