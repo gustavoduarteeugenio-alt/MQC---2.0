@@ -53,11 +53,24 @@ const SimuladoRunner = () => {
       const ids = (att.answers ?? []).map((x) => x.question_id);
       if (ids.length) {
         const [{ data: qs }, { data: subs }] = await Promise.all([
-          supabase.from("questions").select("*").in("id", ids),
+          supabase.from("questions").select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, image_url").in("id", ids),
           supabase.from("subjects").select("id, name"),
         ]);
         const map: Record<string, Q> = {};
-        (qs ?? []).forEach((q: any) => { map[q.id] = q as Q; });
+        (qs ?? []).forEach((q: any) => {
+          map[q.id] = { ...q, correct_answer: "" as Letter, explanation: "", comment_image_url: null } as Q;
+        });
+        // Se o simulado já foi finalizado, buscamos os gabaritos para revisão
+        if (att.finished_at) {
+          const { data: reveal } = await (supabase as any).rpc("reveal_questions_answers", { _ids: ids });
+          ((reveal as any[]) ?? []).forEach((r: any) => {
+            if (map[r.id]) {
+              map[r.id].correct_answer = (r.correct_answer ?? "").toUpperCase() as Letter;
+              map[r.id].explanation = r.explanation ?? "";
+              map[r.id].comment_image_url = r.comment_image_url ?? null;
+            }
+          });
+        }
         setQuestions(ids.map((qid) => map[qid]).filter(Boolean));
         const sm: Record<string, string> = {};
         (subs ?? []).forEach((s: any) => { sm[s.id] = s.name; });
