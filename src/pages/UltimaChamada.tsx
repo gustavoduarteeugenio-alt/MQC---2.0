@@ -122,7 +122,7 @@ const UltimaChamada = () => {
                   R$
                 </span>
                 <span className="text-6xl sm:text-7xl font-display font-bold text-primary leading-none">
-                  49,90
+                  97,00
                 </span>
               </div>
               <p className="text-xs text-white/60 mt-2">
@@ -188,7 +188,7 @@ const UltimaChamada = () => {
           className="w-full h-12 bg-gradient-flame text-white font-display stencil shadow-flame"
         >
           <a href={KIWI_URL} target="_blank" rel="noopener noreferrer">
-            GARANTIR POR R$ 49,90
+            GARANTIR POR R$ 97,00
             <ChevronRight className="w-4 h-4 ml-1" />
           </a>
         </Button>
