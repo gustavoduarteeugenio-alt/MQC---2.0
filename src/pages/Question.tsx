@@ -48,26 +48,60 @@ const Question = () => {
       if (!sub) { navigate("/materias"); return; }
       setSubject(sub as Subject);
 
-      const { data: qs } = await supabase.from("questions").select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, image_url").eq("subject_id", sub.id).limit(100);
-
-      // Excluir questões já respondidas pelo usuário
-      let pool = qs ?? [];
-      if (user && pool.length > 0) {
-        const { data: doneRows } = await supabase
-          .from("attempts")
-          .select("question_id")
-          .eq("user_id", user.id)
-          .in("question_id", pool.map((q: any) => q.id));
-        const done = new Set((doneRows ?? []).map((r: any) => r.question_id));
-        const fresh = pool.filter((q: any) => !done.has(q.id));
-        // se sobraram inéditas, usa só elas; senão libera repetição (modo revisão)
-        if (fresh.length > 0) pool = fresh;
+      // 1) Busca TODOS os ids da matéria (paginado para superar o teto padrão do PostgREST)
+      const allIds: string[] = [];
+      const PAGE = 1000;
+      for (let from = 0; ; from += PAGE) {
+        const { data: page } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("subject_id", sub.id)
+          .range(from, from + PAGE - 1);
+        const rows = page ?? [];
+        rows.forEach((r: any) => allIds.push(r.id));
+        if (rows.length < PAGE) break;
       }
 
-      // Sorteio aleatório + limite de 10 questões por bloco da matéria selecionada
+      // 2) Exclui todas as questões já respondidas pelo usuário (dedup por question_id)
+      let candidateIds = allIds;
+      if (user && allIds.length > 0) {
+        const done = new Set<string>();
+        for (let from = 0; ; from += PAGE) {
+          const { data: page } = await supabase
+            .from("attempts")
+            .select("question_id")
+            .eq("user_id", user.id)
+            .range(from, from + PAGE - 1);
+          const rows = page ?? [];
+          rows.forEach((r: any) => done.add(r.question_id));
+          if (rows.length < PAGE) break;
+        }
+        const fresh = allIds.filter((id) => !done.has(id));
+        // Se sobraram inéditas, usa só elas; senão libera repetição (modo revisão)
+        if (fresh.length > 0) candidateIds = fresh;
+      }
+
+      // 3) Sorteio Fisher–Yates e escolhe até 10 ids únicos
       const BLOCK_SIZE = 10;
-      const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, BLOCK_SIZE);
-      setQuestions(shuffled as Question[]);
+      const arr = [...candidateIds];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      const pickIds = Array.from(new Set(arr)).slice(0, BLOCK_SIZE);
+
+      // 4) Busca as colunas seguras somente para os ids sorteados
+      let picked: any[] = [];
+      if (pickIds.length > 0) {
+        const { data } = await supabase
+          .from("questions")
+          .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, image_url")
+          .in("id", pickIds);
+        const byId = new Map((data ?? []).map((q: any) => [q.id, q]));
+        picked = pickIds.map((id) => byId.get(id)).filter(Boolean);
+      }
+
+      setQuestions(picked as Question[]);
       setIndex(0);
       setSelected(null);
       setConfirmed(false);
