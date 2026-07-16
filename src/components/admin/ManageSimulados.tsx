@@ -163,6 +163,8 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
           <Plus className="w-4 h-4 mr-1" /> Novo simulado
         </Button>
       </div>
+      <SimuladoBulkImport subjects={subjects} onImported={load} />
+
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
