@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, Pencil, Loader2, ClipboardList, Target } from "lucide-react";
 import { toast } from "sonner";
+import { SimuladoBulkImport } from "./SimuladoBulkImport";
 
 type Subject = { id: string; name: string };
 type Simulado = { id: string; name: string; description: string | null; duration_minutes?: number; q_count?: number };
@@ -162,6 +163,8 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
           <Plus className="w-4 h-4 mr-1" /> Novo simulado
         </Button>
       </div>
+      <SimuladoBulkImport subjects={subjects} onImported={load} />
+
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
