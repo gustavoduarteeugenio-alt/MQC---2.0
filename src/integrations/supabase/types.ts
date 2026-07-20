@@ -599,12 +599,36 @@ export type Database = {
         Args: { _per_subject?: number }
         Returns: Json
       }
+      get_my_simulado_rank: {
+        Args: { _simulado_id: string }
+        Returns: {
+          correct: number
+          duration_seconds: number
+          rank_position: number
+          total: number
+          total_users: number
+        }[]
+      }
       get_my_training_rank: {
         Args: never
         Returns: {
           correct_count: number
           rank_position: number
           total_users: number
+        }[]
+      }
+      get_simulado_ranking: {
+        Args: { _limit?: number; _simulado_id: string }
+        Returns: {
+          correct: number
+          display_name: string
+          duration_seconds: number
+          finished_at: string
+          is_anonymous: boolean
+          rank_position: number
+          total: number
+          user_id: string
+          weighted_score: number
         }[]
       }
       get_training_ranking: {
@@ -652,6 +676,16 @@ export type Database = {
           total: number
           total_count: number
           user_id: string
+        }[]
+      }
+      list_published_simulados: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          question_count: number
         }[]
       }
       list_staff: {
