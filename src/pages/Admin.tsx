@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare, Target } from "lucide-react";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
@@ -23,10 +23,10 @@ import { ManageQuestions } from "@/components/admin/ManageQuestions";
 import { ManageSimulados } from "@/components/admin/ManageSimulados";
 import { SupportMessages } from "@/components/admin/SupportMessages";
 import { AccessRequests } from "@/components/admin/AccessRequests";
-import { ManageDiagnostics } from "@/components/admin/ManageDiagnostics";
+import { HotmartPurchases } from "@/components/admin/HotmartPurchases";
 
 type Subject = { id: string; name: string; slug: string };
-type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support" | "diagnostics";
+type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support" | "hotmart";
 
 const sectionLabels: Record<Section, string> = {
   questions: "Questões",
@@ -35,7 +35,7 @@ const sectionLabels: Record<Section, string> = {
   users: "Usuários",
   admins: "Administradores",
   support: "Mensagens de Suporte",
-  diagnostics: "Diagnósticos",
+  hotmart: "Compras Hotmart",
 };
 
 const Admin = () => {
@@ -75,7 +75,7 @@ const Admin = () => {
       case "bulk": return <BulkImport subjects={subjects} onImported={() => {}} />;
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
-      case "diagnostics": return <ManageDiagnostics />;
+      case "hotmart": return <HotmartPurchases />;
       case "admins": return <ManageAdmins />;
       case "support": return (
         <div className="space-y-8">
@@ -165,10 +165,10 @@ const Admin = () => {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={active === "diagnostics"} onClick={() => handleNav("diagnostics")}>
-                        <button className={cn("flex items-center gap-2", active === "diagnostics" && "bg-primary/10 text-primary")}>
-                          <Target className="h-4 w-4" />
-                          <span>Diagnósticos</span>
+                      <SidebarMenuButton asChild isActive={active === "hotmart"} onClick={() => handleNav("hotmart")}>
+                        <button className={cn("flex items-center gap-2", active === "hotmart" && "bg-primary/10 text-primary")}>
+                          <ShoppingBag className="h-4 w-4" />
+                          <span>Hotmart</span>
                         </button>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -263,13 +263,13 @@ const Admin = () => {
               )}
               {isAdmin && (
                 <button
-                  onClick={() => handleNav("diagnostics")}
+                  onClick={() => handleNav("hotmart")}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
-                    active === "diagnostics" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    active === "hotmart" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                   )}
                 >
-                  Diagnósticos
+                  Hotmart
                 </button>
               )}
               {isAdmin && (

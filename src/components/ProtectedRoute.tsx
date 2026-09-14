@@ -3,8 +3,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { Navigate, useLocation } from "react-router-dom";
 import { Flame } from "lucide-react";
 
-// Routes that remain accessible after trial expires (paywall + account)
-const ALLOW_AFTER_TRIAL = ["/trial-expirado", "/planos", "/perfil"];
+// Routes that remain accessible without course access (account screens)
+const ALLOW_WITHOUT_ACCESS = ["/sem-acesso", "/perfil"];
 
 export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading: authLoading } = useAuth();
@@ -20,8 +20,8 @@ export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   }
   if (!user) return <Navigate to="/auth" replace />;
 
-  if (!hasAccess && !ALLOW_AFTER_TRIAL.includes(location.pathname)) {
-    return <Navigate to="/trial-expirado" replace />;
+  if (!hasAccess && !ALLOW_WITHOUT_ACCESS.includes(location.pathname)) {
+    return <Navigate to="/sem-acesso" replace />;
   }
 
   return children;

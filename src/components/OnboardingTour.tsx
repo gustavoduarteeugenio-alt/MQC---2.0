@@ -36,7 +36,7 @@ const STEPS = [
 
 export const OnboardingTour = () => {
   const { user } = useAuth();
-  const { profile, loading, refresh, isPremium } = useProfile();
+  const { profile, loading, refresh } = useProfile();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -82,11 +82,6 @@ export const OnboardingTour = () => {
         </div>
         <div className="px-6 py-5 space-y-4">
           <p className="text-sm text-foreground/80 leading-relaxed">{current.body}</p>
-          {isFirst && !isPremium && (
-            <div className="rounded-lg bg-warning/10 border border-warning/30 px-3 py-2 text-xs text-foreground">
-              <strong className="stencil text-warning-foreground">Teste grátis ativo:</strong> 5 dias de acesso total a todas as funcionalidades. Aproveite cada minuto.
-            </div>
-          )}
           <div className="flex items-center justify-between gap-3 pt-1">
             <button
               type="button"

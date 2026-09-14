@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Flame, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { AccessFields, hasActiveAccess, isAccessExpired } from "@/lib/access";
 
 const signUpSchema = z
   .object({
@@ -111,23 +112,24 @@ const Auth = () => {
       ? "As senhas não coincidem."
       : null;
 
-  const linkPendingDiagnostic = async (userId: string) => {
-    const token = localStorage.getItem("diag_pending_token");
-    if (!token) return;
-    const { data, error } = await (supabase as any).rpc("claim_diagnostic_session", {
-      _client_token: token,
-    });
-    if (error || !data?.ok) { localStorage.removeItem("diag_pending_token"); return; }
-    if (data.results) {
-      await supabase
-        .from("profiles")
-        .update({
-          diagnostic_results: data.results as any,
-          diagnostic_completed_at: data.completed_at ?? new Date().toISOString(),
-        } as any)
-        .eq("user_id", userId);
-    }
-    localStorage.removeItem("diag_pending_token");
+  const accessStatus = async (userId: string): Promise<"active" | "expired" | "pending"> => {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("approved, access_until" as any)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (hasActiveAccess(prof as AccessFields | null)) return "active";
+    return isAccessExpired(prof as AccessFields | null) ? "expired" : "pending";
+  };
+
+  // Sem compra aprovada: desloga e mostra o card de "aguardando liberação"
+  const showPending = async (pendingFor: string) => {
+    // Grava antes do signOut: se a tela remontar no meio, ela já lê o e-mail pendente
+    localStorage.setItem("pending_approval_email", pendingFor);
+    await supabase.auth.signOut();
+    setPendingEmail(pendingFor);
+    setSupportSent(false);
+    setSupportMessage("");
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -153,13 +155,23 @@ const Auth = () => {
           else toast.error(error.message);
           return;
         }
-        if (signUpData.user) await linkPendingDiagnostic(signUpData.user.id);
-        // Conta criada mas precisa de aprovação do admin
-        await supabase.auth.signOut();
-        toast.success("Conta criada! Aguarde a liberação do administrador para acessar.");
-        setMode("signin");
         setPassword("");
         setConfirmPassword("");
+        if (!signUpData.session) {
+          // Projeto exige confirmação de e-mail antes do primeiro login
+          toast.success("Conta criada! Confirme seu e-mail e depois faça login.");
+          setMode("signin");
+          return;
+        }
+        // O cadastro já nasce liberado quando o e-mail tem compra aprovada na Hotmart
+        if (signUpData.user && (await accessStatus(signUpData.user.id)) === "active") {
+          localStorage.removeItem("pending_approval_email");
+          toast.success("Conta criada! Bons estudos.");
+          navigate("/", { replace: true });
+          return;
+        }
+        setMode("signin");
+        await showPending(parsed.data.email);
       } else {
         const parsed = signInSchema.safeParse({ email, password });
         if (!parsed.success) {
@@ -174,23 +186,14 @@ const Auth = () => {
           toast.error("Credenciais inválidas.");
           return;
         }
-        // Checar se a conta foi aprovada pelo admin
+        // Checar se o acesso está liberado (compra aprovada ou liberação manual)
+        // Prazo vencido segue logado: /sem-acesso mostra a data e a renovação libera de novo.
         if (signInData.user) {
-          const { data: prof } = await supabase
-            .from("profiles")
-            .select("approved" as any)
-            .eq("user_id", signInData.user.id)
-            .maybeSingle();
-          if (!prof || (prof as any).approved !== true) {
-            await supabase.auth.signOut();
-            localStorage.setItem("pending_approval_email", parsed.data.email);
-            setPendingEmail(parsed.data.email);
-            setSupportSent(false);
-            setSupportMessage("");
+          if ((await accessStatus(signInData.user.id)) === "pending") {
+            await showPending(parsed.data.email);
             return;
           }
           localStorage.removeItem("pending_approval_email");
-          await linkPendingDiagnostic(signInData.user.id);
         }
         navigate("/", { replace: true });
       }
@@ -257,7 +260,7 @@ const Auth = () => {
                   ✅ Acesso liberado!
                 </h2>
                 <p className="text-sm text-white/85 leading-relaxed">
-                  Seu acesso foi aprovado pelo administrador. Faça login para iniciar sua preparação.
+                  Encontramos sua matrícula. Faça login para iniciar sua preparação.
                 </p>
                 <p className="text-[11px] text-white/60 stencil mt-1">E-mail: {pendingEmail}</p>
               </div>
@@ -279,11 +282,12 @@ const Auth = () => {
                   <AlertTriangle className="w-7 h-7 text-amber-300" />
                 </div>
                 <h2 className="font-display text-lg font-bold text-amber-100">
-                  ⚠️ Aguardando liberação do administrador
+                  ⚠️ Acesso ainda não liberado
                 </h2>
                 <p className="text-sm text-white/80 leading-relaxed">
-                  Seu cadastro foi realizado com sucesso! Nossa equipe está validando seu acesso junto à plataforma de pagamento.
-                  Em breve suas frentes de combate estarão liberadas. Se preferir, envie uma mensagem direto para o nosso suporte abaixo.
+                  Ainda não encontramos uma compra aprovada do curso na Hotmart com este e-mail.
+                  Se você acabou de comprar, o acesso é liberado automaticamente em alguns minutos — esta tela avisa quando acontecer.
+                  Se comprou com outro e-mail, informe-o ao suporte abaixo.
                 </p>
                 <p className="text-[11px] text-amber-200/80 stencil mt-1">E-mail: {pendingEmail}</p>
               </div>
@@ -299,7 +303,7 @@ const Auth = () => {
                   <Textarea
                     value={supportMessage}
                     onChange={(e) => setSupportMessage(e.target.value)}
-                    placeholder="Digite sua mensagem ou informe o e-mail cadastrado na Kiwifi..."
+                    placeholder="Informe o e-mail usado na compra da Hotmart ou descreva o problema..."
                     rows={4}
                     maxLength={2000}
                     className="bg-white/10 border-white/20 text-white placeholder:text-white/40"

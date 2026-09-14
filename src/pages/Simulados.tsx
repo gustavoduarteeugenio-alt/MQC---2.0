@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useProfile";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ClipboardList, Shuffle, Clock, Lock, Crown, ChevronRight, Trophy } from "lucide-react";
+import { ArrowLeft, ClipboardList, Shuffle, Clock, ChevronRight, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { PlanSelectionDialog } from "@/components/PlanSelectionDialog";
 
 // Distribuição: total 50 (10+5+10+10+10+5)
 const RANDOM_DISTRIBUTION: { label: string; slugs: string[]; count: number }[] = [
@@ -28,7 +26,6 @@ type Attempt = {
 const Simulados = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isPremium } = useProfile();
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [history, setHistory] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +47,6 @@ const Simulados = () => {
   useEffect(() => { load(); }, []);
 
   const startFixed = async (sim: Simulado) => {
-    if (!isPremium) { toast.error("Disponível apenas no Premium."); return; }
     if (!user) return;
     if ((sim.q_count ?? 0) === 0) { toast.error("Simulado sem questões."); return; }
     const { data: links } = await (supabase.from("simulado_questions" as any)
@@ -71,7 +67,6 @@ const Simulados = () => {
   };
 
   const generateRandom = async () => {
-    if (!isPremium) { toast.error("Disponível apenas no Premium."); return; }
     if (!user) return;
     setGenerating(true);
     try {
@@ -131,21 +126,6 @@ const Simulados = () => {
       </header>
 
       <main className="px-5 py-5 space-y-5">
-        {!isPremium && (
-          <PlanSelectionDialog>
-            <button className="w-full flex items-center justify-between bg-card border border-dashed border-primary/40 rounded-2xl px-5 py-4 shadow-card text-left">
-              <div className="flex items-center gap-3">
-                <Lock className="w-5 h-5 text-primary" />
-                <div>
-                  <p className="stencil text-[10px] text-muted-foreground">Bloqueado · Premium</p>
-                  <p className="font-display font-semibold">Simulados são exclusivos do Premium</p>
-                </div>
-              </div>
-              <Crown className="w-5 h-5 text-warning" />
-            </button>
-          </PlanSelectionDialog>
-        )}
-
         {/* Gerar aleatório */}
         <section className="bg-gradient-flame rounded-2xl p-5 text-white shadow-flame">
           <div className="flex items-center gap-2 stencil text-[11px] opacity-90">
@@ -160,7 +140,7 @@ const Simulados = () => {
           </ul>
           <Button
             onClick={generateRandom}
-            disabled={!isPremium || generating}
+            disabled={generating}
             className="mt-4 w-full bg-white text-foreground hover:bg-white/90 font-display stencil"
           >
             {generating ? "Sorteando questões..." : "Gerar agora"}
@@ -183,7 +163,6 @@ const Simulados = () => {
                 <button
                   key={s.id}
                   onClick={() => startFixed(s)}
-                  disabled={!isPremium}
                   className="w-full text-left flex items-center gap-3 bg-card border border-border rounded-2xl p-4 shadow-card hover:border-primary/50 transition-all disabled:opacity-50"
                 >
                   <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center">
