@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, Clock, Mail, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { accessUntilFrom } from "@/lib/access";
 
 type Ticket = {
   id: string;
@@ -48,15 +49,9 @@ export const AccessRequests = () => {
         setBusy(null);
         return;
       }
-      const oneYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
       const { error: upErr } = await (supabase as any)
         .from("profiles")
-        .update({
-          approved: true,
-          plan: "premium",
-          premium_since: new Date().toISOString(),
-          premium_until: oneYear,
-        })
+        .update({ approved: true, access_until: accessUntilFrom() })
         .eq("user_id", prof.user_id);
       if (upErr) {
         toast.error("Falha ao aprovar usuário");
@@ -70,7 +65,7 @@ export const AccessRequests = () => {
           resolved_at: new Date().toISOString(),
         })
         .eq("id", t.id);
-      toast.success("Usuário aprovado e liberado como Premium!");
+      toast.success("Usuário liberado por 1 ano!");
       await load();
     } finally {
       setBusy(null);

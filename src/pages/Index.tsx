@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { Flame, Crown, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+import { Flame, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getSubjectStats, pickNextSubject } from "@/lib/training";
 import { fetchDedupedAttempts } from "@/lib/stats";
@@ -15,7 +15,7 @@ const MIN_ATTEMPTS = 3; // mínimo de questões pra entrar no ranking
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, isPremium } = useProfile();
+  const { profile } = useProfile();
   const [stats, setStats] = useState({ total: 0, correct: 0 });
   const [best, setBest] = useState<SubjectStat | null>(null);
   const [worst, setWorst] = useState<SubjectStat | null>(null);
@@ -102,12 +102,6 @@ const Index = () => {
               <Flame className="w-6 h-6 text-white" strokeWidth={2.5} />
             </div>
           </div>
-
-          {isPremium && (
-            <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] stencil tracking-wide bg-warning text-warning-foreground">
-              <Crown className="w-3.5 h-3.5" /> Plano Premium
-            </div>
-          )}
         </div>
       </header>
 

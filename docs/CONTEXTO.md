@@ -1,7 +1,7 @@
 # Método Questão Certa — Contexto Completo do Aplicativo
 
 Documento único de referência: produto, UX/UI, frontend, backend, regras de negócio e modelo de negócio.
-Atualizado em: 15/08/2026.
+Atualizado em: 14/09/2026.
 
 ---
 
@@ -11,54 +11,38 @@ Atualizado em: 15/08/2026.
 **Público:** candidatos ao concurso CFSd BM, banca IDECAN.
 **Promessa central:** "acertar 80% das questões até o dia da prova" através de treino direcionado às matérias mais fracas do aluno.
 
-**Diferencial:** o app não é um banco de questões passivo. Ele diagnostica, calcula desempenho por disciplina e conduz o aluno para o que ele erra mais, em blocos curtos de 10 questões.
+**Diferencial:** o app não é um banco de questões passivo. Ele calcula desempenho por disciplina e conduz o aluno para o que ele erra mais, em blocos curtos de 10 questões.
 
 URLs principais:
 - App publicado: `https://prep-cfsd-buddy.lovable.app`
-- Diagnóstico (porta de entrada pública): `/diagnostico`
-- Página de vendas: `/ultima-chamada`
-- Página de planos: `/selecionar-plano`
 - Login/cadastro: `/auth`
 
 ---
 
 ## 2. Modelo de negócio
 
-### 2.1 Funil
+### 2.1 O app como parte do curso
+
+O app é um **subproduto de uma metodologia de ensino**. Ele não tem funil, página de vendas, diagnóstico público nem checkout próprio.
 
 ```
-Tráfego (Instagram / anúncios)
+Compra do curso na Hotmart (aulas gravadas + acesso ao app)
         ↓
-/diagnostico  → 12 questões gratuitas, sem login
+Webhook da Hotmart → Edge Function hotmart-webhook → profiles.approved = true
         ↓
-Captura de lead (nome + @Instagram) antes de liberar o resultado
-        ↓
-Resultado com pontos fracos + CTA "Liberar meu treino focado"
-        ↓
-Checkout Kiwify (pagamento externo)
-        ↓
-Cadastro em /auth
-        ↓
-Liberação manual do acesso pelo administrador (aprovação)
+Cadastro/login em /auth com o mesmo e-mail da compra
         ↓
 Uso do app (treino, simulados, ranking)
 ```
 
-### 2.2 Oferta e preços atuais
+- **Prazo de acesso: 1 ano** a partir da aprovação da compra. Recompra com o mesmo e-mail libera mais 1 ano a partir da nova aprovação.
+- Reembolso ou chargeback na Hotmart retira o acesso automaticamente.
+- Se o aluno comprou com outro e-mail, abre um ticket na tela de login e o admin libera manualmente.
 
-| Oferta | Preço | Checkout |
-|---|---|---|
-| Acesso até o dia da prova | R$ 79,90 (até 2x de R$ 39,95) — oferta principal | `https://pay.kiwify.com.br/5kq1jdL` |
-| Mensal | conforme card em `/selecionar-plano` | `https://pay.kiwify.com.br/PMLV49m` |
-| Campanha "Última Chamada" | R$ 97,00 | `https://pay.kiwify.com.br/5kq1jdL` |
+### 2.2 Regras comerciais vigentes
 
-**Importante:** o pagamento é 100% externo (Kiwify). Não há integração de webhook nem cobrança dentro do app. A ponte entre "pagou" e "usa" é **manual**: o administrador aprova o e-mail no painel.
-
-### 2.3 Regras comerciais vigentes
-
-- Não existe mais "plano básico" nem venda de gabarito: **todo usuário aprovado tem acesso ilimitado** ao banco de questões, gabaritos comentados e simulados.
-- Não há anúncios em nenhuma tela.
-- O acesso é controlado por aprovação administrativa (`profiles.approved`) e, tecnicamente, ainda existe um período de trial de 5 dias e campos de plano no banco — legado mantido para compatibilidade, sem uso comercial ativo.
+- **Todo usuário liberado tem acesso ilimitado** ao banco de questões, gabaritos comentados e simulados. Não há planos, trial nem anúncios.
+- Campos `plan`, `premium_until`, `premium_since`, `trial_started_at` e a tabela `daily_usage` continuam no schema como legado, sem efeito no acesso.
 
 ---
 
@@ -95,9 +79,9 @@ Regra: **nunca hardcodar cores** (`text-white`, `bg-[#...]`) em componentes — 
 
 | Rota | Tela | Papel na experiência |
 |---|---|---|
-| `/` | RootRedirect | logado → `/inicio`; deslogado → `/diagnostico` |
-| `/diagnostico` | Diagnóstico | 12 questões fixas (2 por disciplina), sem gabarito durante a execução, captura de lead, resultado com matéria crítica e CTAs |
-| `/auth` | Login/Cadastro | inclui card âmbar de "aguardando liberação" com canal de suporte, polling de aprovação e estado de "acesso liberado" |
+| `/` | RootRedirect | logado → `/inicio`; deslogado → `/auth` |
+| `/auth` | Login/Cadastro | inclui card âmbar de "acesso ainda não liberado" com canal de suporte, polling de aprovação e estado de "acesso liberado" |
+| `/sem-acesso` | Acesso pendente | usuário logado sem acesso (compra reembolsada ou prazo de 1 ano vencido, com a data): "verificar novamente" e atalho para o suporte |
 | `/inicio` | Home limpa | 4 métricas (acerto geral, total respondidas, melhor e pior matéria) + botão "Treinar agora" que leva direto à questão certa |
 | `/materias` | Matérias | lista de disciplinas, sem exibir quantidade de questões |
 | `/questao/:slug` | Treino | placar de acertos/erros da sessão, cronômetro, alternativas A–E, gabarito comentado após confirmar, "Próxima questão" e "Encerrar treino" |
@@ -107,9 +91,7 @@ Regra: **nunca hardcodar cores** (`text-white`, `bg-[#...]`) em componentes — 
 | `/ranking` | Ranking | abas "Geral" (treino) e "Simulados Inéditos", pódio ouro/prata/bronze e card fixo com a posição do usuário |
 | `/perfil` | Perfil | dados, apelido de ranking e toggle de anonimato (LGPD) |
 | `/suporte` | Suporte | chat com o administrador |
-| `/admin` | Painel | questões, importação em massa, simulados, usuários, liberações de acesso, diagnósticos e suporte |
-| `/ultima-chamada`, `/reta-final` | Vendas | landing pages públicas |
-| `/selecionar-plano` | Oferta | pública, sem exigir cadastro |
+| `/admin` | Painel | questões, importação em massa, simulados, usuários, compras Hotmart, liberações de acesso e suporte |
 
 ---
 
@@ -126,19 +108,23 @@ src/
 ├── components/
 │   ├── ProtectedRoute      guarda de rota (auth + acesso)
 │   ├── BottomNav, AppShell, NavLink
-│   ├── QuestionImage, RichText, AdBanner (inativo)
+│   ├── QuestionImage, RichText, OnboardingTour
 │   └── admin/              ManageQuestions, BulkImport, ManageSimulados,
 │                           SimuladoBulkImport, ManageUsers, AccessRequests,
-│                           ManageAdmins, ManageDiagnostics, SupportMessages
+│                           ManageAdmins, HotmartPurchases, SupportMessages
 ├── hooks/
-│   ├── useProfile          perfil, papéis, trial, uso diário, hasAccess
-│   └── usePremiumFeatures  flags de recursos (legado)
+│   └── useProfile          perfil, papéis, uso diário, hasAccess
 ├── lib/
 │   ├── training.ts         getSubjectStats + pickNextSubject
 │   ├── stats.ts            fetchDedupedAttempts
+│   ├── access.ts           regra de acesso (approved + prazo de 1 ano)
 │   └── training.test.ts    13 casos cobrindo a lógica de seleção
 ├── pages/                  telas listadas na seção 3.3
 └── integrations/supabase/  client + types (gerados, não editar)
+
+supabase/
+├── functions/hotmart-webhook/  index.ts (Edge Function) + events.ts (parser testado)
+└── migrations/
 ```
 
 ### 4.2 Padrões
@@ -160,11 +146,12 @@ src/
 | `questions` | questões: `subject_id`, `statement`, `option_a..e`, `correct_answer`, `explanation`, `difficulty`, `banca`, `year`, `subtopic`, `image_url`, `comment_image_url` |
 | `attempts` | respostas do treino: `user_id`, `question_id`, `selected_answer`, `is_correct`, `time_seconds` |
 | `daily_usage` | contagem diária de questões (legado do limite básico) |
-| `profiles` | `user_id`, `full_name`, `email`, `plan`, `premium_until`, `trial_started_at`, `approved`, `ranking_name`, `show_in_ranking`, `diagnostic_results` |
+| `profiles` | `user_id`, `full_name`, `email`, `approved`, `access_until`, `ranking_name`, `show_in_ranking` (+ legado: `plan`, `premium_until`, `trial_started_at`, `diagnostic_results`) |
 | `user_roles` | papéis separados do perfil: `admin`, `admin_didatico`, `user` |
 | `simulados`, `simulado_questions`, `simulado_attempts` | provas completas, composição e resultados (`by_subject` em JSON) |
-| `diagnostic_sessions` | sessões do diagnóstico público: `client_token`, respostas, resultado, `lead_name`, `instagram_handle` |
-| `landing_leads` | leads das landing pages |
+| `hotmart_purchases` | uma linha por transação Hotmart: `email`, `status` (`active`/`revoked`), `approved_at`, `access_until` (+1 ano), `last_event`, `last_event_at` |
+| `hotmart_webhook_events` | log de eventos recebidos (sem payload bruto), idempotência por `hotmart_event_id` |
+| `diagnostic_sessions`, `landing_leads` | legado do antigo funil; sem uso no app, dados mantidos |
 | `tickets_suporte` | pedidos de liberação de acesso (usuários não aprovados) |
 | `support_messages`, `support_replies` | chat de suporte aluno ↔ admin |
 
@@ -172,6 +159,9 @@ src/
 
 - RLS habilitado em todas as tabelas públicas, com GRANTs explícitos por papel.
 - `correct_answer` e `explanation` têm **SELECT revogado em nível de coluna**; só saem por RPC `SECURITY DEFINER` (`reveal_question_answer`, `reveal_questions_answers`) e apenas para usuários autenticados.
+- Colunas de acesso de `profiles` (`approved`, `access_until`, `email`, `plan`, `premium_*`, `trial_started_at`) são protegidas pelo trigger `protect_profile_access_columns`: só admin, service_role ou funções `SECURITY DEFINER` alteram.
+- `hotmart_purchases` e `hotmart_webhook_events`: SELECT só para admin; escrita só pela RPC `apply_hotmart_event` (service_role).
+- A Edge Function `hotmart-webhook` roda sem JWT (`verify_jwt = false`) e valida o header `X-HOTMART-HOTTOK` contra o secret `HOTMART_HOTTOK`.
 - `diagnostic_sessions` é fail-closed: INSERT/DELETE diretos negados; toda a interação passa por RPCs com validação de `client_token`.
 - Papéis nunca ficam em `profiles` — sempre em `user_roles`, validados pela função `has_role()` (`SECURITY DEFINER`), evitando escalonamento de privilégio.
 - `landing_leads` e `tickets_suporte` aceitam INSERT anônimo com validação de formato, mas SELECT apenas para admin.
@@ -180,15 +170,16 @@ src/
 
 | Função | Uso |
 |---|---|
-| `get_diagnostic_questions(_per_subject)` | 2 questões por disciplina, determinístico |
-| `create_diagnostic_session` / `submit_diagnostic_answers` / `set_diagnostic_lead` / `claim_diagnostic_session` | ciclo completo do diagnóstico |
+| `apply_hotmart_event` | aplica um evento do webhook (idempotente, descarta eventos fora de ordem) e sincroniza `approved` |
+| `sync_hotmart_access(email)` | `approved` = existe compra ativa e no prazo para o e-mail; `access_until` = maior prazo (casando por `auth.users.email`) |
+| `check_account_approved(email)` | polling da tela de login; considera o prazo |
+| `list_hotmart_purchases` | listagem do admin com indicação de conta criada |
 | `reveal_question_answer` / `reveal_questions_answers` | gabarito após a resposta |
-| `check_account_approved(email)` | polling da tela de login |
 | `has_role`, `grant_role_by_email`, `revoke_role`, `list_staff`, `list_admins` | administração de papéis |
 | `get_training_ranking`, `get_my_training_rank` | ranking geral |
 | `list_published_simulados`, `get_simulado_ranking`, `get_my_simulado_rank` | ranking de simulados |
-| `list_diagnostic_sessions`, `get_diagnostic_overview` | métricas de diagnóstico no admin |
-| `handle_new_user` (trigger) | cria `profiles` + papel `user` no cadastro |
+| `handle_new_user` (trigger) | cria `profiles` + papel `user` no cadastro; já nasce `approved` se o e-mail tem compra ativa |
+| RPCs de diagnóstico (`get_diagnostic_questions`, `create_diagnostic_session`...) | legado do antigo funil, sem uso no app |
 | `expire_premium_users` | rebaixa planos vencidos (legado) |
 
 ---
@@ -197,21 +188,22 @@ src/
 
 ### 6.1 Acesso e autenticação
 
-1. Cadastro cria automaticamente perfil (`approved = false`) e papel `user`.
-2. Login é bloqueado enquanto `approved = false`: aparece card âmbar "aguardando liberação do administrador", com caixa de texto para abrir ticket, botão "Voltar para o login" e persistência do estado em `localStorage`.
-3. O app faz polling de `check_account_approved`; ao ser aprovado, a tela troca para "acesso liberado" com botão de login.
-4. `ProtectedRoute` exige sessão; usuários sem acesso são enviados a `/trial-expirado` (rotas liberadas: `/trial-expirado`, `/planos`, `/perfil`).
-5. `hasAccess = isPremium || trialActive || isAdmin || isDidacticAdmin`.
+1. Cadastro cria automaticamente perfil e papel `user`. O perfil já nasce liberado (com `access_until`) se o e-mail tiver compra ativa e no prazo em `hotmart_purchases`; nesse caso o aluno entra direto.
+2. Login é bloqueado enquanto `approved = false`: aparece card âmbar "acesso ainda não liberado", com caixa de texto para abrir ticket, botão "Voltar para o login" e persistência do estado em `localStorage`.
+3. O app faz polling de `check_account_approved`; quando o webhook libera, a tela troca para "acesso liberado" com botão de login.
+4. `ProtectedRoute` exige sessão; usuários sem acesso são enviados a `/sem-acesso` (rotas liberadas: `/sem-acesso`, `/perfil`).
+5. `hasAccess = hasActiveAccess(profile) || isAdmin || isDidacticAdmin`, onde `hasActiveAccess = approved && (access_until nulo || access_until > agora)` (`src/lib/access.ts`).
+6. Com o prazo vencido o aluno continua conseguindo logar, mas cai em `/sem-acesso` com a data de término; a renovação na Hotmart libera de novo.
+7. Liberação manual pelo admin (Usuários ou Liberações de acesso) concede 1 ano a partir do momento da liberação.
 
-### 6.2 Diagnóstico
+### 6.2 Liberação pela Hotmart
 
-- Público, sem login. Sempre as **mesmas 12 questões** (2 por disciplina), ordem determinística.
-- Nenhum gabarito é mostrado durante a execução.
-- Após a 12ª questão, o resultado só é liberado depois do cadastro simples (nome + @Instagram).
-- Comparação de resposta normalizada em maiúsculas.
-- Resultado: percentual geral com cor (verde/amarelo/vermelho), desempenho por matéria e "Matéria mais crítica".
-- Resultado persistido em `diagnostic_sessions` e, quando o usuário se cadastra, associado ao `profiles`.
-- CTAs finais: "Liberar meu treino focado" (Kiwify) e "Criar conta / Entrar".
+- Eventos que **liberam**: `PURCHASE_APPROVED`, `PURCHASE_COMPLETE`. Eventos que **retiram**: `PURCHASE_REFUNDED`, `PURCHASE_CHARGEBACK`. Os demais só ficam registrados.
+- O acesso é por transação: o aluno fica liberado enquanto tiver **ao menos uma** compra ativa e dentro do prazo com o e-mail.
+- O prazo conta de `data.purchase.approved_date` (ou da data do evento, se não vier) e não é estendido por `PURCHASE_COMPLETE`.
+- Eventos repetidos (mesmo `id`) são descartados; eventos mais antigos que o último aplicado na transação não sobrescrevem o status.
+- Secret opcional `HOTMART_PRODUCT_IDS` (IDs separados por vírgula) restringe quais produtos da conta dão acesso.
+- Revogação afeta qualquer perfil com aquele e-mail, inclusive se ele tinha sido liberado manualmente.
 
 ### 6.3 Treino direcionado (núcleo do método)
 
@@ -259,9 +251,9 @@ src/
 Painel `/admin` (papéis `admin` e `admin_didatico`):
 - Questões: CRUD, upload de imagens (bucket público `question-images`), importação em massa.
 - Simulados: criação manual e importação de planilha.
-- Usuários: liberação de acesso (fluxo simplificado, sem restringir plano nem reiniciar trial).
-- Liberações de acesso: fila de tickets de cadastro pendente.
-- Diagnósticos: métricas (sessões, concluídos, leads, últimas 24h/7d, média) e exportação CSV de leads.
+- Usuários: liberar/revogar acesso manualmente.
+- Hotmart: compras recebidas (ativa/revogada, se o comprador já criou conta), últimos eventos e URL do webhook.
+- Liberações de acesso: fila de tickets de cadastro pendente (ex.: comprou com outro e-mail).
 - Suporte: chat com alunos.
 - Admins: conceder/revogar papéis por e-mail (`admin_didatico` tem acesso apenas ao conteúdo didático).
 
@@ -272,5 +264,6 @@ Painel `/admin` (papéis `admin` e `admin_didatico`):
 - Não há edital/concurso nem hierarquia assunto/subassunto no banco — apenas `subjects` e o campo livre `subtopic`.
 - `attempts` não tem restrição de unicidade; a deduplicação é feita na aplicação.
 - O cálculo de estatísticas opera sob um teto prático de linhas lidas.
-- Conciliação pagamento → liberação é manual (sem webhook Kiwify).
-- Campos de plano/trial/`daily_usage` permanecem no schema como legado, sem efeito comercial hoje.
+- Usuários liberados antes da Hotmart têm `access_until` nulo (sem prazo).
+- O prazo é verificado no app (frontend e `check_account_approved`); as policies RLS das tabelas de conteúdo não checam acesso.
+- Campos de plano/trial/`daily_usage`, tabelas e RPCs do antigo funil (diagnóstico, `landing_leads`) permanecem no schema como legado.

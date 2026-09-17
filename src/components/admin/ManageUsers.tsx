@@ -4,28 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Crown, Loader2, Users, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Loader2, Users, CheckCircle2, XCircle, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
-
-type PlanType = "basic" | "premium" | "monthly" | "quarterly";
+import { accessUntilFrom, formatAccessDate, hasActiveAccess, isAccessExpired } from "@/lib/access";
 
 type UserRow = {
   user_id: string;
   full_name: string | null;
   email: string | null;
-  plan: PlanType;
-  premium_until: string | null;
-  premium_since: string | null;
   origem: string | null;
-  trial_started_at: string | null;
   approved: boolean;
-};
-
-const PLAN_LABEL: Record<PlanType, string> = {
-  basic: "Básico",
-  premium: "Premium",
-  monthly: "Mensal",
-  quarterly: "Trimestral",
+  access_until: string | null;
 };
 
 const ORIGEM_OPTIONS = ["Instagram", "Indicação de Amigo", "Grupos de Estudo", "Google"];
@@ -42,7 +31,7 @@ export const ManageUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, plan, premium_until, premium_since, origem, trial_started_at, approved" as any)
+      .select("user_id, full_name, email, origem, approved, access_until" as any)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
@@ -81,53 +70,27 @@ export const ManageUsers = () => {
     });
   }, [users, query, originFilter]);
 
-  const setPlan = async (u: UserRow, newPlan: PlanType, days: number | null) => {
-    setUpdatingId(u.user_id);
-    const now = new Date();
-    const premium_since = newPlan === "basic" ? null : now.toISOString();
-    const premium_until =
-      newPlan === "basic" || days === null
-        ? null
-        : new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ plan: newPlan, premium_until, premium_since } as any)
-      .eq("user_id", u.user_id);
-
-    setUpdatingId(null);
-
-    if (error) {
-      toast.error("Falha ao atualizar plano: " + error.message);
-      return;
-    }
-    toast.success(
-      newPlan === "basic"
-        ? `Premium removido de ${u.email ?? "usuário"}`
-        : `${u.email ?? "Usuário"} agora é ${PLAN_LABEL[newPlan]} ✅`
-    );
-    setUsers((prev) =>
-      prev.map((x) =>
-        x.user_id === u.user_id ? { ...x, plan: newPlan, premium_until, premium_since } : x
-      )
-    );
-  };
-
-
+  // Liberar concede 1 ano a partir de agora (também renova quem já expirou); revogar só desliga.
   const toggleApproval = async (u: UserRow) => {
     setUpdatingId(u.user_id);
-    const newVal = !u.approved;
+    const grant = !hasActiveAccess(u);
+    const until = grant ? accessUntilFrom() : null;
+    const patch: Partial<UserRow> = grant ? { approved: true, access_until: until } : { approved: false };
     const { error } = await supabase
       .from("profiles")
-      .update({ approved: newVal } as any)
+      .update(patch as any)
       .eq("user_id", u.user_id);
     setUpdatingId(null);
     if (error) {
       toast.error("Falha ao atualizar acesso: " + error.message);
       return;
     }
-    toast.success(newVal ? `${u.email ?? "Usuário"} liberado para entrar.` : `Acesso revogado para ${u.email ?? "usuário"}.`);
-    setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, approved: newVal } : x)));
+    toast.success(
+      grant
+        ? `${u.email ?? "Usuário"} liberado até ${formatAccessDate(until!)}.`
+        : `Acesso revogado para ${u.email ?? "usuário"}.`,
+    );
+    setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, ...patch } : x)));
   };
 
   return (
@@ -190,7 +153,6 @@ export const ManageUsers = () => {
       ) : (
         <div className="space-y-2">
           {filtered.map((u) => {
-            const isPremium = u.plan !== "basic";
             const busy = updatingId === u.user_id;
             const origemLabel = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
             return (
@@ -213,29 +175,19 @@ export const ManageUsers = () => {
                       </span>
                     </p>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
-                      {u.approved ? (
+                      {isAccessExpired(u) ? (
+                        <Badge variant="secondary" className="stencil text-[10px]">
+                          <CalendarClock className="w-3 h-3 mr-1" /> Expirou em {formatAccessDate(u.access_until!)}
+                        </Badge>
+                      ) : u.approved ? (
                         <Badge className="bg-success text-success-foreground stencil text-[10px]">
-                          <CheckCircle2 className="w-3 h-3 mr-1" /> Liberado
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          {u.access_until ? `Liberado até ${formatAccessDate(u.access_until)}` : "Liberado · sem prazo"}
                         </Badge>
                       ) : (
                         <Badge variant="destructive" className="stencil text-[10px]">
                           <XCircle className="w-3 h-3 mr-1" /> Aguardando liberação
                         </Badge>
-                      )}
-                      {isPremium ? (
-                        <Badge className="bg-primary text-primary-foreground stencil text-[10px]">
-                          <Crown className="w-3 h-3 mr-1" /> {PLAN_LABEL[u.plan]}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="stencil text-[10px]">
-                          Básico
-                        </Badge>
-                      )}
-                      {u.premium_until && (
-                        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          até {new Date(u.premium_until).toLocaleDateString("pt-BR")}
-                        </span>
                       )}
                     </div>
                   </div>
@@ -246,27 +198,11 @@ export const ManageUsers = () => {
                     size="sm"
                     disabled={busy}
                     onClick={() => toggleApproval(u)}
-                    className={u.approved
+                    className={hasActiveAccess(u)
                       ? "bg-muted hover:bg-muted/80 text-foreground stencil text-[11px]"
                       : "bg-success hover:bg-success/90 text-success-foreground stencil text-[11px]"}
                   >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : u.approved ? <><XCircle className="w-3 h-3 mr-1" /> Revogar acesso</> : <><CheckCircle2 className="w-3 h-3 mr-1" /> Liberar acesso</>}
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => setPlan(u, "monthly", 30)}
-                    className="bg-secondary hover:bg-secondary/90 text-secondary-foreground stencil text-[11px]"
-                  >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Crown className="w-3 h-3 mr-1" /> Tornar Mensal</>}
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => setPlan(u, "quarterly", 90)}
-                    className="bg-warning hover:bg-warning/90 text-warning-foreground stencil text-[11px]"
-                  >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Crown className="w-3 h-3 mr-1" /> Tornar Trimestral</>}
+                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : hasActiveAccess(u) ? <><XCircle className="w-3 h-3 mr-1" /> Revogar acesso</> : <><CheckCircle2 className="w-3 h-3 mr-1" /> Liberar por 1 ano</>}
                   </Button>
                 </div>
               </div>

@@ -1,24 +1,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-
-export type PlanType = "basic" | "premium" | "monthly" | "quarterly";
+import { hasActiveAccess, isAccessExpired } from "@/lib/access";
 
 export type Profile = {
   id: string;
   user_id: string;
   full_name: string | null;
   email: string | null;
-  plan: PlanType;
-  premium_until: string | null;
-  premium_since: string | null;
-  trial_started_at: string | null;
+  approved: boolean;
+  access_until: string | null;
   onboarding_completed_at: string | null;
 };
-
-export const TRIAL_DAYS = 5;
-
-const BASIC_DAILY_LIMIT = 5;
 
 export const useProfile = () => {
   const { user } = useAuth();
@@ -44,21 +37,8 @@ export const useProfile = () => {
       supabase.from("daily_usage").select("questions_count").eq("user_id", user.id).eq("usage_date", today).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", user.id),
     ]);
-    let prof = p as Profile | null;
-    // Auto-expire on login: if premium_until passed, downgrade in DB
-    if (
-      prof &&
-      (prof.plan === "premium" || prof.plan === "monthly" || prof.plan === "quarterly") &&
-      prof.premium_until &&
-      new Date(prof.premium_until) < new Date()
-    ) {
-      await supabase
-        .from("profiles")
-        .update({ plan: "basic" as any, premium_until: null, premium_since: null } as any)
-        .eq("user_id", user.id);
-      prof = { ...prof, plan: "basic", premium_until: null, premium_since: null };
-    }
-    setProfile(prof);
+    // access_until entra nos types gerados só depois que a migration for aplicada
+    setProfile(p as unknown as Profile | null);
     setDailyCount(u?.questions_count ?? 0);
     const rolesArr = (roles ?? []).map((r: any) => r.role);
     setIsAdmin(rolesArr.includes("admin"));
@@ -71,21 +51,9 @@ export const useProfile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const planIsPremium = profile?.plan === "premium" || profile?.plan === "monthly" || profile?.plan === "quarterly";
-  const notExpired = !profile?.premium_until || new Date(profile.premium_until) > new Date();
-  const isPremium = !!planIsPremium && notExpired;
-
-  // Trial calculation
-  const trialStartedAt = profile?.trial_started_at ? new Date(profile.trial_started_at) : null;
-  const trialEndsAt = trialStartedAt ? new Date(trialStartedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000) : null;
-  const trialActive = !!trialEndsAt && trialEndsAt > new Date();
-  const trialDaysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
-    : 0;
-  const hasAccess = isPremium || trialActive || isAdmin || isDidacticAdmin;
-
-  const dailyLimit = isPremium || trialActive ? Infinity : BASIC_DAILY_LIMIT;
-  const canAnswerMore = dailyCount < dailyLimit;
+  // Acesso ao app: compra aprovada na Hotmart (ou liberação manual), dentro do prazo de 1 ano.
+  const hasAccess = hasActiveAccess(profile) || isAdmin || isDidacticAdmin;
+  const accessExpired = isAccessExpired(profile);
 
   const incrementDaily = async () => {
     if (!user) return;
@@ -106,5 +74,5 @@ export const useProfile = () => {
     }
   };
 
-  return { profile, dailyCount, dailyLimit, isPremium, isAdmin, isDidacticAdmin, canAnswerMore, loading, refresh, incrementDaily, trialActive, trialDaysLeft, trialEndsAt, hasAccess };
+  return { profile, dailyCount, isAdmin, isDidacticAdmin, loading, refresh, incrementDaily, hasAccess, accessExpired };
 };
