@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accessUntilFrom, hasActiveAccess, isAccessExpired } from "./access";
+import { accessUntilFrom, hasActiveAccess, isAccessExpired, isStaff } from "./access";
 
 const now = new Date("2026-09-14T12:00:00Z");
 
@@ -30,6 +30,21 @@ describe("isAccessExpired", () => {
     expect(isAccessExpired({ approved: true, access_until: null }, now)).toBe(false);
     expect(isAccessExpired({ approved: false, access_until: "2025-01-01T00:00:00Z" }, now)).toBe(false);
     expect(isAccessExpired(null, now)).toBe(false);
+  });
+});
+
+describe("isStaff", () => {
+  it("reconhece admin e admin didatico", () => {
+    expect(isStaff(["user", "admin"])).toBe(true);
+    expect(isStaff(["admin_didatico"])).toBe(true);
+  });
+
+  it("nega aluno comum e listas vazias", () => {
+    expect(isStaff(["user"])).toBe(false);
+    expect(isStaff([])).toBe(false);
+    expect(isStaff(null)).toBe(false);
+    expect(isStaff(undefined)).toBe(false);
+    expect(isStaff([null, undefined])).toBe(false);
   });
 });
 

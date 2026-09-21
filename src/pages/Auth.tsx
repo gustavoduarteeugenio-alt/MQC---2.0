@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Flame, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { AccessFields, hasActiveAccess, isAccessExpired } from "@/lib/access";
+import { AccessFields, hasActiveAccess, isAccessExpired, isStaff } from "@/lib/access";
 
 const signUpSchema = z
   .object({
@@ -113,11 +113,12 @@ const Auth = () => {
       : null;
 
   const accessStatus = async (userId: string): Promise<"active" | "expired" | "pending"> => {
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("approved, access_until" as any)
-      .eq("user_id", userId)
-      .maybeSingle();
+    const [{ data: prof }, { data: roles }] = await Promise.all([
+      supabase.from("profiles").select("approved, access_until" as any).eq("user_id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+    ]);
+    // Admin e admin didático entram sem compra — mesma regra do ProtectedRoute
+    if (isStaff((roles ?? []).map((r: any) => r.role))) return "active";
     if (hasActiveAccess(prof as AccessFields | null)) return "active";
     return isAccessExpired(prof as AccessFields | null) ? "expired" : "pending";
   };
