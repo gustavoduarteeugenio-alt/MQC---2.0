@@ -9,9 +9,12 @@ Arquitetura:
 
 | Camada | Onde |
 |---|---|
-| Frontend (Vite + React) | Cloudflare Pages, publicando deste repositório |
-| Banco, Auth e Storage | projeto Supabase próprio do MQC 2.0 |
+| Frontend (Vite + React) | Cloudflare Pages, projeto `mqc---2-0` → https://mqc---2-0.pages.dev |
+| Banco, Auth e Storage | projeto Supabase `nrlovulqehnnabrwqwbo` (São Paulo) |
 | Webhook da Hotmart | Edge Function `hotmart-webhook` no mesmo projeto Supabase |
+
+**Estado:** tudo acima está no ar desde 21/09/2026. Este documento serve para
+refazer a instalação num projeto novo e como referência dos ajustes de painel.
 
 ---
 
@@ -37,7 +40,7 @@ As migrations em `supabase/migrations/` montam tudo: tabelas, RLS, funções, o 
 `question-images`, as disciplinas e as regras de acesso da Hotmart. O banco de questões
 nasce **vazio**, por decisão de produto.
 
-No terminal, na raiz do projeto:
+Pelo CLI, na raiz do projeto:
 
 ```bash
 npx supabase login
@@ -51,9 +54,21 @@ npx supabase link --project-ref <ref>
 npx supabase db push
 ```
 
+**Se o CLI não funcionar** (na máquina usada em 09/2026 o npm falhava com
+`UNABLE_TO_VERIFY_LEAF_SIGNATURE`, por inspeção de TLS do antivírus), o caminho
+alternativo é o **SQL Editor** do painel. O script
+`scratchpad/pgtest/build-and-test.mjs` (fora do repositório) gera
+`supabase/bootstrap/parte-N.sql` concatenando as migrations, valida num Postgres real
+via PGlite e registra as versões em `supabase_migrations.schema_migrations` para o CLI
+não reaplicar depois. Cole uma parte por vez e clique em **Run**.
+
+As partes são divididas nos `ALTER TYPE ... ADD VALUE`: o SQL Editor roda cada colagem
+como uma transação, e o Postgres não deixa usar um valor de enum novo na mesma
+transação em que ele foi criado (`admin_didatico`).
+
 Se a migration `20260504143609` falhar por causa do `pg_cron`, ative a extensão em
-**Database → Extensions** e rode o `db push` de novo. Ela é legado (expiração de plano)
-e não afeta o acesso pela Hotmart.
+**Database → Extensions** e rode de novo. Ela é legado (expiração de plano) e não
+afeta o acesso pela Hotmart.
 
 ## 3. Publicar a Edge Function do webhook
 
@@ -64,7 +79,15 @@ npx supabase functions deploy hotmart-webhook
 O `supabase/config.toml` já marca `verify_jwt = false`, porque a Hotmart não envia JWT
 — quem autentica a chamada é o hottok.
 
-Depois, em **Edge Functions → hotmart-webhook → Secrets**, cadastre:
+Sem CLI, dá para criar a função pelo painel em **Edge Functions → Deploy a new
+function**, colando `supabase/bootstrap/hotmart-webhook.ts` (versão de arquivo único,
+gerada a partir de `index.ts` + `events.ts`). Nesse caminho, **desligue
+`Verify JWT with legacy secret`** nas configurações da função e salve — o painel cria
+com a verificação ligada, e aí a Hotmart é recusada antes de chegar ao código. Para
+conferir: um POST sem token deve responder `{"error":"unauthorized"}` (nosso código) e
+não `Missing authorization header` (portão do Supabase).
+
+Depois, em **Edge Functions → Secrets**, cadastre:
 
 | Secret | Valor |
 |---|---|
@@ -83,7 +106,8 @@ on conflict (user_id, role) do nothing;
 ```
 
 Admin tem acesso ao app independente de compra, então dá para testar tudo antes da
-primeira venda.
+primeira venda — tanto no `ProtectedRoute` quanto na tela de login (`isStaff` em
+`src/lib/access.ts`).
 
 ## 5. Publicar o frontend na Cloudflare Pages
 
@@ -107,6 +131,20 @@ primeira venda.
 
 Como as variáveis `VITE_*` são embutidas no bundle, qualquer troca delas exige um novo
 build.
+
+Se o build falhar em segundos com `bun install --frozen-lockfile`, procure por um
+`bun.lockb` no repositório: a Cloudflare prefere o bun quando encontra esse arquivo.
+O projeto usa npm.
+
+## 5.1 URLs de autenticação
+
+Em **Authentication → URL Configuration** do Supabase:
+
+- **Site URL:** `https://mqc---2-0.pages.dev` (ou o domínio próprio)
+- **Redirect URLs:** `https://mqc---2-0.pages.dev/**` e `http://localhost:8080/**`
+
+Sem isso, o link de confirmação de e-mail e o de recuperar senha voltam para
+`localhost:3000`, que é o padrão do projeto novo.
 
 ## 6. Configurar o webhook na Hotmart
 
