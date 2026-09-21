@@ -19,7 +19,12 @@ export const useProfile = () => {
   const [dailyCount, setDailyCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDidacticAdmin, setIsDidacticAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Usuário cujos dados estão no estado. Enquanto não bater com o usuário atual,
+  // ainda estamos carregando — e quem decide acesso (ProtectedRoute) precisa esperar.
+  // Um booleano de loading não serve: efeitos rodam depois do render, então o
+  // ProtectedRoute chegava a decidir com o perfil do usuário anterior (nenhum).
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const loading = (user?.id ?? null) !== loadedFor;
 
   const refresh = async () => {
     if (!user) {
@@ -27,10 +32,9 @@ export const useProfile = () => {
       setDailyCount(0);
       setIsAdmin(false);
       setIsDidacticAdmin(false);
-      setLoading(false);
+      setLoadedFor(null);
       return;
     }
-    setLoading(true);
     const today = new Date().toISOString().slice(0, 10);
     const [{ data: p }, { data: u }, { data: roles }] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
@@ -43,7 +47,7 @@ export const useProfile = () => {
     const rolesArr = (roles ?? []).map((r: any) => r.role);
     setIsAdmin(rolesArr.includes("admin"));
     setIsDidacticAdmin(rolesArr.includes("admin_didatico"));
-    setLoading(false);
+    setLoadedFor(user.id);
   };
 
   useEffect(() => {
