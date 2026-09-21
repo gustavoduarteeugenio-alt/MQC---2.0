@@ -164,6 +164,7 @@ supabase/
 
 - RLS habilitado em todas as tabelas públicas, com GRANTs explícitos por papel.
 - `correct_answer` e `explanation` têm **SELECT revogado em nível de coluna**; só saem por RPC `SECURITY DEFINER` (`reveal_question_answer`, `reveal_questions_answers`) e apenas para usuários autenticados.
+- **Conteúdo exige acesso no banco**, não só na interface: `subjects`, `questions`, `simulados` e `simulado_questions` só são lidos, e `attempts`/`simulado_attempts` só recebem inserção, quando `has_app_access()` é verdadeiro (compra ativa e no prazo, ou staff). As RPCs `reveal_question_answer`, `reveal_questions_answers` e `list_published_simulados` são `SECURITY DEFINER` e checam o mesmo no corpo.
 - Colunas de acesso de `profiles` (`approved`, `access_until`, `email`, `plan`, `premium_*`, `trial_started_at`) são protegidas pelo trigger `protect_profile_access_columns`: só admin, service_role ou funções `SECURITY DEFINER` alteram.
 - `hotmart_purchases` e `hotmart_webhook_events`: SELECT só para admin; escrita só pela RPC `apply_hotmart_event` (service_role).
 - A Edge Function `hotmart-webhook` roda sem JWT (`verify_jwt = false`) e valida o header `X-HOTMART-HOTTOK` contra o secret `HOTMART_HOTTOK`.
@@ -176,6 +177,7 @@ supabase/
 | Função | Uso |
 |---|---|
 | `apply_hotmart_event` | aplica um evento do webhook (idempotente, descarta eventos fora de ordem) e sincroniza `approved` |
+| `has_app_access(user_id)` | regra de acesso no banco: compra ativa e no prazo, ou staff. Usada nas policies de conteúdo |
 | `sync_hotmart_access(email)` | `approved` = existe compra ativa e no prazo para o e-mail; `access_until` = maior prazo (casando por `auth.users.email`) |
 | `check_account_approved(email)` | polling da tela de login; considera o prazo |
 | `list_hotmart_purchases` | listagem do admin com indicação de conta criada |
@@ -270,5 +272,6 @@ Painel `/admin` (papéis `admin` e `admin_didatico`):
 - `attempts` não tem restrição de unicidade; a deduplicação é feita na aplicação.
 - O cálculo de estatísticas opera sob um teto prático de linhas lidas.
 - Usuários liberados antes da Hotmart têm `access_until` nulo (sem prazo).
-- O prazo é verificado no app (frontend e `check_account_approved`); as policies RLS das tabelas de conteúdo não checam acesso.
+- As funções de ranking (`get_training_ranking`, `get_simulado_ranking`) não checam acesso: expõem apelidos e pontuações a qualquer conta autenticada.
+- O bucket `question-images` é público: as imagens são acessíveis por URL direta, sem login.
 - Campos de plano/trial/`daily_usage`, tabelas e RPCs do antigo funil (diagnóstico, `landing_leads`) permanecem no schema como legado.
