@@ -26,3 +26,7 @@ export const accessUntilFrom = (start: Date = new Date()): string => {
 };
 
 export const formatAccessDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
+
+/** Papéis que acessam o app sem compra (mesma regra do ProtectedRoute). */
+export const isStaff = (roles: (string | null | undefined)[] | null | undefined): boolean =>
+  (roles ?? []).some((r) => r === "admin" || r === "admin_didatico");
