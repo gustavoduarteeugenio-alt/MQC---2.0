@@ -4,7 +4,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { LogOut, Mail, Zap, Shield, ChevronRight, PlayCircle, Radio, Trophy, CalendarClock } from "lucide-react";
+import { LogOut, Mail, Shield, ChevronRight, PlayCircle, Radio, Trophy, CalendarClock } from "lucide-react";
 import { formatAccessDate } from "@/lib/access";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 
 const Profile = () => {
   const { signOut, user } = useAuth();
-  const { profile, isAdmin, dailyCount, refresh } = useProfile();
+  const { profile, isAdmin, isDidacticAdmin, refresh } = useProfile();
   const initialShow = (profile as any)?.show_in_ranking ?? true;
   const [showInRanking, setShowInRanking] = useState<boolean>(initialShow);
   const [rankingName, setRankingName] = useState<string>((profile as any)?.ranking_name ?? "");
@@ -82,13 +82,12 @@ const Profile = () => {
       <main className="px-5 -mt-10 space-y-3 relative">
         <Card>
           <Row icon={Mail} label="E-mail" value={profile?.email ?? user?.email ?? "—"} />
-          <Row icon={Zap} label="Questões hoje" value={`${dailyCount}`} />
           {profile?.access_until && (
             <Row icon={CalendarClock} label="Acesso até" value={formatAccessDate(profile.access_until)} />
           )}
         </Card>
 
-        {isAdmin && (
+        {(isAdmin || isDidacticAdmin) && (
           <Link to="/admin">
             <Card>
               <div className="flex items-center justify-between p-1">

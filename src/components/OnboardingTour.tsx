@@ -20,7 +20,7 @@ const STEPS = [
   {
     icon: BarChart3,
     title: "Feedback de desempenho",
-    body: "Na aba 'Progresso' você vê seu Índice de Vulnerabilidade por matéria, identifica seus pontos fracos e recebe orientação do Mentor de Estudos para focar onde mais importa.",
+    body: "Na aba 'Progresso' você acompanha seu acerto por matéria, com o peso de cada disciplina no edital e o alerta da matéria mais crítica. É o mapa de onde investir seu tempo.",
   },
   {
     icon: ShieldCheck,

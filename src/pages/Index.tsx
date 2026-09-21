@@ -9,8 +9,10 @@ import { fetchDedupedAttempts } from "@/lib/stats";
 import { toast } from "sonner";
 
 type SubjectStat = { name: string; total: number; correct: number; accuracy: number };
+type FocusStat = SubjectStat & { slug: string | null };
 
 const MIN_ATTEMPTS = 3; // mínimo de questões pra entrar no ranking
+const TARGET_ACCURACY = 80; // meta do método
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ const Index = () => {
   const [stats, setStats] = useState({ total: 0, correct: 0 });
   const [best, setBest] = useState<SubjectStat | null>(null);
   const [worst, setWorst] = useState<SubjectStat | null>(null);
+  const [focus, setFocus] = useState<FocusStat[]>([]);
   const [training, setTraining] = useState(false);
 
   const handleTrainNow = async () => {
@@ -46,11 +49,11 @@ const Index = () => {
     const correct = data.filter((a) => a.is_correct).length;
     setStats({ total, correct });
 
-    const bySubject: Record<string, SubjectStat> = {};
+    const bySubject: Record<string, FocusStat> = {};
     data.forEach((a) => {
       const name = a.subject_name;
       if (!name) return;
-      bySubject[name] = bySubject[name] ?? { name, total: 0, correct: 0, accuracy: 0 };
+      bySubject[name] = bySubject[name] ?? { name, slug: a.subject_slug, total: 0, correct: 0, accuracy: 0 };
       bySubject[name].total++;
       if (a.is_correct) bySubject[name].correct++;
     });
@@ -59,10 +62,12 @@ const Index = () => {
       .map((s) => ({ ...s, accuracy: Math.round((s.correct / s.total) * 100) }))
       .filter((s) => s.total >= MIN_ATTEMPTS);
 
-    if (ranked.length === 0) { setBest(null); setWorst(null); return; }
+    if (ranked.length === 0) { setBest(null); setWorst(null); setFocus([]); return; }
     const sorted = [...ranked].sort((a, b) => b.accuracy - a.accuracy);
     setBest(sorted[0]);
     setWorst(sorted[sorted.length - 1]);
+    // Abaixo da meta de 80%, da pior para a melhor — é onde o treino rende mais
+    setFocus(sorted.filter((s) => s.accuracy < TARGET_ACCURACY).reverse().slice(0, 3));
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
@@ -152,6 +157,43 @@ const Index = () => {
             </div>
           </div>
         </button>
+
+        {/* Matérias abaixo da meta, com atalho direto pra treinar cada uma */}
+        {focus.length > 0 && (
+          <section className="bg-card border border-border rounded-2xl p-4 shadow-card">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-primary" />
+              <h2 className="stencil text-[11px] tracking-widest text-muted-foreground">
+                Onde focar · meta {TARGET_ACCURACY}%
+              </h2>
+            </div>
+            <ul className="space-y-2.5">
+              {focus.map((s) => (
+                <li key={s.name}>
+                  <button
+                    onClick={() => s.slug && navigate(`/questao/${s.slug}`)}
+                    disabled={!s.slug}
+                    className="w-full text-left flex items-center gap-3 disabled:opacity-60"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="font-display text-sm font-semibold truncate">{s.name}</p>
+                        <span className="stencil text-xs text-muted-foreground shrink-0">{s.accuracy}%</span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-flame"
+                          style={{ width: `${Math.max(s.accuracy, 4)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
     </AppShell>
   );
