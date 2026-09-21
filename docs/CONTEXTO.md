@@ -13,8 +13,13 @@ Atualizado em: 14/09/2026.
 
 **Diferencial:** o app não é um banco de questões passivo. Ele calcula desempenho por disciplina e conduz o aluno para o que ele erra mais, em blocos curtos de 10 questões.
 
+**Independência:** o MQC 2.0 é um produto separado do app mensal criado no Lovable
+(repositório `prep-cfsd-buddy`), que segue com funil e checkout Kiwify. Não há nada
+compartilhado entre os dois: código, alunos e banco de dados são próprios de cada um.
+Frontend na Cloudflare Pages e backend em projeto Supabase próprio — ver [DEPLOY.md](DEPLOY.md).
+
 URLs principais:
-- App publicado: `https://prep-cfsd-buddy.lovable.app`
+- App publicado: domínio próprio (Cloudflare Pages)
 - Login/cadastro: `/auth`
 
 ---
@@ -136,7 +141,7 @@ supabase/
 
 ---
 
-## 5. Backend (Lovable Cloud / Postgres)
+## 5. Backend (Supabase / Postgres)
 
 ### 5.1 Tabelas
 
