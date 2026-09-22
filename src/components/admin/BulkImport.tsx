@@ -177,7 +177,7 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
         explanation: row["comentario"].toString().trim(),
         difficulty: difficulty ?? "medium",
         year,
-        banca: (row["banca"] ?? "IDECAN").toString().trim() || "IDECAN",
+        banca: (row["banca"] ?? "").toString().trim(),
       });
     });
 

@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate, useLocation } from "react-router-dom";
-import { Flame } from "lucide-react";
+import { Target } from "lucide-react";
 
 // Routes that remain accessible without course access (account screens)
 const ALLOW_WITHOUT_ACCESS = ["/sem-acesso", "/perfil"];
@@ -14,7 +14,7 @@ export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   if (authLoading || (user && profileLoading)) {
     return (
       <div className="app-shell flex items-center justify-center bg-gradient-dark">
-        <Flame className="w-10 h-10 text-primary animate-pulse-brand" />
+        <Target className="w-10 h-10 text-primary animate-pulse-brand" />
       </div>
     );
   }

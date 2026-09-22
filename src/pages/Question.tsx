@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle2, XCircle, Flame, Lightbulb, LogOut } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Target, Lightbulb, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { QuestionImage } from "@/components/QuestionImage";
@@ -228,7 +228,7 @@ const Question = () => {
   if (loading) {
     return (
       <div className="app-shell flex items-center justify-center bg-gradient-dark">
-        <Flame className="w-10 h-10 text-primary animate-pulse-brand" />
+        <Target className="w-10 h-10 text-primary animate-pulse-brand" />
       </div>
     );
   }

@@ -1,6 +1,10 @@
 // Regras de alternativas e gabarito, compartilhadas pelo cadastro manual e pelos
-// dois importadores de planilha. A banca IDECAN usa cinco alternativas, então E
-// é alternativa legítima — e pode ser o gabarito.
+// dois importadores de planilha.
+//
+// Os editais da PMMG e do CBMMG usam quatro alternativas (A a D), então a coluna
+// alternativa_e fica em branco nas planilhas. E continua aceita porque outras
+// bancas usam cinco, e nesse caso pode ser o gabarito — desde que a alternativa
+// exista, o que validateAnswer garante.
 
 export const ANSWER_LETTERS = ["A", "B", "C", "D", "E"] as const;
 export type AnswerLetter = (typeof ANSWER_LETTERS)[number];

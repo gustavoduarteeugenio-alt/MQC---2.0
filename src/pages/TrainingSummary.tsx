@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
-import { Target, Trophy, Clock, Home, Flame, ChevronRight } from "lucide-react";
+import { Target, Trophy, Clock, Home, ChevronRight } from "lucide-react";
 
 type SubjectSession = {
   id: string;
@@ -80,7 +80,7 @@ const TrainingSummary = () => {
         <div className="bg-card border border-border rounded-3xl p-6 shadow-brand">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-brand">
-              <Flame className="w-6 h-6 text-white" strokeWidth={2.4} />
+              <Target className="w-6 h-6 text-white" strokeWidth={2.4} />
             </div>
             <div>
               <p className="stencil text-[10px] text-muted-foreground tracking-widest">Acerto geral</p>

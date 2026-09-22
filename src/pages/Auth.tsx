@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Flame, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
+import { Target, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { AccessFields, hasActiveAccess, isAccessExpired, isStaff } from "@/lib/access";
@@ -241,12 +241,16 @@ const Auth = () => {
       <div className="flex-1 flex flex-col justify-between px-6 pt-12 pb-6">
         <header className="text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-brand shadow-brand mb-5">
-            <Flame className="w-10 h-10 text-white" strokeWidth={2.5} />
+            <Target className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
+          {/* Antes do login não se sabe o edital do aluno, então esta tela fala
+              do método, não do concurso. Quem veste as cores da instituição é
+              o app depois de entrar (ver ExamContext). */}
           <h1 className="text-3xl font-display font-bold tracking-wide">Método Questão Certa</h1>
-          <p className="stencil text-xs text-primary mt-1">CFSd CBMMG 2027 · Banca IDECAN</p>
+          <p className="stencil text-xs text-primary mt-1">Carreira militar · Minas Gerais</p>
           <p className="text-sm text-white/70 mt-3 max-w-xs mx-auto">
-            O caminho até a farda começa aqui. Treine com questões inéditas no estilo da banca.
+            O caminho até a farda começa aqui. Estude resolvendo questões, com o conteúdo
+            do seu edital e o gabarito comentado.
           </p>
         </header>
 

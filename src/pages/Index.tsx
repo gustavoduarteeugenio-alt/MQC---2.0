@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { Flame, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+import { Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getDisciplineStats, pickNextSubject } from "@/lib/training";
 import { accuracyOf, fetchExamAttempts, tallyByNode } from "@/lib/stats";
@@ -114,7 +114,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-brand">
-                <Flame className="w-6 h-6 text-white" strokeWidth={2.5} />
+                <Target className="w-6 h-6 text-white" strokeWidth={2.5} />
               </div>
               <ExamSwitcher />
             </div>

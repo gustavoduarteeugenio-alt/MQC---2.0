@@ -38,7 +38,7 @@ const emptyForm = (content_node_id = "") => ({
   explanation: "",
   difficulty: "medium",
   year: "" as string | number,
-  banca: "IDECAN",
+  banca: "",
   status: "draft" as "draft" | "published",
   image_url: "",
   comment_image_url: "",
@@ -149,7 +149,7 @@ export const ManageQuestions = () => {
       explanation: q.explanation,
       difficulty: q.difficulty,
       year: q.year ?? "",
-      banca: q.banca ?? "IDECAN",
+      banca: q.banca ?? "",
       status: q.status,
       image_url: q.image_url ?? "",
       comment_image_url: q.comment_image_url ?? "",
@@ -183,7 +183,7 @@ export const ManageQuestions = () => {
         explanation: form.explanation.trim(),
         difficulty: form.difficulty,
         year: yearNum,
-        banca: form.banca.trim() || "IDECAN",
+        banca: form.banca.trim(),
         image_url: form.image_url.trim() || null,
         comment_image_url: form.comment_image_url.trim() || null,
       };
@@ -461,7 +461,7 @@ export const ManageQuestions = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="stencil text-[10px]">Banca</Label>
-                <Input value={form.banca} onChange={(e) => setForm({ ...form, banca: e.target.value })} />
+                <Input value={form.banca} onChange={(e) => setForm({ ...form, banca: e.target.value })} placeholder="Ex.: IDECAN, FUMARC" />
               </div>
               <div>
                 <Label className="stencil text-[10px]">Ano</Label>

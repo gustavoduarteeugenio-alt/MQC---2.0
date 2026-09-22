@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { Flame, BookOpen, BarChart3, ShieldCheck, Radio, ChevronRight } from "lucide-react";
+import { Target, BookOpen, BarChart3, ShieldCheck, Radio, ChevronRight } from "lucide-react";
 
+// O texto não cita instituição nem banca: o mesmo tour serve a todos os
+// editais, e quem diz qual é o concurso é o edital ativo no app.
 const STEPS = [
   {
-    icon: Flame,
+    icon: Target,
     title: "Bem-vindo, Combatente!",
-    body: "A partir de agora, você inicia uma jornada individualizada. Nosso sistema analisará cada resposta sua para oferecer um direcionamento preciso, apontando exatamente quais pontos você deve priorizar para garantir seu melhor rendimento e a sua farda no CBMMG.",
+    body: "A partir de agora, você inicia uma jornada individualizada. Nosso sistema analisará cada resposta sua para oferecer um direcionamento preciso, apontando exatamente quais pontos você deve priorizar para garantir seu melhor rendimento e a sua farda.",
   },
   {
     icon: BookOpen,
@@ -25,7 +27,7 @@ const STEPS = [
   {
     icon: ShieldCheck,
     title: "Simulados completos",
-    body: "Os simulados reproduzem o estilo IDECAN, com tempo cronometrado e relatório por disciplina. Use-os para medir sua prontidão real para a prova.",
+    body: "Os simulados reproduzem a prova do seu edital: mesma distribuição de questões por disciplina, tempo cronometrado e relatório de desempenho no final. Use-os para medir sua prontidão real.",
   },
   {
     icon: Radio,
