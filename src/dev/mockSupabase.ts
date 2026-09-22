@@ -216,6 +216,20 @@ const RPCS: Record<string, (args: any) => any> = {
       }))
       .filter((s) => s.question_count > 0),
   list_hotmart_purchases: () => [],
+  admin_hotmart_products: () =>
+    (TABLES.hotmart_products ?? []).map((p) => ({
+      product_id: p.product_id,
+      label: p.label ?? null,
+      exam_id: p.exam_id,
+      exam_name: (TABLES.exams ?? []).find((e) => e.id === p.exam_id)?.name ?? "?",
+      compras_ativas: 0,
+    })),
+  // Uma venda órfã de exemplo, que desaparece assim que for vinculada
+  admin_unmapped_hotmart_products: () =>
+    (TABLES.hotmart_products ?? []).some((p) => p.product_id === "9988776")
+      ? []
+      : [{ product_id: "9988776", compras: 3, ultima_compra: new Date().toISOString() }],
+  resync_hotmart_enrollments: () => 0,
   admin_list_questions: () => QUESTIONS,
   admin_list_exam_questions: (args: any) => {
     const vinculos = (TABLES.exam_questions ?? []).filter((v) => v.exam_id === args?._exam_id);
@@ -311,6 +325,20 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
       id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...padrao, ...r,
     }));
     (TABLES[this.table] ??= []).unshift(...list);
+    this.inserted = list;
+    return this;
+  }
+  /** Como no Postgres: substitui a linha existente pela chave, ou insere. */
+  upsert(rows: Row | Row[], opts?: { onConflict?: string }) {
+    const chave = opts?.onConflict ?? "id";
+    const alvo = (TABLES[this.table] ??= []);
+    const list = (Array.isArray(rows) ? rows : [rows]).map((r) => {
+      const i = alvo.findIndex((x) => String(x[chave]) === String(r[chave]));
+      if (i >= 0) { Object.assign(alvo[i], r); return alvo[i]; }
+      const nova = { id: `new-${Date.now()}`, created_at: new Date().toISOString(), ...r };
+      alvo.unshift(nova);
+      return nova;
+    });
     this.inserted = list;
     return this;
   }

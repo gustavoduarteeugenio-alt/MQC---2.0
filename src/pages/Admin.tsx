@@ -24,6 +24,7 @@ import { ManageSimulados } from "@/components/admin/ManageSimulados";
 import { SupportMessages } from "@/components/admin/SupportMessages";
 import { AccessRequests } from "@/components/admin/AccessRequests";
 import { HotmartPurchases } from "@/components/admin/HotmartPurchases";
+import { HotmartProducts } from "@/components/admin/HotmartProducts";
 import { ManageExams } from "@/components/admin/ManageExams";
 
 type Subject = { id: string; name: string; slug: string };
@@ -78,7 +79,14 @@ const Admin = () => {
       case "bulk": return <BulkImport />;
       case "simulados": return <ManageSimulados />;
       case "users": return <ManageUsers />;
-      case "hotmart": return <HotmartPurchases />;
+      case "hotmart": return (
+        <div className="space-y-8">
+          <HotmartProducts />
+          <div className="border-t border-border pt-6">
+            <HotmartPurchases />
+          </div>
+        </div>
+      );
       case "admins": return <ManageAdmins />;
       case "support": return (
         <div className="space-y-8">
