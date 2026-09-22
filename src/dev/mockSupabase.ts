@@ -121,7 +121,9 @@ const EXAM_QUESTIONS: Row[] = QUESTIONS.map((q, i) => ({
   id: `eq${i + 1}`,
   exam_id: "e1",
   question_id: q.id,
-  content_node_id: FOLHAS[i % FOLHAS.length].id,
+  // A última fica sem classificação, como acontece quando alguém remove um
+  // item da árvore: dá para exercitar o filtro "Sem classificação".
+  content_node_id: i === QUESTIONS.length - 1 ? null : FOLHAS[i % FOLHAS.length].id,
   status: "published",
 }));
 

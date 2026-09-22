@@ -73,10 +73,27 @@ export const ManageExams = () => {
   const filhos = (parentId: string | null) =>
     nodes.filter((n) => n.parent_id === parentId).sort((a, b) => a.display_order - b.display_order);
 
-  const temQuestoes = async (nodeId: string) => {
+  /** Ids do nó e de toda a sua descendência: apagar o pai leva os filhos (ON DELETE CASCADE). */
+  const subarvore = useCallback((rootId: string): string[] => {
+    const out = [rootId];
+    const desce = (pai: string) => {
+      for (const filho of nodes.filter((n) => n.parent_id === pai)) { out.push(filho.id); desce(filho.id); }
+    };
+    desce(rootId);
+    return out;
+  }, [nodes]);
+
+  /**
+   * Quantas questões ficam sem classificação se este nó for removido.
+   * Conta a subárvore inteira, não só o nó: a questão é classificada na folha,
+   * então apagar a disciplina desclassificaria tudo abaixo dela sem aviso.
+   */
+  const questoesNaSubarvore = async (nodeId: string) => {
     const { count } = await (supabase as any)
-      .from("exam_questions").select("id", { count: "exact", head: true }).eq("content_node_id", nodeId);
-    return (count ?? 0) > 0;
+      .from("exam_questions")
+      .select("id", { count: "exact", head: true })
+      .in("content_node_id", subarvore(nodeId));
+    return count ?? 0;
   };
 
   const adicionar = async (parent: Node | null) => {
@@ -130,12 +147,17 @@ export const ManageExams = () => {
   };
 
   const remover = async (node: Node) => {
-    const netos = nodes.filter((n) => n.parent_id === node.id).length;
-    if (await temQuestoes(node.id)) {
-      toast.error("Este item tem questões vinculadas. Reclassifique-as antes de remover.");
-      return;
-    }
-    if (!confirm(netos > 0 ? `Remover "${node.name}" e seus ${netos} itens?` : `Remover "${node.name}"?`)) return;
+    const descendentes = subarvore(node.id).length - 1;
+    const questoes = await questoesNaSubarvore(node.id);
+
+    const oQue = descendentes > 0
+      ? `"${node.name}" e seus ${descendentes} itens`
+      : `"${node.name}"`;
+    const aviso = questoes > 0
+      ? `Remover ${oQue}?\n\n${questoes} questão(ões) classificada(s) aqui vão ficar SEM CLASSIFICAÇÃO. ` +
+        `As questões não são apagadas, mas alguém terá que reclassificar cada uma na árvore.`
+      : `Remover ${oQue}?`;
+    if (!confirm(aviso)) return;
     const { error } = await (supabase as any).from("content_nodes").delete().eq("id", node.id);
     if (error) { toast.error(error.message); return; }
     carregarNos();
