@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useExam } from "@/contexts/ExamContext";
+import { examLabel } from "@/lib/exams";
 import { AppShell } from "@/components/AppShell";
 import { Trophy, Medal, Award, Crown, Clock, Target, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -72,6 +74,7 @@ const podiumBg = (pos: number) => {
 
 const Ranking = () => {
   const { user } = useAuth();
+  const { exam } = useExam();
 
   // Treinamento
   const [rows, setRows] = useState<Row[]>([]);
@@ -86,12 +89,14 @@ const Ranking = () => {
   const [loadingSims, setLoadingSims] = useState(true);
   const [loadingRanking, setLoadingRanking] = useState(false);
 
+  // Ranking é sempre dentro de um edital: quem disputa PMMG não aparece no CBMMG.
   useEffect(() => {
+    if (!exam) { setRows([]); setMine(null); setLoadingGeral(false); return; }
     (async () => {
       setLoadingGeral(true);
       const [{ data: top }, { data: my }] = await Promise.all([
-        supabase.rpc("get_training_ranking", { _limit: TOP_LIMIT }),
-        supabase.rpc("get_my_training_rank"),
+        (supabase as any).rpc("get_training_ranking", { _exam_id: exam.id, _limit: TOP_LIMIT }),
+        (supabase as any).rpc("get_my_training_rank", { _exam_id: exam.id }),
       ]);
       setRows(((top as any[]) ?? []).map((r) => ({
         rank_position: Number(r.rank_position),
@@ -104,24 +109,25 @@ const Ranking = () => {
       setMine(m ? { rank_position: Number(m.rank_position), correct_count: Number(m.correct_count), total_users: Number(m.total_users) } : null);
       setLoadingGeral(false);
     })();
-  }, [user?.id]);
+  }, [user?.id, exam?.id]);
 
   useEffect(() => {
+    if (!exam) { setSimulados([]); setSelectedSim(""); setLoadingSims(false); return; }
     (async () => {
       setLoadingSims(true);
-      const { data } = await (supabase as any).rpc("list_published_simulados");
+      const { data } = await (supabase as any).rpc("list_published_simulados", { _exam_id: exam.id });
       const list: SimuladoOption[] = ((data as any[]) ?? []).map((s) => ({
         id: s.id, name: s.name, question_count: Number(s.question_count),
       }));
       setSimulados(list);
-      if (list.length > 0 && !selectedSim) setSelectedSim(list[0].id);
+      // Ao trocar de edital o simulado escolhido antes não existe mais aqui.
+      setSelectedSim((prev) => (list.some((s) => s.id === prev) ? prev : list[0]?.id ?? ""));
       setLoadingSims(false);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [exam?.id]);
 
   useEffect(() => {
-    if (!selectedSim) return;
+    if (!selectedSim) { setSimRows([]); setMineSim(null); return; }
     (async () => {
       setLoadingRanking(true);
       const [{ data: rk }, { data: my }] = await Promise.all([
@@ -157,10 +163,10 @@ const Ranking = () => {
   return (
     <AppShell>
       <header className="bg-gradient-night text-white px-5 pt-12 pb-6">
-        <p className="stencil text-xs text-primary">Quartel · Ranking</p>
+        <p className="stencil text-xs text-primary">{exam ? examLabel(exam) : "Quartel · Ranking"}</p>
         <h1 className="text-2xl font-display font-bold">Top combatentes</h1>
         <p className="text-sm text-white/70 mt-1">
-          Classificação por desempenho no Modo Treinamento e nos Simulados Inéditos.
+          Classificação entre os candidatos deste edital, no Modo Treinamento e nos Simulados Inéditos.
         </p>
       </header>
 

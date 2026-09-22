@@ -1,21 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useExam } from "@/contexts/ExamContext";
+import { disciplinesOf, examLabel, subtreeIds } from "@/lib/exams";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ClipboardList, Shuffle, Clock, ChevronRight, Trophy } from "lucide-react";
+import { ArrowLeft, ClipboardList, Shuffle, ChevronRight, Trophy } from "lucide-react";
 import { toast } from "sonner";
-
-// Distribuição: total 50 (10+5+10+10+10+5)
-const RANDOM_DISTRIBUTION: { label: string; slugs: string[]; count: number }[] = [
-  { label: "Língua Portuguesa", slugs: ["lingua-portuguesa"], count: 10 },
-  { label: "Raciocínio Lógico e Matemático", slugs: ["rlm"], count: 5 },
-  { label: "Noções de Direitos Humanos e Legislação", slugs: ["direitos-humanos-legislacao"], count: 10 },
-  { label: "Ciências Naturais", slugs: ["ciencias-naturais"], count: 10 },
-  { label: "Ciências Humanas", slugs: ["ciencias-humanas"], count: 10 },
-  { label: "Proteção e Defesa Civil", slugs: ["protecao-defesa-civil"], count: 5 },
-];
 
 type Simulado = { id: string; name: string; description: string | null; q_count?: number };
 type Attempt = {
@@ -26,84 +18,102 @@ type Attempt = {
 const Simulados = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { exam, nodes, loading: examLoading } = useExam();
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [history, setHistory] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  const load = async () => {
+  // A prova do edital: disciplinas de nível 1 com peso (nº de questões na prova).
+  const grade = useMemo(
+    () => disciplinesOf(nodes).filter((d) => (d.weight ?? 0) > 0),
+    [nodes],
+  );
+  const totalQuestoes = useMemo(
+    () => grade.reduce((sum, d) => sum + (d.weight ?? 0), 0),
+    [grade],
+  );
+
+  const load = useCallback(async () => {
+    if (!exam) { setSimulados([]); setHistory([]); setLoading(false); return; }
     setLoading(true);
-    const [{ data: sims }, { data: counts }, { data: hist }] = await Promise.all([
-      (supabase.from("simulados" as any).select("id, name, description").order("created_at", { ascending: false })) as any,
-      (supabase.from("simulado_questions" as any).select("simulado_id")) as any,
-      (supabase.from("simulado_attempts" as any).select("id, mode, title, total, correct, started_at, finished_at").order("started_at", { ascending: false }).limit(20)) as any,
+    const [{ data: sims }, { data: hist }] = await Promise.all([
+      (supabase as any).rpc("list_published_simulados", { _exam_id: exam.id }),
+      (supabase as any).from("simulado_attempts")
+        .select("id, mode, title, total, correct, started_at, finished_at")
+        .eq("exam_id", exam.id)
+        .order("started_at", { ascending: false })
+        .limit(20),
     ]);
-    const cmap: Record<string, number> = {};
-    (counts ?? []).forEach((c: any) => { cmap[c.simulado_id] = (cmap[c.simulado_id] ?? 0) + 1; });
-    setSimulados(((sims ?? []) as any[]).map((s) => ({ ...s, q_count: cmap[s.id] ?? 0 })));
+    setSimulados(((sims ?? []) as any[]).map((s) => ({ ...s, q_count: Number(s.question_count ?? 0) })));
     setHistory((hist ?? []) as any);
     setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
+  }, [exam]);
+
+  useEffect(() => { if (!examLoading) load(); }, [load, examLoading]);
 
   const startFixed = async (sim: Simulado) => {
-    if (!user) return;
+    if (!user || !exam) return;
     if ((sim.q_count ?? 0) === 0) { toast.error("Simulado sem questões."); return; }
-    const { data: links } = await (supabase.from("simulado_questions" as any)
+    const { data: links } = await (supabase as any).from("simulado_questions")
       .select("question_id, position")
       .eq("simulado_id", sim.id)
-      .order("position", { ascending: true })) as any;
-    const ids = (links ?? []).map((l: any) => l.question_id);
-    const { data: attempt, error } = await (supabase.from("simulado_attempts" as any).insert({
+      .order("position", { ascending: true });
+    const ids = ((links ?? []) as any[]).map((l: any) => l.question_id);
+    const { data: attempt, error } = await (supabase as any).from("simulado_attempts").insert({
       user_id: user.id,
+      exam_id: exam.id,
       simulado_id: sim.id,
       mode: "fixed",
       title: sim.name,
       total: ids.length,
       answers: ids.map((qid: string) => ({ question_id: qid, selected: null })),
-    } as any).select("id").single()) as any;
+    }).select("id").single();
     if (error) { toast.error("Erro ao iniciar simulado."); return; }
     navigate(`/simulado/${attempt.id}`);
   };
 
   const generateRandom = async () => {
-    if (!user) return;
+    if (!user || !exam) return;
     setGenerating(true);
     try {
-      const { data: subs } = await supabase.from("subjects").select("id, slug");
-      const bySlug: Record<string, string> = {};
-      (subs ?? []).forEach((s: any) => { bySlug[s.slug] = s.id; });
-
       const allIds: string[] = [];
       const breakdown: { label: string; question_ids: string[] }[] = [];
-      for (const group of RANDOM_DISTRIBUTION) {
-        const subjectIds = group.slugs.map((sl) => bySlug[sl]).filter(Boolean);
-        if (subjectIds.length === 0) continue;
-        const { data: qs } = await supabase
-          .from("questions")
-          .select("id")
-          .in("subject_id", subjectIds);
-        const pool = (qs ?? []).map((q: any) => q.id);
-        // shuffle
-        for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-        const picked = pool.slice(0, group.count);
-        if (picked.length < group.count) {
-          toast.error(`Sem questões suficientes em ${group.label} (${picked.length}/${group.count}).`);
+
+      // A grade vem do edital: cada disciplina entra com o peso que tem na prova
+      for (const disciplina of grade) {
+        const escopo = subtreeIds(nodes, disciplina.id);
+        const { data: vinculos } = await (supabase as any)
+          .from("exam_questions")
+          .select("question_id")
+          .eq("exam_id", exam.id)
+          .eq("status", "published")
+          .in("content_node_id", escopo);
+
+        const pool = ((vinculos ?? []) as any[]).map((v) => v.question_id);
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const picked = pool.slice(0, disciplina.weight!);
+        if (picked.length < disciplina.weight!) {
+          toast.error(`Sem questões suficientes em ${disciplina.name} (${picked.length}/${disciplina.weight}).`);
           setGenerating(false);
           return;
         }
-        breakdown.push({ label: group.label, question_ids: picked });
+        breakdown.push({ label: disciplina.name, question_ids: picked });
         allIds.push(...picked);
       }
 
-      const { data: attempt, error } = await (supabase.from("simulado_attempts" as any).insert({
+      const { data: attempt, error } = await (supabase as any).from("simulado_attempts").insert({
         user_id: user.id,
+        exam_id: exam.id,
         mode: "random",
-        title: "Simulado Aleatório (50)",
+        title: `Simulado Aleatório (${allIds.length})`,
         total: allIds.length,
         answers: allIds.map((qid) => ({ question_id: qid, selected: null })),
         by_subject: breakdown,
-      } as any).select("id").single()) as any;
+      }).select("id").single();
       if (error) throw error;
       navigate(`/simulado/${attempt.id}`);
     } catch (e: any) {
@@ -120,7 +130,7 @@ const Simulados = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <p className="stencil text-xs text-primary">CFSd CBMMG · IDECAN</p>
+          <p className="stencil text-xs text-primary">{exam ? examLabel(exam) : "Simulados"}</p>
           <h1 className="font-display text-xl font-bold">Simulados</h1>
         </div>
       </header>
@@ -131,16 +141,26 @@ const Simulados = () => {
           <div className="flex items-center gap-2 stencil text-[11px] opacity-90">
             <Shuffle className="w-4 h-4" /> Aleatório
           </div>
-          <h2 className="font-display text-2xl font-bold mt-1">Gerar Simulado (50 questões)</h2>
-          <p className="text-sm opacity-90 mt-1">Distribuição oficial · 4 horas de duração.</p>
-          <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-90">
-            {RANDOM_DISTRIBUTION.map((d) => (
-              <li key={d.label}>• {d.count} {d.label}</li>
-            ))}
-          </ul>
+          <h2 className="font-display text-2xl font-bold mt-1">
+            Gerar Simulado{totalQuestoes > 0 ? ` (${totalQuestoes} questões)` : ""}
+          </h2>
+          <p className="text-sm opacity-90 mt-1">
+            Distribuição do edital{exam ? ` · ${Math.round(exam.duration_minutes / 60)} horas de duração` : ""}.
+          </p>
+          {grade.length === 0 ? (
+            <p className="mt-3 text-xs opacity-90">
+              Este edital ainda não tem pesos por disciplina cadastrados.
+            </p>
+          ) : (
+            <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs opacity-90">
+              {grade.map((d) => (
+                <li key={d.id}>• {d.weight} {d.name}</li>
+              ))}
+            </ul>
+          )}
           <Button
             onClick={generateRandom}
-            disabled={generating}
+            disabled={generating || grade.length === 0 || !exam}
             className="mt-4 w-full bg-white text-foreground hover:bg-white/90 font-display stencil"
           >
             {generating ? "Sorteando questões..." : "Gerar agora"}

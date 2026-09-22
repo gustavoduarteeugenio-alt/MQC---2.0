@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,15 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeAnswer, validateAnswer } from "@/lib/questions";
-
-type Subject = { id: string; name: string; slug?: string };
+import { ContentNode, disciplinesOf } from "@/lib/exams";
 
 type RawRow = Record<string, any>;
 
 type ParsedRow = {
   rowNumber: number;
   num_questao: number;
-  subject_id: string;
+  content_node_id: string;
   statement: string;
   option_a: string;
   option_b: string;
@@ -41,22 +40,13 @@ const REQUIRED = [
   "comentario_professor",
 ];
 
-const ALLOWED_DISCIPLINAS = [
-  "Língua Portuguesa",
-  "Raciocínio Lógico e Matemático",
-  "Noções de Direitos Humanos e Legislação",
-  "Ciências Naturais",
-  "Ciências Humanas",
-  "Proteção e Defesa Civil",
-];
-
 const norm = (s: any) =>
   (s ?? "")
     .toString()
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, "_");
 
 const normalizeKeys = (row: RawRow): RawRow => {
@@ -66,11 +56,13 @@ const normalizeKeys = (row: RawRow): RawRow => {
 };
 
 interface Props {
-  subjects: Subject[];
+  /** Edital do simulado: é ele que define as disciplinas aceitas na planilha. */
+  examId: string;
+  nodes: ContentNode[];
   onImported: () => void;
 }
 
-export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
+export const SimuladoBulkImport = ({ examId, nodes, onImported }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [simuladoName, setSimuladoName] = useState("");
   const [duration, setDuration] = useState<number>(240);
@@ -79,6 +71,8 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
   const [errors, setErrors] = useState<RowError[]>([]);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
+
+  const disciplinas = useMemo(() => disciplinesOf(nodes), [nodes]);
 
   const reset = () => {
     setFileName("");
@@ -90,13 +84,12 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
   const resetAll = () => {
     reset();
     setSimuladoName("");
-    setDuration(240);
   };
 
   const validate = (rows: RawRow[]) => {
-    // Build a map of normalized discipline name → subject_id
-    const subjectByName = new Map<string, string>();
-    subjects.forEach((s) => subjectByName.set(norm(s.name), s.id));
+    // Disciplina da planilha → nó de nível 1 do edital escolhido.
+    const porNome = new Map<string, string>();
+    disciplinas.forEach((d) => porNome.set(norm(d.name), d.id));
 
     const ok: ParsedRow[] = [];
     const errs: RowError[] = [];
@@ -128,10 +121,10 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       }
 
       const discRaw = (row["disciplina"] ?? "").toString().trim();
-      const subject_id = subjectByName.get(norm(discRaw));
-      if (!subject_id && !missing.includes("disciplina")) {
+      const content_node_id = porNome.get(norm(discRaw));
+      if (!content_node_id && !missing.includes("disciplina")) {
         localErrors.push(
-          `Disciplina "${discRaw}" inválida. Use exatamente uma de: ${ALLOWED_DISCIPLINAS.join(" | ")}.`,
+          `Disciplina "${discRaw}" não existe neste edital. Use exatamente uma de: ${disciplinas.map((d) => d.name).join(" | ")}.`,
         );
       }
 
@@ -157,7 +150,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       ok.push({
         rowNumber,
         num_questao: num,
-        subject_id: subject_id!,
+        content_node_id: content_node_id!,
         statement: row["enunciado"].toString(),
         option_a: row["alternativa_a"].toString(),
         option_b: row["alternativa_b"].toString(),
@@ -169,7 +162,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       });
     });
 
-    // Sort by num_questao for stable ordering
+    // Ordem estável: a da prova
     ok.sort((a, b) => a.num_questao - b.num_questao);
 
     setValid(ok);
@@ -183,6 +176,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
   };
 
   const handleFile = async (file: File) => {
+    if (!examId) { toast.error("Selecione o edital antes de enviar a planilha."); return; }
     setParsing(true);
     setFileName(file.name);
     setValid([]);
@@ -213,6 +207,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
   };
 
   const doImport = async () => {
+    if (!examId) { toast.error("Selecione o edital."); return; }
     if (!simuladoName.trim()) {
       toast.error("Informe o nome do simulado.");
       return;
@@ -228,46 +223,53 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
 
     setImporting(true);
     try {
-      // 1) Create simulado
-      const { data: sim, error: eSim } = await (supabase
-        .from("simulados" as any)
+      // 1) Simulado do edital
+      const { data: sim, error: eSim } = await (supabase as any)
+        .from("simulados")
         .insert({
           name: simuladoName.trim(),
           description: `Importado via planilha (${valid.length} questões)`,
           duration_minutes: duration,
-        } as any)
+          exam_id: examId,
+        })
         .select("id")
-        .single()) as any;
+        .single();
       if (eSim) throw eSim;
       const simId = sim.id;
 
-      // 2) Insert questions
-      const questionsPayload = valid.map((v) => ({
-        subject_id: v.subject_id,
-        statement: v.statement,
-        option_a: v.option_a,
-        option_b: v.option_b,
-        option_c: v.option_c,
-        option_d: v.option_d,
-        option_e: v.option_e,
-        correct_answer: v.correct_answer,
-        explanation: v.explanation,
-        difficulty: "medium",
-      }));
-
-      const { data: inserted, error: eQ } = await supabase
+      // 2) Questões
+      const { data: inserted, error: eQ } = await (supabase as any)
         .from("questions")
-        .insert(questionsPayload as any)
+        .insert(valid.map((v) => ({
+          statement: v.statement,
+          option_a: v.option_a,
+          option_b: v.option_b,
+          option_c: v.option_c,
+          option_d: v.option_d,
+          option_e: v.option_e,
+          correct_answer: v.correct_answer,
+          explanation: v.explanation,
+          difficulty: "medium",
+        })))
         .select("id");
       if (eQ) throw eQ;
+      const ids = ((inserted ?? []) as any[]).map((q: any) => q.id);
 
-      // 3) Link to simulado in same order as valid[]
-      const links = (inserted ?? []).map((q: any, i: number) => ({
-        simulado_id: simId,
-        question_id: q.id,
-        position: valid[i].num_questao,
-      }));
-      const { error: eL } = await (supabase.from("simulado_questions" as any).insert(links as any)) as any;
+      // 3) Vínculo com o edital, já publicado: a questão nasce dentro da prova
+      const { error: eV } = await (supabase as any).from("exam_questions").insert(
+        ids.map((id, i) => ({
+          exam_id: examId,
+          question_id: id,
+          content_node_id: valid[i].content_node_id,
+          status: "published",
+        })),
+      );
+      if (eV) throw eV;
+
+      // 4) Ordem dentro do simulado
+      const { error: eL } = await (supabase as any).from("simulado_questions").insert(
+        ids.map((id, i) => ({ simulado_id: simId, question_id: id, position: valid[i].num_questao })),
+      );
       if (eL) throw eL;
 
       toast.success(`Simulado "${simuladoName}" publicado com ${valid.length} questões.`);
@@ -293,7 +295,10 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       "resposta_correta",
       "comentario_professor",
     ];
-    const examples = ALLOWED_DISCIPLINAS.slice(0, 2).map((disc, i) => [
+    // O exemplo usa as disciplinas do edital selecionado, para o professor
+    // copiar o nome exato.
+    const exemplos = (disciplinas.length ? disciplinas.slice(0, 2).map((d) => d.name) : ["Disciplina do edital"]);
+    const examples = exemplos.map((disc, i) => [
       i + 1,
       disc,
       `Exemplo de enunciado ${i + 1}. Suporta HTML: <b>negrito</b> e <img src="https://exemplo.com/img.png" />`,
@@ -322,6 +327,9 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
           <p className="text-xs text-muted-foreground mt-1">
             Aceita .csv, .xlsx ou .xls. Colunas obrigatórias: {REQUIRED.join(", ")}.
           </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            As questões entram no edital selecionado acima, classificadas pela disciplina informada.
+          </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
           <Download className="w-4 h-4 mr-1" /> Modelo
@@ -334,7 +342,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
           <Input
             value={simuladoName}
             onChange={(e) => setSimuladoName(e.target.value)}
-            placeholder="Ex: 1º Simulado Inédito de Reta Final - CBMMG"
+            placeholder="Ex: 1º Simulado Inédito de Reta Final"
           />
         </div>
         <div>
@@ -349,6 +357,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
           ref={inputRef}
           type="file"
           accept=".csv,.xlsx,.xls"
+          disabled={!examId}
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:cursor-pointer"
         />

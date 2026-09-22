@@ -76,7 +76,7 @@ const Admin = () => {
       case "editais": return <ManageExams />;
       case "questions": return <ManageQuestions />;
       case "bulk": return <BulkImport />;
-      case "simulados": return <ManageSimulados subjects={subjects} />;
+      case "simulados": return <ManageSimulados />;
       case "users": return <ManageUsers />;
       case "hotmart": return <HotmartPurchases />;
       case "admins": return <ManageAdmins />;

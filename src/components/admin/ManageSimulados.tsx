@@ -1,31 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, Pencil, Loader2, ClipboardList, Target } from "lucide-react";
 import { toast } from "sonner";
+import { ContentNode, disciplineOf, disciplinesOf } from "@/lib/exams";
 import { SimuladoBulkImport } from "./SimuladoBulkImport";
 
-type Subject = { id: string; name: string };
+type Exam = { id: string; name: string; duration_minutes: number };
 type Simulado = { id: string; name: string; description: string | null; duration_minutes?: number; q_count?: number };
-type Question = { id: string; statement: string; subject_id: string; year: number | null };
+/** Questão do edital: o vínculo traz a classificação que vale ali. */
+type Question = { id: string; statement: string; year: number | null; content_node_id: string | null; status: string };
 
-const TARGET_TOTAL = 50;
-// Distribuição alvo por matéria (slug → quantidade)
-const SUBJECT_TARGETS: Record<string, number> = {
-  "lingua-portuguesa": 10,
-  rlm: 5,
-  "direitos-humanos-legislacao": 10,
-  "ciencias-naturais": 10,
-  "ciencias-humanas": 10,
-  "protecao-defesa-civil": 5,
-};
-
-export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
+export const ManageSimulados = () => {
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [examId, setExamId] = useState("");
+  const [nodes, setNodes] = useState<ContentNode[]>([]);
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [loading, setLoading] = useState(false);
   const [openForm, setOpenForm] = useState(false);
@@ -34,42 +29,82 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState<number>(240);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
-  const [filterSubject, setFilterSubject] = useState<string>("all");
+  const [filterDisciplina, setFilterDisciplina] = useState<string>("all");
   const [filterText, setFilterText] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
 
-  const subjectMap = useMemo(() => Object.fromEntries(subjects.map((s) => [s.id, s.name])), [subjects]);
-  const subjectSlugMap = useMemo(() => {
-    // Subjects passed in only have id+name; we re-derive slug via name normalization is unreliable.
-    // We'll fetch slugs separately.
-    return {} as Record<string, string>;
-  }, [subjects]);
+  const exam = useMemo(() => exams.find((e) => e.id === examId) ?? null, [exams, examId]);
+  const disciplinas = useMemo(() => disciplinesOf(nodes), [nodes]);
+  // O alvo do simulado é a própria prova do edital: peso de cada disciplina.
+  const alvoPorDisciplina = useMemo(() => {
+    const map: Record<string, number> = {};
+    disciplinas.forEach((d) => { if (d.weight) map[d.id] = d.weight; });
+    return map;
+  }, [disciplinas]);
+  const alvoTotal = useMemo(
+    () => Object.values(alvoPorDisciplina).reduce((a, b) => a + b, 0),
+    [alvoPorDisciplina],
+  );
 
-  const [subjectSlugs, setSubjectSlugs] = useState<Record<string, string>>({});
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("exams").select("id, name, duration_minutes").order("year", { ascending: false });
+      const lista = (data ?? []) as Exam[];
+      setExams(lista);
+      setExamId((atual) => atual || lista[0]?.id || "");
+    })();
+  }, []);
 
-  const load = async () => {
+  useEffect(() => {
+    if (!examId) { setNodes([]); return; }
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("content_nodes").select("*").eq("exam_id", examId).order("level").order("display_order");
+      setNodes((data ?? []) as ContentNode[]);
+      setFilterDisciplina("all");
+    })();
+  }, [examId]);
+
+  const load = useCallback(async () => {
+    if (!examId) { setSimulados([]); return; }
     setLoading(true);
-    const [{ data: sims }, { data: counts }, { data: subs }] = await Promise.all([
-      (supabase.from("simulados" as any).select("id, name, description, duration_minutes").order("created_at", { ascending: false })) as any,
-      (supabase.from("simulado_questions" as any).select("simulado_id")) as any,
-      supabase.from("subjects").select("id, slug"),
+    const [{ data: sims }, { data: counts }] = await Promise.all([
+      (supabase as any).from("simulados")
+        .select("id, name, description, duration_minutes")
+        .eq("exam_id", examId)
+        .order("created_at", { ascending: false }),
+      (supabase as any).from("simulado_questions").select("simulado_id"),
     ]);
     const cmap: Record<string, number> = {};
-    (counts ?? []).forEach((c: any) => { cmap[c.simulado_id] = (cmap[c.simulado_id] ?? 0) + 1; });
+    ((counts ?? []) as any[]).forEach((c: any) => { cmap[c.simulado_id] = (cmap[c.simulado_id] ?? 0) + 1; });
     setSimulados(((sims ?? []) as any[]).map((s) => ({ ...s, q_count: cmap[s.id] ?? 0 })));
-    const slugMap: Record<string, string> = {};
-    (subs ?? []).forEach((s: any) => { slugMap[s.id] = s.slug; });
-    setSubjectSlugs(slugMap);
     setLoading(false);
+  }, [examId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  /** Banco do edital: só questões vinculadas a ele, com a classificação dele. */
+  const loadQuestions = async () => {
+    if (!examId) { setAllQuestions([]); return; }
+    const { data } = await (supabase as any).rpc("admin_list_exam_questions", {
+      _exam_id: examId, _node_ids: null, _search: null, _limit: 2000,
+    });
+    setAllQuestions(((data ?? []) as any[]).map((r) => ({
+      id: r.id,
+      statement: r.statement,
+      year: r.year ?? null,
+      content_node_id: r.content_node_id ?? null,
+      status: r.status,
+    })));
   };
 
-  useEffect(() => { load(); }, []);
-
   const openNew = async () => {
+    if (!exam) { toast.error("Selecione um edital."); return; }
     setEditing(null);
-    setName(""); setDescription(""); setDuration(240); setSelectedIds(new Set());
-    setFilterSubject("all"); setFilterText("");
+    setName(""); setDescription(""); setDuration(exam.duration_minutes ?? 240); setSelectedIds(new Set());
+    setFilterDisciplina("all"); setFilterText("");
     await loadQuestions();
     setOpenForm(true);
   };
@@ -77,16 +112,12 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
   const openEdit = async (s: Simulado) => {
     setEditing(s);
     setName(s.name); setDescription(s.description ?? ""); setDuration(s.duration_minutes ?? 240);
-    setFilterSubject("all"); setFilterText("");
+    setFilterDisciplina("all"); setFilterText("");
     await loadQuestions();
-    const { data: links } = await (supabase.from("simulado_questions" as any).select("question_id").eq("simulado_id", s.id)) as any;
-    setSelectedIds(new Set((links ?? []).map((l: any) => l.question_id)));
+    const { data: links } = await (supabase as any)
+      .from("simulado_questions").select("question_id").eq("simulado_id", s.id);
+    setSelectedIds(new Set(((links ?? []) as any[]).map((l: any) => l.question_id)));
     setOpenForm(true);
-  };
-
-  const loadQuestions = async () => {
-    const { data } = await supabase.from("questions").select("id, statement, subject_id, year").order("created_at", { ascending: false }).limit(1000);
-    setAllQuestions((data ?? []) as Question[]);
   };
 
   const toggle = (id: string) => {
@@ -98,24 +129,25 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
   };
 
   const save = async () => {
+    if (!examId) { toast.error("Selecione um edital."); return; }
     if (!name.trim()) { toast.error("Informe um nome."); return; }
     if (selectedIds.size === 0) { toast.error("Selecione ao menos uma questão."); return; }
     if (!duration || duration < 1) { toast.error("Informe uma duração válida."); return; }
     setSaving(true);
     try {
       let simId = editing?.id;
-      const payload = { name, description, duration_minutes: duration };
+      const payload = { name, description, duration_minutes: duration, exam_id: examId };
       if (editing) {
-        await (supabase.from("simulados" as any).update(payload as any).eq("id", editing.id)) as any;
-        await (supabase.from("simulado_questions" as any).delete().eq("simulado_id", editing.id)) as any;
+        await (supabase as any).from("simulados").update(payload).eq("id", editing.id);
+        await (supabase as any).from("simulado_questions").delete().eq("simulado_id", editing.id);
       } else {
-        const { data, error } = await (supabase.from("simulados" as any).insert(payload as any).select("id").single()) as any;
+        const { data, error } = await (supabase as any).from("simulados").insert(payload).select("id").single();
         if (error) throw error;
         simId = data.id;
       }
       const ids = Array.from(selectedIds);
       const rows = ids.map((qid, i) => ({ simulado_id: simId, question_id: qid, position: i }));
-      const { error: e2 } = await (supabase.from("simulado_questions" as any).insert(rows as any)) as any;
+      const { error: e2 } = await (supabase as any).from("simulado_questions").insert(rows);
       if (e2) throw e2;
       toast.success(editing ? "Simulado atualizado." : "Simulado criado.");
       setOpenForm(false);
@@ -129,28 +161,31 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
 
   const remove = async (s: Simulado) => {
     if (!confirm(`Excluir "${s.name}"?`)) return;
-    const { error } = await (supabase.from("simulados" as any).delete().eq("id", s.id)) as any;
+    const { error } = await (supabase as any).from("simulados").delete().eq("id", s.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Excluído."); load();
   };
 
   const filtered = allQuestions.filter((q) => {
-    if (filterSubject !== "all" && q.subject_id !== filterSubject) return false;
+    if (filterDisciplina !== "all" && disciplineOf(nodes, q.content_node_id)?.id !== filterDisciplina) return false;
     if (filterText && !q.statement.toLowerCase().includes(filterText.toLowerCase())) return false;
     return true;
   });
 
-  // Contagem por matéria das questões selecionadas
-  const selectedBySubject = useMemo(() => {
+  // Contagem por disciplina das questões selecionadas
+  const selectedPorDisciplina = useMemo(() => {
     const map: Record<string, number> = {};
     allQuestions.forEach((q) => {
-      if (selectedIds.has(q.id)) map[q.subject_id] = (map[q.subject_id] ?? 0) + 1;
+      if (!selectedIds.has(q.id)) return;
+      const d = disciplineOf(nodes, q.content_node_id);
+      const key = d?.id ?? "outros";
+      map[key] = (map[key] ?? 0) + 1;
     });
     return map;
-  }, [selectedIds, allQuestions]);
+  }, [selectedIds, allQuestions, nodes]);
 
   const total = selectedIds.size;
-  const overTarget = total > TARGET_TOTAL;
+  const overTarget = alvoTotal > 0 && total > alvoTotal;
 
   return (
     <div className="space-y-3">
@@ -159,17 +194,27 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
           <ClipboardList className="w-4 h-4 text-primary" />
           <h3 className="font-display font-bold">Gestão de Simulados</h3>
         </div>
-        <Button size="sm" onClick={openNew} className="bg-gradient-flame text-white stencil">
+        <Button size="sm" onClick={openNew} disabled={!examId} className="bg-gradient-flame text-white stencil">
           <Plus className="w-4 h-4 mr-1" /> Novo simulado
         </Button>
       </div>
-      <SimuladoBulkImport subjects={subjects} onImported={load} />
 
+      <div>
+        <Label className="text-xs">Edital</Label>
+        <Select value={examId} onValueChange={setExamId}>
+          <SelectTrigger><SelectValue placeholder="Edital" /></SelectTrigger>
+          <SelectContent>
+            {exams.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <SimuladoBulkImport examId={examId} nodes={nodes} onImported={load} />
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
       ) : simulados.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nenhum simulado cadastrado ainda.</p>
+        <p className="text-sm text-muted-foreground">Nenhum simulado cadastrado neste edital.</p>
       ) : (
         <div className="space-y-2">
           {simulados.map((s) => (
@@ -192,16 +237,20 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar Simulado" : "Cadastrar Simulado Inédito"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Editar Simulado" : "Cadastrar Simulado Inédito"}
+              {exam && <span className="block text-xs font-normal text-muted-foreground mt-0.5">{exam.name}</span>}
+            </DialogTitle>
           </DialogHeader>
 
-          {/* Sticky counter */}
+          {/* Contador fixo */}
           <div className={`sticky top-0 z-10 -mx-6 px-6 py-2 border-b border-border flex items-center gap-2 ${overTarget ? "bg-destructive/10" : "bg-primary/5"}`}>
             <Target className={`w-4 h-4 ${overTarget ? "text-destructive" : "text-primary"}`} />
             <span className="font-display font-bold text-sm">
-              Selecionadas: <span className={overTarget ? "text-destructive" : "text-primary"}>{total}</span> / {TARGET_TOTAL} questões
+              Selecionadas: <span className={overTarget ? "text-destructive" : "text-primary"}>{total}</span>
+              {alvoTotal > 0 ? ` / ${alvoTotal} questões` : " questões"}
             </span>
-            {overTarget && <span className="text-xs text-destructive ml-2">acima do alvo</span>}
+            {overTarget && <span className="text-xs text-destructive ml-2">acima da prova</span>}
           </div>
 
           <div className="grid md:grid-cols-[1fr_240px] gap-4 overflow-y-auto pr-1 pt-2">
@@ -210,7 +259,7 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="sm:col-span-2">
                   <Label>Nome do Simulado</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Simulado Zero 01 - CBMMG" />
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Simulado Zero 01" />
                 </div>
                 <div>
                   <Label>Duração (min)</Label>
@@ -223,15 +272,15 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
               </div>
 
               <div className="space-y-2">
-                <Label>Banco de questões</Label>
+                <Label>Banco de questões do edital</Label>
                 <div className="flex gap-2">
                   <select
                     className="border border-border rounded-md px-2 py-1 text-sm bg-background"
-                    value={filterSubject}
-                    onChange={(e) => setFilterSubject(e.target.value)}
+                    value={filterDisciplina}
+                    onChange={(e) => setFilterDisciplina(e.target.value)}
                   >
-                    <option value="all">Todas as matérias</option>
-                    {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    <option value="all">Todas as disciplinas</option>
+                    {disciplinas.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                   <Input placeholder="Buscar enunciado..." value={filterText} onChange={(e) => setFilterText(e.target.value)} className="flex-1" />
                 </div>
@@ -245,7 +294,9 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
                       <div className="flex-1 text-sm">
                         <p className="line-clamp-2">{q.statement}</p>
                         <p className="text-[10px] stencil text-muted-foreground mt-0.5">
-                          {subjectMap[q.subject_id] ?? "?"} {q.year ? `· ${q.year}` : ""}
+                          {disciplineOf(nodes, q.content_node_id)?.name ?? "Sem classificação"}
+                          {q.year ? ` · ${q.year}` : ""}
+                          {q.status !== "published" ? " · rascunho" : ""}
                         </p>
                       </div>
                     </label>
@@ -254,21 +305,20 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
               </div>
             </div>
 
-            {/* Sidebar resumo por matéria */}
+            {/* Resumo: quanto cada disciplina pesa na prova */}
             <aside className="bg-muted/30 border border-border rounded-xl p-3 h-fit md:sticky md:top-12">
-              <p className="font-display font-bold text-sm mb-2">Resumo por matéria</p>
+              <p className="font-display font-bold text-sm mb-2">Resumo por disciplina</p>
               <ul className="space-y-1.5">
-                {subjects.map((s) => {
-                  const slug = subjectSlugs[s.id];
-                  const target = SUBJECT_TARGETS[slug];
-                  const got = selectedBySubject[s.id] ?? 0;
-                  const ok = target ? got === target : false;
-                  const over = target ? got > target : false;
+                {disciplinas.map((d) => {
+                  const alvo = alvoPorDisciplina[d.id];
+                  const got = selectedPorDisciplina[d.id] ?? 0;
+                  const ok = alvo ? got === alvo : false;
+                  const over = alvo ? got > alvo : false;
                   return (
-                    <li key={s.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate pr-2">{s.name}</span>
+                    <li key={d.id} className="flex items-center justify-between text-xs">
+                      <span className="truncate pr-2">{d.name}</span>
                       <span className={`stencil font-bold ${over ? "text-destructive" : ok ? "text-primary" : "text-muted-foreground"}`}>
-                        {got}{target ? ` / ${target}` : ""}
+                        {got}{alvo ? ` / ${alvo}` : ""}
                       </span>
                     </li>
                   );
@@ -276,7 +326,9 @@ export const ManageSimulados = ({ subjects }: { subjects: Subject[] }) => {
               </ul>
               <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-xs">
                 <span className="font-display font-bold">Total</span>
-                <span className={`stencil font-bold ${overTarget ? "text-destructive" : "text-primary"}`}>{total} / {TARGET_TOTAL}</span>
+                <span className={`stencil font-bold ${overTarget ? "text-destructive" : "text-primary"}`}>
+                  {total}{alvoTotal > 0 ? ` / ${alvoTotal}` : ""}
+                </span>
               </div>
             </aside>
           </div>

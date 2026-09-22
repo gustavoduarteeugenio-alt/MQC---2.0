@@ -156,7 +156,10 @@ const TABLES: Record<string, Row[]> = {
   profiles: [PROFILE],
   daily_usage: [{ id: "d1", user_id: uid, usage_date: new Date().toISOString().slice(0, 10), questions_count: 12 }],
   user_roles: [{ user_id: uid, role: "user" }, { user_id: uid, role: "admin" }],
-  simulados: [{ id: "sim1", name: "Simulado Inédito 01", description: "Prova completa no estilo IDECAN", created_at: new Date().toISOString() }],
+  simulados: [
+    { id: "sim1", name: "Simulado Inédito 01", description: "Prova completa do CBMMG", exam_id: "e1", duration_minutes: 240, created_at: new Date().toISOString() },
+    { id: "sim2", name: "Simulado PMMG 01", description: "Prova completa da PMMG", exam_id: "e2", duration_minutes: 180, created_at: new Date().toISOString() },
+  ],
   simulado_questions: QUESTIONS.slice(0, 50).map((q, i) => ({ simulado_id: "sim1", question_id: q.id, position: i + 1 })),
   simulado_attempts: [],
   support_messages: [],
@@ -166,15 +169,23 @@ const TABLES: Record<string, Row[]> = {
   hotmart_webhook_events: [],
 };
 
-const RANKING = Array.from({ length: 12 }, (_, i) => ({
-  rank_position: i + 1,
-  user_id: i === 4 ? uid : `u${i}`,
-  display_name: i === 4 ? "Recruta Teste" : `Recruta ${String.fromCharCode(65 + i)}`,
-  is_anonymous: false,
-  correct: 240 - i * 13,
-  total: 300,
-  accuracy: 80 - i * 2,
-}));
+// O ranking é por edital: no mock o PMMG tem menos gente, para dar para ver
+// na tela que trocar de edital troca a disputa.
+const rankingDoEdital = (examId: string) => {
+  const tamanho = examId === "e2" ? 5 : 12;
+  return Array.from({ length: tamanho }, (_, i) => ({
+    rank_position: i + 1,
+    user_id: i === 4 ? uid : `u${examId}${i}`,
+    display_name: i === 4 ? "Recruta Teste" : `Recruta ${String.fromCharCode(65 + i)}`,
+    is_anonymous: false,
+    correct_count: 240 - i * 13,
+    correct: 240 - i * 13,
+    total: 300,
+    duration_seconds: 7200 + i * 60,
+    accuracy: 80 - i * 2,
+  }));
+};
+const RANKING = rankingDoEdital("e1");
 
 const RPCS: Record<string, (args: any) => any> = {
   reveal_question_answer: () => ({
@@ -188,11 +199,22 @@ const RPCS: Record<string, (args: any) => any> = {
     (args?._ids ?? []).map((id: string) => ({ id, correct_answer: "B", explanation: "Comentário de teste.", comment_image_url: null })),
   check_account_approved: () => true,
   has_app_access: () => true,
-  get_training_ranking: () => RANKING,
-  get_my_training_rank: () => ({ rank_position: 5, correct: 188, total: 300 }),
+  get_training_ranking: (args: any) => rankingDoEdital(args?._exam_id ?? "e1"),
+  get_my_training_rank: (args: any) => {
+    const lista = rankingDoEdital(args?._exam_id ?? "e1");
+    return [{ rank_position: 5, correct_count: 188, total_users: lista.length }];
+  },
   get_simulado_ranking: () => RANKING.slice(0, 8),
-  get_my_simulado_rank: () => ({ rank_position: 3, correct: 38, total: 50, duration_seconds: 7200 }),
-  list_published_simulados: () => [{ id: "sim1", name: "Simulado Inédito 01", description: null, created_at: new Date().toISOString(), question_count: 50 }],
+  get_my_simulado_rank: () => [{ rank_position: 3, total_users: 8, correct: 38, total: 50, duration_seconds: 7200 }],
+  list_published_simulados: (args: any) =>
+    (TABLES.simulados ?? [])
+      .filter((s) => !args?._exam_id || s.exam_id === args._exam_id)
+      .map((s) => ({
+        id: s.id, name: s.name, description: s.description ?? null,
+        created_at: s.created_at, duration_minutes: s.duration_minutes ?? 240,
+        question_count: (TABLES.simulado_questions ?? []).filter((q) => q.simulado_id === s.id).length,
+      }))
+      .filter((s) => s.question_count > 0),
   list_hotmart_purchases: () => [],
   admin_list_questions: () => QUESTIONS,
   admin_list_exam_questions: (args: any) => {
@@ -257,7 +279,7 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
   private sort: { col: string; asc: boolean } | null = null;
   private slice: { from: number; to: number } | null = null;
   private max: number | null = null;
-  private single = false;
+  private oneRow = false;
   private headOnly = false;
   private wantCount = false;
   private inserted: Row[] | null = null;
@@ -277,9 +299,17 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
   order(col: string, opts?: { ascending?: boolean }) { this.sort = { col, asc: opts?.ascending !== false }; return this; }
   range(from: number, to: number) { this.slice = { from, to }; return this; }
   limit(n: number) { this.max = n; return this; }
-  maybeSingle() { this.single = true; return this; }
+  maybeSingle() { this.oneRow = true; return this; }
+  single() { this.oneRow = true; return this; }
   insert(rows: Row | Row[]) {
-    const list = (Array.isArray(rows) ? rows : [rows]).map((r, i) => ({ id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...r }));
+    // started_at/correct existem por default no banco; o mock precisa imitar,
+    // senão o relógio do simulado nasce sem hora de início.
+    const padrao = this.table === "simulado_attempts"
+      ? { started_at: new Date().toISOString(), correct: 0, finished_at: null }
+      : {};
+    const list = (Array.isArray(rows) ? rows : [rows]).map((r, i) => ({
+      id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...padrao, ...r,
+    }));
     (TABLES[this.table] ??= []).unshift(...list);
     this.inserted = list;
     return this;
@@ -304,11 +334,11 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
       } else {
         TABLES[this.table] = (TABLES[this.table] ?? []).filter((r) => !alvo.includes(r));
       }
-      const data: any = this.single ? alvo[0] ?? null : alvo;
+      const data: any = this.oneRow ? alvo[0] ?? null : alvo;
       return { data, error: null, count: null };
     }
     if (this.inserted) {
-      const data: any = this.single ? this.inserted[0] ?? null : this.inserted;
+      const data: any = this.oneRow ? this.inserted[0] ?? null : this.inserted;
       return { data, error: null, count: null };
     }
     let rows = (TABLES[this.table] ?? []).filter((r) => matches(r, this.filters));
@@ -320,7 +350,7 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
     if (this.slice) rows = rows.slice(this.slice.from, this.slice.to + 1);
     if (this.max != null) rows = rows.slice(0, this.max);
     if (this.headOnly) return { data: null as any, error: null, count };
-    const data: any = this.single ? rows[0] ?? null : rows;
+    const data: any = this.oneRow ? rows[0] ?? null : rows;
     return { data, error: null, count: this.wantCount ? count : null };
   }
 

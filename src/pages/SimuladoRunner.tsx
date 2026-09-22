@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useExam } from "@/contexts/ExamContext";
+import { ContentNode, disciplineOf, fetchContentNodes } from "@/lib/exams";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Clock, CheckCircle2, XCircle, Trophy, Lightbulb, ChevronRight } from "lucide-react";
@@ -13,25 +15,27 @@ import { RichText } from "@/components/RichText";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Q = {
-  id: string; subject_id: string; statement: string;
+  id: string; content_node_id: string | null; statement: string;
   option_a: string; option_b: string; option_c: string; option_d: string;
   option_e: string | null; correct_answer: Letter; explanation: string;
   image_url: string | null; comment_image_url: string | null;
 };
 type Answer = { question_id: string; selected: Letter | null };
 type AttemptRow = {
-  id: string; user_id: string; mode: string; title: string | null;
+  id: string; user_id: string; exam_id: string | null; simulado_id: string | null;
+  mode: string; title: string | null;
   total: number; correct: number; started_at: string; finished_at: string | null;
   duration_seconds: number | null; answers: Answer[]; by_subject: any;
 };
 
-const TOTAL_SECONDS = 4 * 60 * 60;
+const DEFAULT_SECONDS = 4 * 60 * 60;
 
 const SimuladoRunner = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { enrollments } = useExam();
   const isReviewRoute = location.pathname.endsWith("/revisar");
 
   const [attempt, setAttempt] = useState<AttemptRow | null>(null);
@@ -39,26 +43,53 @@ const SimuladoRunner = () => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [remaining, setRemaining] = useState(TOTAL_SECONDS);
-  const [subjectsMap, setSubjectsMap] = useState<Record<string, string>>({});
+  const [remaining, setRemaining] = useState(DEFAULT_SECONDS);
+  // A árvore é a do edital DESTE simulado, que pode não ser o edital ativo
+  // agora (o aluno pode ter trocado de edital depois de fazer a prova).
+  const [nodes, setNodes] = useState<ContentNode[]>([]);
+  // Duração de um simulado inédito é a cadastrada nele; a de um aleatório é a
+  // da prova do edital. Nunca mais um valor fixo no código.
+  const [simMinutes, setSimMinutes] = useState<number | null>(null);
   const finishedRef = useRef(false);
+
+  const totalSeconds = useMemo(() => {
+    if (simMinutes) return simMinutes * 60;
+    const min = enrollments.find((e) => e.exam.id === attempt?.exam_id)?.exam.duration_minutes;
+    return (min ?? 240) * 60;
+  }, [simMinutes, enrollments, attempt?.exam_id]);
 
   useEffect(() => {
     (async () => {
-      const { data: a } = await (supabase.from("simulado_attempts" as any).select("*").eq("id", id!).maybeSingle()) as any;
+      const { data: a } = await (supabase as any).from("simulado_attempts").select("*").eq("id", id!).maybeSingle();
       if (!a) { navigate("/simulados"); return; }
       const att = a as AttemptRow;
       setAttempt(att);
       setAnswers(att.answers ?? []);
+      if (att.exam_id) setNodes(await fetchContentNodes(att.exam_id));
+      if (att.simulado_id) {
+        const { data: sim } = await (supabase as any)
+          .from("simulados").select("duration_minutes").eq("id", att.simulado_id).maybeSingle();
+        if (sim?.duration_minutes) setSimMinutes(Number(sim.duration_minutes));
+      }
       const ids = (att.answers ?? []).map((x) => x.question_id);
       if (ids.length) {
-        const [{ data: qs }, { data: subs }] = await Promise.all([
-          supabase.from("questions").select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, image_url").in("id", ids),
-          supabase.from("subjects").select("id, name"),
+        // A classificação da questão é a do edital deste simulado: a mesma
+        // questão pode estar em outro nó em outro edital.
+        const [{ data: qs }, { data: links }] = await Promise.all([
+          supabase.from("questions").select("id, statement, option_a, option_b, option_c, option_d, option_e, image_url").in("id", ids),
+          att.exam_id
+            ? (supabase as any).from("exam_questions").select("question_id, content_node_id").eq("exam_id", att.exam_id).in("question_id", ids)
+            : Promise.resolve({ data: [] as any[] }),
         ]);
+        const nodeByQuestion: Record<string, string | null> = {};
+        ((links ?? []) as any[]).forEach((l: any) => { nodeByQuestion[l.question_id] = l.content_node_id ?? null; });
         const map: Record<string, Q> = {};
         (qs ?? []).forEach((q: any) => {
-          map[q.id] = { ...q, correct_answer: "" as Letter, explanation: "", comment_image_url: null } as Q;
+          map[q.id] = {
+            ...q,
+            content_node_id: nodeByQuestion[q.id] ?? null,
+            correct_answer: "" as Letter, explanation: "", comment_image_url: null,
+          } as Q;
         });
         // Se o simulado já foi finalizado, buscamos os gabaritos para revisão
         if (att.finished_at) {
@@ -72,17 +103,18 @@ const SimuladoRunner = () => {
           });
         }
         setQuestions(ids.map((qid) => map[qid]).filter(Boolean));
-        const sm: Record<string, string> = {};
-        (subs ?? []).forEach((s: any) => { sm[s.id] = s.name; });
-        setSubjectsMap(sm);
-      }
-      if (!att.finished_at) {
-        const elapsed = Math.floor((Date.now() - new Date(att.started_at).getTime()) / 1000);
-        setRemaining(Math.max(0, TOTAL_SECONDS - elapsed));
       }
       setLoading(false);
     })();
   }, [id, navigate]);
+
+  // O relógio só é ajustado quando sabemos a duração do edital.
+  useEffect(() => {
+    if (!attempt || attempt.finished_at) return;
+    const inicio = new Date(attempt.started_at).getTime();
+    const elapsed = Number.isFinite(inicio) ? Math.floor((Date.now() - inicio) / 1000) : 0;
+    setRemaining(Math.max(0, totalSeconds - elapsed));
+  }, [totalSeconds, attempt?.id, attempt?.finished_at, attempt?.started_at]);
 
   const isFinished = !!attempt?.finished_at;
   const showResult = isFinished && !isReviewRoute;
@@ -138,16 +170,19 @@ const SimuladoRunner = () => {
       : q
     ));
     let correct = 0;
+    // Agrupamos pela disciplina (nível 1) do edital — é a leitura que o aluno
+    // reconhece no boletim e a mesma usada na estatística do treino.
     const bySubject: Record<string, { name: string; correct: number; total: number }> = {};
     questions.forEach((q) => {
       const ans = answers.find((a) => a.question_id === q.id);
       const correctLetter = answerMap[q.id]?.c;
       const ok = !!correctLetter && ans?.selected === correctLetter;
       if (ok) correct++;
-      const subjName = subjectsMap[q.subject_id] ?? "Outros";
-      if (!bySubject[q.subject_id]) bySubject[q.subject_id] = { name: subjName, correct: 0, total: 0 };
-      bySubject[q.subject_id].total++;
-      if (ok) bySubject[q.subject_id].correct++;
+      const disc = disciplineOf(nodes, q.content_node_id);
+      const key = disc?.id ?? "outros";
+      if (!bySubject[key]) bySubject[key] = { name: disc?.name ?? "Outros", correct: 0, total: 0 };
+      bySubject[key].total++;
+      if (ok) bySubject[key].correct++;
     });
     const finished_at = new Date().toISOString();
     const duration = Math.floor((Date.now() - new Date(attempt.started_at).getTime()) / 1000);
@@ -163,13 +198,15 @@ const SimuladoRunner = () => {
           selected_answer: ans.selected as string,
           is_correct: !!correctLetter && ans.selected === correctLetter,
           time_seconds: 0,
+          exam_id: attempt.exam_id ?? null,
+          content_node_id: q.content_node_id ?? null,
         };
       }).filter(Boolean) as any[];
-      if (rows.length) await supabase.from("attempts").insert(rows);
+      if (rows.length) await (supabase as any).from("attempts").insert(rows);
     }
-    await (supabase.from("simulado_attempts" as any).update({
+    await (supabase as any).from("simulado_attempts").update({
       finished_at, duration_seconds: duration, total: questions.length, correct, by_subject,
-    } as any).eq("id", id!)) as any;
+    }).eq("id", id!);
     setAttempt({ ...attempt, finished_at, duration_seconds: duration, correct, total: questions.length, by_subject });
     if (auto) toast.error("Tempo esgotado! Simulado finalizado.");
   };
@@ -209,7 +246,9 @@ const SimuladoRunner = () => {
       {current && (
         <main className="flex-1 px-5 pt-5">
           <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
-            <p className="stencil text-[10px] text-muted-foreground mb-2">{subjectsMap[current.subject_id]}</p>
+            <p className="stencil text-[10px] text-muted-foreground mb-2">
+              {disciplineOf(nodes, current.content_node_id)?.name ?? ""}
+            </p>
             <RichText content={current.statement} className="text-[15px] leading-relaxed" />
             {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
           </div>
