@@ -301,8 +301,9 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       "Alternativa B",
       "Alternativa C",
       "Alternativa D",
-      "Alternativa E",
-      "E",
+      // Quatro alternativas no exemplo: é o padrão dos editais de PMMG e CBMMG
+      "",
+      "A",
       "Resolução comentada pelo professor.",
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...examples]);

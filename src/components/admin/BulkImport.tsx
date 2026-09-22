@@ -207,8 +207,10 @@ export const BulkImport = ({ subjects, onImported }: Props) => {
     const example = [
       subjects[0]?.name ?? "Português",
       "Exemplo de enunciado da questão.",
-      "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "Alternativa E",
-      "E", "Explicação do gabarito.", "medium",
+      // PMMG e CBMMG usam quatro alternativas; a coluna alternativa_e fica no
+      // modelo em branco, para editais de outras bancas que usem cinco.
+      "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "",
+      "A", "Explicação do gabarito.", "medium",
     ];
     const ws = XLSX.utils.aoa_to_sheet([headers, example]);
     const wb = XLSX.utils.book_new();
