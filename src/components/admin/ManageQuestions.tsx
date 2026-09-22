@@ -92,18 +92,23 @@ export const ManageQuestions = () => {
   const reload = useCallback(async () => {
     if (!examId) return;
     setLoading(true);
-    const nodeIds = filtroNo === "todos" ? null : subtreeIds(nodes, filtroNo);
+    // "sem-no" são as questões que perderam a classificação, normalmente porque
+    // alguém removeu um item da árvore. Não há filtro para isso no banco, então
+    // varremos o edital e separamos aqui.
+    const semNo = filtroNo === "sem-no";
+    const nodeIds = filtroNo === "todos" || semNo ? null : subtreeIds(nodes, filtroNo);
     const [{ data, error }, { data: counts }] = await Promise.all([
       (supabase as any).rpc("admin_list_exam_questions", {
         _exam_id: examId,
         _node_ids: nodeIds,
         _search: busca.trim() || null,
-        _limit: 200,
+        _limit: semNo ? 2000 : 200,
       }),
       (supabase as any).rpc("admin_count_questions_by_node", { _exam_id: examId }),
     ]);
     if (error) toast.error(error.message);
-    setQuestions((data ?? []) as QRow[]);
+    const lista = (data ?? []) as QRow[];
+    setQuestions(semNo ? lista.filter((q) => !q.content_node_id) : lista);
     const mapa: Record<string, { publicadas: number; rascunhos: number }> = {};
     for (const c of (counts ?? []) as any[]) {
       mapa[c.content_node_id] = { publicadas: Number(c.publicadas), rascunhos: Number(c.rascunhos) };
@@ -290,6 +295,7 @@ export const ManageQuestions = () => {
             <SelectTrigger><SelectValue placeholder="Todo o conteúdo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todo o conteúdo</SelectItem>
+              <SelectItem value="sem-no">Sem classificação</SelectItem>
               {opcoesDeNo.map((o) => (
                 <SelectItem key={o.id} value={o.id}>
                   {o.label}
@@ -318,7 +324,9 @@ export const ManageQuestions = () => {
         </div>
       ) : questions.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhuma questão {filtroNo === "todos" ? "neste edital" : "neste conteúdo"} ainda.
+          {filtroNo === "sem-no"
+            ? "Nenhuma questão sem classificação — a árvore está em ordem."
+            : `Nenhuma questão ${filtroNo === "todos" ? "neste edital" : "neste conteúdo"} ainda.`}
         </p>
       ) : (
         <div className="space-y-2">

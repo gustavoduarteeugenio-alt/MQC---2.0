@@ -77,11 +77,12 @@ export const ManageAdmins = () => {
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin Total</SelectItem>
-              <SelectItem value="admin_didatico">Admin Didático (somente questões)</SelectItem>
+              <SelectItem value="admin_didatico">Admin Didático (conteúdo)</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Admin Didático só vê e edita questões — não acessa usuários, simulados nem promove Premium.
+            Admin Didático cuida do conteúdo: editais, árvore de conteúdo e questões. Não acessa
+            usuários, simulados, Hotmart nem concede acesso.
           </p>
         </div>
         <Button type="submit" disabled={loading} className="w-full bg-gradient-flame text-white stencil">
