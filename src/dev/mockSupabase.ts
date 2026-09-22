@@ -149,6 +149,7 @@ const TABLES: Record<string, Row[]> = {
   exam_questions: EXAM_QUESTIONS,
   enrollments: ENROLLMENTS,
   hotmart_products: [],
+  question_imports: [],
   subjects: SUBJECTS,
   questions: QUESTIONS,
   attempts: ATTEMPTS,
@@ -218,6 +219,18 @@ const RPCS: Record<string, (args: any) => any> = {
       })
       .filter((q: any) => !args?._search || q.statement.toLowerCase().includes(String(args._search).toLowerCase()))
       .slice(0, args?._limit ?? 200);
+  },
+  admin_existing_statements: (args: any) => {
+    const doEdital = new Set(
+      (TABLES.exam_questions ?? []).filter((v) => v.exam_id === args?._exam_id).map((v) => v.question_id),
+    );
+    const normaliza = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const existentes = new Set(
+      QUESTIONS.filter((q) => doEdital.has(q.id)).map((q) => normaliza(q.statement)),
+    );
+    return (args?._statements ?? [])
+      .filter((s: string) => existentes.has(normaliza(s)))
+      .map((statement: string) => ({ statement }));
   },
   admin_count_questions_by_node: (args: any) => {
     const contagem: Record<string, { publicadas: number; rascunhos: number }> = {};

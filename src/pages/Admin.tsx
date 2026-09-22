@@ -75,7 +75,7 @@ const Admin = () => {
     switch (active) {
       case "editais": return <ManageExams />;
       case "questions": return <ManageQuestions />;
-      case "bulk": return <BulkImport subjects={subjects} onImported={() => {}} />;
+      case "bulk": return <BulkImport />;
       case "simulados": return <ManageSimulados subjects={subjects} />;
       case "users": return <ManageUsers />;
       case "hotmart": return <HotmartPurchases />;
