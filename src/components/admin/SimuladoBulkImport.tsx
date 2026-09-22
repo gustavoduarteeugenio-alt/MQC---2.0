@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { normalizeAnswer, validateAnswer } from "@/lib/questions";
 
 type Subject = { id: string; name: string; slug?: string };
 
@@ -21,6 +22,7 @@ type ParsedRow = {
   option_b: string;
   option_c: string;
   option_d: string;
+  option_e: string | null;
   correct_answer: string;
   explanation: string;
 };
@@ -133,9 +135,18 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
         );
       }
 
-      const gab = (row["resposta_correta"] ?? "").toString().trim().toUpperCase();
-      if (gab && !["A", "B", "C", "D"].includes(gab)) {
-        localErrors.push(`resposta_correta inválida "${gab}" (use A, B, C ou D).`);
+      // alternativa_e é opcional, como no importador do banco de questões
+      const optionE = (row["alternativa_e"] ?? "").toString().trim();
+      const gab = normalizeAnswer(row["resposta_correta"]);
+      const gabError = validateAnswer(gab, {
+        a: row["alternativa_a"],
+        b: row["alternativa_b"],
+        c: row["alternativa_c"],
+        d: row["alternativa_d"],
+        e: optionE,
+      });
+      if (gabError && !missing.includes("resposta_correta")) {
+        localErrors.push(gabError.replace("Gabarito", "resposta_correta"));
       }
 
       if (localErrors.length) {
@@ -152,6 +163,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
         option_b: row["alternativa_b"].toString(),
         option_c: row["alternativa_c"].toString(),
         option_d: row["alternativa_d"].toString(),
+        option_e: optionE || null,
         correct_answer: gab,
         explanation: row["comentario_professor"].toString(),
       });
@@ -237,6 +249,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
         option_b: v.option_b,
         option_c: v.option_c,
         option_d: v.option_d,
+        option_e: v.option_e,
         correct_answer: v.correct_answer,
         explanation: v.explanation,
         difficulty: "medium",
@@ -276,6 +289,7 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       "alternativa_b",
       "alternativa_c",
       "alternativa_d",
+      "alternativa_e",
       "resposta_correta",
       "comentario_professor",
     ];
@@ -287,7 +301,8 @@ export const SimuladoBulkImport = ({ subjects, onImported }: Props) => {
       "Alternativa B",
       "Alternativa C",
       "Alternativa D",
-      "A",
+      "Alternativa E",
+      "E",
       "Resolução comentada pelo professor.",
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...examples]);

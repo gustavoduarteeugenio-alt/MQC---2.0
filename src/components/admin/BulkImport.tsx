@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { normalizeAnswer, validateAnswer } from "@/lib/questions";
 
 type Subject = { id: string; name: string; slug: string };
 
@@ -19,6 +20,7 @@ type ParsedRow = {
   option_b: string;
   option_c: string;
   option_d: string;
+  option_e: string | null;
   correct_answer: string;
   explanation: string;
   difficulty: string;
@@ -99,9 +101,17 @@ export const BulkImport = ({ subjects, onImported }: Props) => {
       if (!subject_id && !missing.includes("materia"))
         localErrors.push(`Matéria "${row["materia"]}" não encontrada.`);
 
-      const gab = (row["gabarito"] ?? "").toString().trim().toUpperCase();
-      if (gab && !["A", "B", "C", "D"].includes(gab))
-        localErrors.push(`Gabarito inválido "${gab}" (use A, B, C ou D).`);
+      // alternativa_e é opcional: a banca usa cinco alternativas, mas há questões com quatro
+      const optionE = (row["alternativa_e"] ?? "").toString().trim();
+      const gab = normalizeAnswer(row["gabarito"]);
+      const gabError = validateAnswer(gab, {
+        a: row["alternativa_a"],
+        b: row["alternativa_b"],
+        c: row["alternativa_c"],
+        d: row["alternativa_d"],
+        e: optionE,
+      });
+      if (gabError && !missing.includes("gabarito")) localErrors.push(gabError);
 
       const dif = (row["dificuldade"] ?? "medium").toString().trim().toLowerCase();
       const difMap: Record<string, string> = {
@@ -124,6 +134,7 @@ export const BulkImport = ({ subjects, onImported }: Props) => {
         option_b: row["alternativa_b"].toString().trim(),
         option_c: row["alternativa_c"].toString().trim(),
         option_d: row["alternativa_d"].toString().trim(),
+        option_e: optionE || null,
         correct_answer: gab,
         explanation: row["comentario"].toString().trim(),
         difficulty,
@@ -190,14 +201,14 @@ export const BulkImport = ({ subjects, onImported }: Props) => {
   const downloadTemplate = () => {
     const headers = [
       "materia", "enunciado",
-      "alternativa_a", "alternativa_b", "alternativa_c", "alternativa_d",
+      "alternativa_a", "alternativa_b", "alternativa_c", "alternativa_d", "alternativa_e",
       "gabarito", "comentario", "dificuldade",
     ];
     const example = [
       subjects[0]?.name ?? "Português",
       "Exemplo de enunciado da questão.",
-      "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D",
-      "A", "Explicação do gabarito.", "medium",
+      "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "Alternativa E",
+      "E", "Explicação do gabarito.", "medium",
     ];
     const ws = XLSX.utils.aoa_to_sheet([headers, example]);
     const wb = XLSX.utils.book_new();
