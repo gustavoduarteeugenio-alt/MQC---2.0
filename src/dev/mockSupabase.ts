@@ -166,7 +166,18 @@ const TABLES: Record<string, Row[]> = {
   support_replies: [],
   tickets_suporte: [],
   hotmart_purchases: [],
-  hotmart_webhook_events: [],
+  // Um evento recebido, para dar para ver de onde sai o ID do produto
+  hotmart_webhook_events: [{
+    id: "ev1",
+    hotmart_event_id: "hm-teste-1",
+    event: "PURCHASE_APPROVED",
+    action: "grant",
+    transaction: "HP1234567890",
+    email: "comprador.teste@exemplo.com",
+    product_id: "9988776",
+    applied: true,
+    received_at: new Date().toISOString(),
+  }],
 };
 
 // O ranking é por edital: no mock o PMMG tem menos gente, para dar para ver
