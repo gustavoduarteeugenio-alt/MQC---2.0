@@ -214,6 +214,7 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
   private headOnly = false;
   private wantCount = false;
   private inserted: Row[] | null = null;
+  private pending: { kind: "update"; patch: Row } | { kind: "delete" } | null = null;
 
   constructor(private table: string) {}
 
@@ -236,18 +237,29 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
     this.inserted = list;
     return this;
   }
+  // update e delete só rodam no resolve: os filtros chegam DEPOIS na cadeia
+  // (.update(patch).eq("id", x)), e aplicar antes atingiria a tabela inteira.
   update(patch: Row) {
-    for (const row of TABLES[this.table] ?? []) if (matches(row, this.filters)) Object.assign(row, patch);
-    this.inserted = [];
+    this.pending = { kind: "update", patch };
     return this;
   }
   delete() {
-    TABLES[this.table] = (TABLES[this.table] ?? []).filter((r) => !matches(r, this.filters));
-    this.inserted = [];
+    this.pending = { kind: "delete" };
     return this;
   }
 
   private resolve() {
+    if (this.pending) {
+      const alvo = (TABLES[this.table] ?? []).filter((r) => matches(r, this.filters));
+      if (this.pending.kind === "update") {
+        const patch = this.pending.patch;
+        alvo.forEach((row) => Object.assign(row, patch));
+      } else {
+        TABLES[this.table] = (TABLES[this.table] ?? []).filter((r) => !alvo.includes(r));
+      }
+      const data: any = this.single ? alvo[0] ?? null : alvo;
+      return { data, error: null, count: null };
+    }
     if (this.inserted) {
       const data: any = this.single ? this.inserted[0] ?? null : this.inserted;
       return { data, error: null, count: null };

@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Shield, Library, FilePlus, Upload, ClipboardList, Users, UserCog, MessageSquare, ShoppingBag, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulkImport } from "@/components/admin/BulkImport";
 import { ManageAdmins } from "@/components/admin/ManageAdmins";
@@ -24,11 +24,13 @@ import { ManageSimulados } from "@/components/admin/ManageSimulados";
 import { SupportMessages } from "@/components/admin/SupportMessages";
 import { AccessRequests } from "@/components/admin/AccessRequests";
 import { HotmartPurchases } from "@/components/admin/HotmartPurchases";
+import { ManageExams } from "@/components/admin/ManageExams";
 
 type Subject = { id: string; name: string; slug: string };
-type Section = "questions" | "bulk" | "simulados" | "users" | "admins" | "support" | "hotmart";
+type Section = "editais" | "questions" | "bulk" | "simulados" | "users" | "admins" | "support" | "hotmart";
 
 const sectionLabels: Record<Section, string> = {
+  editais: "Editais",
   questions: "Questões",
   bulk: "Importar em Lote",
   simulados: "Simulados",
@@ -71,6 +73,7 @@ const Admin = () => {
 
   const renderContent = () => {
     switch (active) {
+      case "editais": return <ManageExams />;
       case "questions": return <ManageQuestions subjects={subjects} />;
       case "bulk": return <BulkImport subjects={subjects} onImported={() => {}} />;
       case "simulados": return <ManageSimulados subjects={subjects} />;
@@ -111,6 +114,14 @@ const Admin = () => {
               <SidebarGroupLabel>Banco de Questões</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={active === "editais"} onClick={() => handleNav("editais")}>
+                      <button className={cn("flex items-center gap-2", active === "editais" && "bg-primary/10 text-primary")}>
+                        <GraduationCap className="h-4 w-4" />
+                        <span>Editais</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={active === "questions"} onClick={() => handleNav("questions")}>
                       <button className={cn("flex items-center gap-2", active === "questions" && "bg-primary/10 text-primary")}>
@@ -221,6 +232,15 @@ const Admin = () => {
           {/* Mobile Horizontal Nav */}
           <nav className="md:hidden px-4 py-2 border-b border-border bg-card overflow-x-auto">
             <div className="flex gap-2 min-w-max">
+              <button
+                onClick={() => handleNav("editais")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                  active === "editais" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                )}
+              >
+                Editais
+              </button>
               <button
                 onClick={() => handleNav("questions")}
                 className={cn(
