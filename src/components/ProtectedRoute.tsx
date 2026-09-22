@@ -13,8 +13,8 @@ export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   if (authLoading || (user && profileLoading)) {
     return (
-      <div className="app-shell flex items-center justify-center bg-gradient-night">
-        <Flame className="w-10 h-10 text-primary animate-pulse-flame" />
+      <div className="app-shell flex items-center justify-center bg-gradient-dark">
+        <Flame className="w-10 h-10 text-primary animate-pulse-brand" />
       </div>
     );
   }

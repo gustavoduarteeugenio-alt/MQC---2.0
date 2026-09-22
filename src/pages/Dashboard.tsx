@@ -154,7 +154,7 @@ const Dashboard = () => {
 
   return (
     <AppShell>
-      <header className="bg-gradient-night text-white px-5 pt-12 pb-6">
+      <header className="bg-gradient-dark text-white px-5 pt-12 pb-6">
         <p className="stencil text-xs text-primary">Quartel · Inteligência</p>
         <h1 className="text-2xl font-display font-bold">Seu progresso</h1>
         <p className="text-sm text-white/70 mt-1">
@@ -278,7 +278,7 @@ const Dashboard = () => {
         </div>
 
         {/* Palavra do Comandante */}
-        <div className="relative rounded-2xl p-6 shadow-flame overflow-hidden bg-gradient-night text-white">
+        <div className="relative rounded-2xl p-6 shadow-brand overflow-hidden bg-gradient-dark text-white">
           <div className="absolute inset-0 opacity-20" style={{
             background: "radial-gradient(500px 200px at 100% 0%, hsl(18 95% 52%/0.7), transparent 60%)"
           }} />

@@ -278,7 +278,7 @@ export const ManageQuestions = () => {
             </span>
           </h2>
           <Button size="sm" onClick={openNew} disabled={!examId || nodes.length === 0}
-            className="bg-gradient-flame text-white stencil text-[11px]">
+            className="bg-gradient-brand text-white stencil text-[11px]">
             <Plus className="w-3.5 h-3.5 mr-1" /> Nova questão
           </Button>
         </div>
@@ -471,7 +471,7 @@ export const ManageQuestions = () => {
           </div>
 
           <DialogFooter>
-            <Button onClick={save} disabled={saving} className="bg-gradient-flame text-white stencil">
+            <Button onClick={save} disabled={saving} className="bg-gradient-brand text-white stencil">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? "Salvar" : "Cadastrar"}
             </Button>
           </DialogFooter>

@@ -222,7 +222,7 @@ const Admin = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="flex items-center gap-3 px-4 pt-12 md:pt-4 pb-3 bg-gradient-night text-white">
+          <header className="flex items-center gap-3 px-4 pt-12 md:pt-4 pb-3 bg-gradient-dark text-white">
             <SidebarTrigger className="hidden md:flex -ml-1 text-white hover:bg-white/10" />
             <button onClick={() => navigate(-1)} className="w-10 h-10 -ml-2 md:ml-0 flex items-center justify-center rounded-full hover:bg-white/10 md:hidden">
               <ArrowLeft className="w-5 h-5" />

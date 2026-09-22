@@ -227,8 +227,8 @@ const Question = () => {
 
   if (loading) {
     return (
-      <div className="app-shell flex items-center justify-center bg-gradient-night">
-        <Flame className="w-10 h-10 text-primary animate-pulse-flame" />
+      <div className="app-shell flex items-center justify-center bg-gradient-dark">
+        <Flame className="w-10 h-10 text-primary animate-pulse-brand" />
       </div>
     );
   }
@@ -336,7 +336,7 @@ const Question = () => {
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent space-y-2.5">
         {!confirmed ? (
           <Button onClick={confirm} disabled={!selected}
-            className="w-full h-13 py-3.5 bg-gradient-flame text-white font-display text-base stencil shadow-flame disabled:opacity-50">
+            className="w-full h-13 py-3.5 bg-gradient-brand text-white font-display text-base stencil shadow-brand disabled:opacity-50">
             Confirmar resposta
           </Button>
         ) : (

@@ -341,7 +341,7 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
             <Download className="w-3.5 h-3.5 mr-1" /> Baixar modelo deste edital
           </Button>
           <Button size="sm" onClick={() => inputRef.current?.click()} disabled={!examId || parsing}
-            className="bg-gradient-flame text-white stencil text-[11px]">
+            className="bg-gradient-brand text-white stencil text-[11px]">
             <Upload className="w-3.5 h-3.5 mr-1" /> Enviar planilha
           </Button>
           <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden"
@@ -372,7 +372,7 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
             </div>
 
             <Button onClick={importar} disabled={!valid.length || importing}
-              className="w-full bg-gradient-flame text-white stencil">
+              className="w-full bg-gradient-brand text-white stencil">
               {importing ? <Loader2 className="w-4 h-4 animate-spin" />
                 : <><Upload className="w-4 h-4 mr-1" /> Importar {valid.length} como rascunho</>}
             </Button>

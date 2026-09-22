@@ -75,8 +75,8 @@ const Profile = () => {
 
   return (
     <AppShell>
-      <header className="bg-gradient-night text-white px-5 pt-12 pb-16 rounded-b-[2rem] text-center">
-        <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-flame flex items-center justify-center font-display text-2xl font-bold shadow-flame">
+      <header className="bg-gradient-dark text-white px-5 pt-12 pb-16 rounded-b-[2rem] text-center">
+        <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-brand flex items-center justify-center font-display text-2xl font-bold shadow-brand">
           {initials}
         </div>
         <h1 className="font-display text-xl font-bold mt-3">{profile?.full_name ?? "Recruta"}</h1>

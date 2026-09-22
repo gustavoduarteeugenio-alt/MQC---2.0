@@ -2,8 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CBMMG — Identidade visual militar.
-   Paleta: laranja (chama), preto (uniforme), branco, vermelho (alerta), azul (institucional).
+/* Tema por instituição.
+   O app veste as cores do edital que o aluno está estudando: `:root` é o CBMMG
+   (padrão, e o que vale antes do login, quando ainda não se sabe o edital) e
+   [data-instituicao="..."] sobrescreve. Quem aplica o atributo no <html> é o
+   ExamContext, a partir da sigla do edital ativo.
+
+   Usamos apenas a paleta de cada instituição. Escudo, brasão e logotipo são
+   marcas regulamentadas e não entram no app.
+
+   CBMMG: laranja (chama), azul institucional, preto.
+   PMMG:  Cáqui Tiradentes e preto, conforme o MIV-PMMG de 2025, que substituiu
+          as antigas cores heráldicas pelo tom da farda. Os valores aqui são
+          aproximação do cáqui — o código exato vem do Caderno 1 do manual.
+
    Todas as cores em HSL.
 */
 
@@ -50,12 +62,12 @@
     --radius: 0.875rem;
 
     /* Gradientes militares */
-    --gradient-flame: linear-gradient(135deg, hsl(358 80% 45%), hsl(18 95% 52%) 55%, hsl(38 100% 58%));
-    --gradient-night: linear-gradient(160deg, hsl(220 35% 8%), hsl(218 60% 18%));
+    --gradient-brand: linear-gradient(135deg, hsl(358 80% 45%), hsl(18 95% 52%) 55%, hsl(38 100% 58%));
+    --gradient-dark: linear-gradient(160deg, hsl(220 35% 8%), hsl(218 60% 18%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 25% 97%));
 
     /* Sombras */
-    --shadow-flame: 0 12px 30px -12px hsl(18 95% 52% / 0.45);
+    --shadow-brand: 0 12px 30px -12px hsl(18 95% 52% / 0.45);
     --shadow-card: 0 2px 12px -4px hsl(220 30% 8% / 0.08);
     --shadow-elevated: 0 16px 40px -16px hsl(220 30% 8% / 0.25);
 
@@ -67,6 +79,45 @@
     --sidebar-accent-foreground: 220 30% 8%;
     --sidebar-border: 220 15% 88%;
     --sidebar-ring: 18 95% 52%;
+  }
+
+  /* PMMG — Cáqui Tiradentes e preto (MIV-PMMG 2025).
+     O vermelho de alerta permanece: no manual ele segue reservado à emergência. */
+  :root[data-instituicao="pmmg"] {
+    /* Fundo levemente acinzentado no tom do cáqui, para o app não parecer
+       laranja apagado ao trocar de edital. */
+    --background: 43 14% 97%;
+
+    /* Cáqui de aplicação: escuro o bastante para texto branco em cima
+       (contraste ~5:1 com #fff, acima do mínimo AA). */
+    --primary: 43 31% 35%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 43 30% 52%;
+
+    /* Preto do fardamento, no lugar do azul institucional do CBMMG */
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 43 12% 93%;
+    --muted-foreground: 43 8% 38%;
+
+    --border: 43 10% 86%;
+    --input: 43 10% 88%;
+    --ring: 43 31% 35%;
+
+    --gradient-brand: linear-gradient(135deg, hsl(43 26% 26%), hsl(43 31% 38%) 55%, hsl(43 33% 50%));
+    --gradient-dark: linear-gradient(160deg, hsl(0 0% 6%), hsl(43 14% 19%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(43 18% 97%));
+
+    --shadow-brand: 0 12px 30px -12px hsl(43 31% 35% / 0.45);
+
+    --sidebar-background: 43 14% 97%;
+    --sidebar-foreground: 43 8% 30%;
+    --sidebar-primary: 43 31% 35%;
+    --sidebar-accent: 43 12% 93%;
+    --sidebar-accent-foreground: 0 0% 12%;
+    --sidebar-border: 43 10% 86%;
+    --sidebar-ring: 43 31% 35%;
   }
 
   .dark {

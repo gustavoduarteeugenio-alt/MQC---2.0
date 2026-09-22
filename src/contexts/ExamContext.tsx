@@ -86,6 +86,14 @@ export const ExamProvider = ({ children }: { children: ReactNode }) => {
     return () => { cancelled = true; };
   }, [exam]);
 
+  // O app veste as cores da instituição do edital ativo (ver src/index.css).
+  // Sem edital, volta ao tema padrão — é o caso da tela de login.
+  useEffect(() => {
+    const sigla = exam?.institution_sigla?.toLowerCase();
+    if (sigla) document.documentElement.dataset.instituicao = sigla;
+    else delete document.documentElement.dataset.instituicao;
+  }, [exam?.institution_sigla]);
+
   const setExam = useCallback((id: string) => {
     localStorage.setItem(STORAGE_KEY, id);
     setExamId(id);

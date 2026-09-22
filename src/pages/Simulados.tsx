@@ -125,7 +125,7 @@ const Simulados = () => {
 
   return (
     <AppShell>
-      <header className="flex items-center gap-2 px-4 pt-12 pb-4 bg-gradient-night text-white rounded-b-3xl">
+      <header className="flex items-center gap-2 px-4 pt-12 pb-4 bg-gradient-dark text-white rounded-b-3xl">
         <button onClick={() => navigate(-1)} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-white/10">
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -137,7 +137,7 @@ const Simulados = () => {
 
       <main className="px-5 py-5 space-y-5">
         {/* Gerar aleatório */}
-        <section className="bg-gradient-flame rounded-2xl p-5 text-white shadow-flame">
+        <section className="bg-gradient-brand rounded-2xl p-5 text-white shadow-brand">
           <div className="flex items-center gap-2 stencil text-[11px] opacity-90">
             <Shuffle className="w-4 h-4" /> Aleatório
           </div>
