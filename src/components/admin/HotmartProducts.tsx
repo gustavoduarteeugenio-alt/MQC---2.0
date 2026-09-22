@@ -85,6 +85,15 @@ export const HotmartProducts = () => {
     const pid = productId.trim();
     if (!pid) { toast.error("Informe o ID do produto na Hotmart."); return; }
     if (selected.size === 0) { toast.error("Marque ao menos um edital."); return; }
+    // Um produto liberando vários editais é combo, não o caso normal: uma
+    // marcação errada aqui daria acesso a um concurso que o aluno não pagou.
+    if (selected.size > 1) {
+      const nomes = exams.filter((e) => selected.has(e.id)).map((e) => e.name).join(", ");
+      if (!confirm(
+        `Este produto vai liberar ${selected.size} editais de uma vez: ${nomes}.\n\n` +
+        `Quem comprar entra em todos eles com uma compra só. Isso é o que você quer?`
+      )) return;
+    }
     setSaving(true);
     const { error } = await (supabase as any).rpc("admin_set_hotmart_product", {
       _product_id: pid,
@@ -132,9 +141,9 @@ export const HotmartProducts = () => {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Um produto pode liberar mais de um edital — quem compra é matriculado em todos eles e escolhe
-          no app onde estudar. Compras de produtos não listados aqui liberam o app, mas não matriculam
-          em nenhum concurso.
+          Cada produto libera <strong>um edital</strong>: quem quiser outro concurso faz outra compra.
+          Marcar mais de um só faz sentido num produto combo, vendido como os dois concursos juntos.
+          Compras de produtos não listados aqui liberam o app, mas não matriculam em nenhum concurso.
         </p>
 
         <div className="grid gap-2 sm:grid-cols-[180px_1fr]">
@@ -155,7 +164,7 @@ export const HotmartProducts = () => {
         </div>
 
         <div>
-          <Label className="stencil text-[10px]">Editais que este produto libera</Label>
+          <Label className="stencil text-[10px]">Edital que este produto libera</Label>
           <div className="mt-1 grid gap-1.5 sm:grid-cols-2">
             {exams.map((e) => (
               <label key={e.id} className="flex items-center gap-2 text-sm border border-border rounded-lg px-3 py-2 cursor-pointer hover:bg-muted/50">
@@ -164,6 +173,13 @@ export const HotmartProducts = () => {
               </label>
             ))}
           </div>
+          {selected.size > 1 && (
+            <p className="mt-1.5 text-xs text-warning flex items-start gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              {selected.size} editais marcados: uma compra só vai liberar todos eles. Use isso apenas
+              num produto combo.
+            </p>
+          )}
         </div>
 
         <div className="flex gap-2">
