@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { BUCKET, urlDeExibicao } from "@/lib/imagens";
 
 interface Props {
   value: string | null | undefined;
@@ -14,6 +15,16 @@ interface Props {
 export const ImageUploader = ({ value, onChange, folder = "questions", label }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  // A pré-visualização também precisa da URL assinada.
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    setPreview(null);
+    if (!value) return;
+    urlDeExibicao(value).then((u) => { if (!cancelado) setPreview(u); });
+    return () => { cancelado = true; };
+  }, [value]);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -27,7 +38,7 @@ export const ImageUploader = ({ value, onChange, folder = "questions", label }: 
     setUploading(true);
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("question-images").upload(path, file, {
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
       cacheControl: "3600",
       upsert: false,
       contentType: file.type,
@@ -37,8 +48,9 @@ export const ImageUploader = ({ value, onChange, folder = "questions", label }: 
       toast.error(error.message);
       return;
     }
-    const { data } = supabase.storage.from("question-images").getPublicUrl(path);
-    onChange(data.publicUrl);
+    // Guardamos o caminho, não uma URL: o bucket é privado e o endereço de
+    // exibição é assinado na hora de mostrar, com validade curta.
+    onChange(path);
     setUploading(false);
     toast.success("Imagem enviada.");
   };
@@ -63,7 +75,9 @@ export const ImageUploader = ({ value, onChange, folder = "questions", label }: 
       />
       {value ? (
         <div className="relative rounded-xl overflow-hidden border border-border bg-muted">
-          <img src={value} alt="Pré-visualização" className="w-full h-auto max-h-56 object-contain" />
+          {preview
+            ? <img src={preview} alt="Pré-visualização" className="w-full h-auto max-h-56 object-contain" />
+            : <div className="h-40 animate-pulse bg-muted" />}
           <button
             type="button"
             onClick={remove}
