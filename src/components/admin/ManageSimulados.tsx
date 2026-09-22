@@ -194,7 +194,7 @@ export const ManageSimulados = () => {
           <ClipboardList className="w-4 h-4 text-primary" />
           <h3 className="font-display font-bold">Gestão de Simulados</h3>
         </div>
-        <Button size="sm" onClick={openNew} disabled={!examId} className="bg-gradient-flame text-white stencil">
+        <Button size="sm" onClick={openNew} disabled={!examId} className="bg-gradient-brand text-white stencil">
           <Plus className="w-4 h-4 mr-1" /> Novo simulado
         </Button>
       </div>
@@ -335,7 +335,7 @@ export const ManageSimulados = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenForm(false)}>Cancelar</Button>
-            <Button onClick={save} disabled={saving} className="bg-gradient-flame text-white stencil">
+            <Button onClick={save} disabled={saving} className="bg-gradient-brand text-white stencil">
               {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
               {editing ? "Salvar alterações" : "Cadastrar simulado"}
             </Button>

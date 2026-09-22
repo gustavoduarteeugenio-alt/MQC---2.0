@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
-import { Target, Trophy, Clock, Home, Flame, ChevronRight } from "lucide-react";
+import { Target, Trophy, Clock, Home, ChevronRight } from "lucide-react";
 
 type SubjectSession = {
   id: string;
@@ -59,7 +59,7 @@ const TrainingSummary = () => {
 
   return (
     <AppShell>
-      <header className="bg-gradient-night text-white px-6 pt-12 pb-24 rounded-b-[2.5rem] relative overflow-hidden">
+      <header className="bg-gradient-dark text-white px-6 pt-12 pb-24 rounded-b-[2.5rem] relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-25"
           style={{ background: "radial-gradient(700px 240px at 85% 0%, hsl(18 95% 52%/0.55), transparent 60%)" }}
@@ -77,10 +77,10 @@ const TrainingSummary = () => {
 
       <main className="px-5 -mt-16 pb-8 space-y-4 relative z-10">
         {/* Card principal de acerto */}
-        <div className="bg-card border border-border rounded-3xl p-6 shadow-flame">
+        <div className="bg-card border border-border rounded-3xl p-6 shadow-brand">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-flame flex items-center justify-center shadow-flame">
-              <Flame className="w-6 h-6 text-white" strokeWidth={2.4} />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-brand">
+              <Target className="w-6 h-6 text-white" strokeWidth={2.4} />
             </div>
             <div>
               <p className="stencil text-[10px] text-muted-foreground tracking-widest">Acerto geral</p>
@@ -181,7 +181,7 @@ const TrainingSummary = () => {
           {focus && (
             <button
               onClick={() => navigate(`/questao/${focus.slug}`)}
-              className="w-full group bg-gradient-flame rounded-2xl p-5 shadow-flame text-white text-left flex items-center justify-between"
+              className="w-full group bg-gradient-brand rounded-2xl p-5 shadow-brand text-white text-left flex items-center justify-between"
             >
               <div>
                 <p className="stencil text-[11px] opacity-90 tracking-widest">Próxima missão</p>

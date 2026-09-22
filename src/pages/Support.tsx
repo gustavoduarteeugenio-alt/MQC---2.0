@@ -153,12 +153,12 @@ const Support = () => {
 
   return (
     <AppShell>
-      <header className="bg-gradient-night text-white px-5 pt-12 pb-10 rounded-b-[2rem]">
+      <header className="bg-gradient-dark text-white px-5 pt-12 pb-10 rounded-b-[2rem]">
         <button onClick={() => navigate(-1)} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-white/10">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="mt-2 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-flame shadow-flame flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-brand shadow-brand flex items-center justify-center">
             <Radio className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -199,7 +199,7 @@ const Support = () => {
             <p className="text-[10px] text-muted-foreground text-right">{message.length}/2000</p>
           </div>
 
-          <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-flame text-white font-display stencil">
+          <Button onClick={submit} disabled={submitting} className="w-full bg-gradient-brand text-white font-display stencil">
             <Send className="w-4 h-4 mr-2" /> {submitting ? "Enviando..." : "Enviar mensagem"}
           </Button>
         </div>
@@ -268,7 +268,7 @@ const Support = () => {
                           <Button
                             onClick={() => sendReply(m.id)}
                             disabled={sending === m.id || !(drafts[m.id] ?? "").trim()}
-                            className="bg-gradient-flame text-white"
+                            className="bg-gradient-brand text-white"
                           >
                             <Send className="w-4 h-4" />
                           </Button>

@@ -190,7 +190,7 @@ export const ManageExams = () => {
             <GraduationCap className="w-4 h-4 text-primary" />
             <h2 className="font-display font-bold">Editais ({exams.length})</h2>
           </div>
-          <Button size="sm" onClick={() => setNovoEdital(true)} className="bg-gradient-flame text-white stencil text-[11px]">
+          <Button size="sm" onClick={() => setNovoEdital(true)} className="bg-gradient-brand text-white stencil text-[11px]">
             <Plus className="w-3.5 h-3.5 mr-1" /> Novo edital
           </Button>
         </div>
@@ -483,7 +483,7 @@ const NovoEditalDialog = ({
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={salvar} disabled={salvando} className="bg-gradient-flame text-white stencil">
+          <Button onClick={salvar} disabled={salvando} className="bg-gradient-brand text-white stencil">
             {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar edital"}
           </Button>
         </DialogFooter>

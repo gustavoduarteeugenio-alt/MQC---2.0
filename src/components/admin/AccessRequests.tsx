@@ -157,7 +157,7 @@ export const AccessRequests = () => {
                     size="sm"
                     onClick={() => approve(t)}
                     disabled={busy === t.id}
-                    className="bg-gradient-flame text-white"
+                    className="bg-gradient-brand text-white"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 mr-1" />
                     Aprovar Usuário

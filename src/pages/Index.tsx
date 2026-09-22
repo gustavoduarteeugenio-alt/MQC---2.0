@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { Flame, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+import { Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getDisciplineStats, pickNextSubject } from "@/lib/training";
 import { accuracyOf, fetchExamAttempts, tallyByNode } from "@/lib/stats";
@@ -96,7 +96,7 @@ const Index = () => {
   return (
     <AppShell>
       {/* Cabeçalho */}
-      <header className="bg-gradient-night text-white px-6 pt-12 pb-24 rounded-b-[2.5rem] relative overflow-hidden">
+      <header className="bg-gradient-dark text-white px-6 pt-12 pb-24 rounded-b-[2.5rem] relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-25"
           style={{ background: "radial-gradient(700px 240px at 85% 0%, hsl(18 95% 52%/0.55), transparent 60%)" }}
@@ -113,8 +113,8 @@ const Index = () => {
               <p className="text-sm text-white/60 mt-1">Hora de treinar.</p>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-flame flex items-center justify-center shadow-flame">
-                <Flame className="w-6 h-6 text-white" strokeWidth={2.5} />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-brand">
+                <Target className="w-6 h-6 text-white" strokeWidth={2.5} />
               </div>
               <ExamSwitcher />
             </div>
@@ -155,7 +155,7 @@ const Index = () => {
 
         {/* CTA principal */}
         <button onClick={handleTrainNow} disabled={training} className="block w-full text-left group disabled:opacity-70">
-          <div className="bg-gradient-flame rounded-3xl p-6 shadow-flame text-white relative overflow-hidden">
+          <div className="bg-gradient-brand rounded-3xl p-6 shadow-brand text-white relative overflow-hidden">
             <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
             <div className="relative flex items-center justify-between">
               <div>
@@ -194,7 +194,7 @@ const Index = () => {
                       </div>
                       <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-flame"
+                          className="h-full rounded-full bg-gradient-brand"
                           style={{ width: `${Math.max(s.accuracy, 4)}%` }}
                         />
                       </div>

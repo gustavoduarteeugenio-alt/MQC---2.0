@@ -85,7 +85,7 @@ export const ManageAdmins = () => {
             usuários, simulados, Hotmart nem concede acesso.
           </p>
         </div>
-        <Button type="submit" disabled={loading} className="w-full bg-gradient-flame text-white stencil">
+        <Button type="submit" disabled={loading} className="w-full bg-gradient-brand text-white stencil">
           <UserPlus className="w-4 h-4 mr-1" /> Conceder acesso
         </Button>
       </form>

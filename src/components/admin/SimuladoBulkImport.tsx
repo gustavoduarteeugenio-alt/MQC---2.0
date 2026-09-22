@@ -410,7 +410,7 @@ export const SimuladoBulkImport = ({ examId, nodes, onImported }: Props) => {
               type="button"
               onClick={doImport}
               disabled={!valid.length || importing || errors.length > 0 || !simuladoName.trim()}
-              className="flex-1 bg-gradient-flame text-white stencil"
+              className="flex-1 bg-gradient-brand text-white stencil"
             >
               {importing ? (
                 <>

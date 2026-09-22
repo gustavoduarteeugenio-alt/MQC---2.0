@@ -212,7 +212,7 @@ const SimuladoRunner = () => {
   };
 
   if (loading || !attempt) {
-    return <div className="app-shell flex items-center justify-center bg-gradient-night text-white">Carregando...</div>;
+    return <div className="app-shell flex items-center justify-center bg-gradient-dark text-white">Carregando...</div>;
   }
 
   // Tela de resultado (após finalizar e não em revisão)
@@ -321,7 +321,7 @@ const SimuladoRunner = () => {
         {index + 1 < questions.length ? (
           <Button
             onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}
-            className="flex-1 bg-gradient-flame text-white font-display stencil shadow-flame"
+            className="flex-1 bg-gradient-brand text-white font-display stencil shadow-brand"
           >
             Próxima →
           </Button>
@@ -350,7 +350,7 @@ const ResultView = ({ attempt, navigate }: { attempt: AttemptRow; navigate: (to:
   const bySub = (attempt.by_subject ?? []) as { name: string; correct: number; total: number }[];
   return (
     <div className="app-shell bg-background min-h-screen pb-10">
-      <header className="bg-gradient-night text-white px-5 pt-12 pb-8 rounded-b-3xl">
+      <header className="bg-gradient-dark text-white px-5 pt-12 pb-8 rounded-b-3xl">
         <button
           onClick={() => navigate("/simulados")}
           className="w-10 h-10 -ml-2 mb-2 flex items-center justify-center rounded-full hover:bg-white/10"
@@ -382,7 +382,7 @@ const ResultView = ({ attempt, navigate }: { attempt: AttemptRow; navigate: (to:
             ))}
           </div>
         </section>
-        <Link to={`/simulado/${attempt.id}/revisar`} className="flex items-center justify-between bg-gradient-flame text-white rounded-2xl px-5 py-4 shadow-flame">
+        <Link to={`/simulado/${attempt.id}/revisar`} className="flex items-center justify-between bg-gradient-brand text-white rounded-2xl px-5 py-4 shadow-brand">
           <div>
             <p className="stencil text-[11px] opacity-90">Aprenda com seus erros</p>
             <p className="font-display text-lg font-bold">Revisar questões</p>

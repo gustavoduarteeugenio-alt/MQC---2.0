@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Flame, ArrowLeft, Loader2, MailCheck } from "lucide-react";
+import { Target, ArrowLeft, Loader2, MailCheck } from "lucide-react";
 
 const emailSchema = z.string().trim().email("E-mail inválido").max(255);
 
@@ -39,11 +39,11 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="app-shell bg-gradient-night text-white flex flex-col">
+    <div className="app-shell bg-gradient-dark text-white flex flex-col">
       <div className="flex-1 flex flex-col justify-between px-6 pt-12 pb-6">
         <header className="text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-flame shadow-flame mb-5">
-            <Flame className="w-10 h-10 text-white" strokeWidth={2.5} />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-brand shadow-brand mb-5">
+            <Target className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
           <h1 className="text-2xl font-display font-bold tracking-wide">Recuperar Senha</h1>
           <p className="stencil text-xs text-primary mt-1">Quartel virtual · Resgate de acesso</p>
@@ -78,7 +78,7 @@ const ForgotPassword = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-13 py-3.5 bg-gradient-flame hover:opacity-95 text-white font-display text-base tracking-wider shadow-flame stencil"
+              className="w-full h-13 py-3.5 bg-gradient-brand hover:opacity-95 text-white font-display text-base tracking-wider shadow-brand stencil"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enviar instruções"}
             </Button>

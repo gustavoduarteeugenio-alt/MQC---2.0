@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Flame, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
+import { Target, Shield, Loader2, Eye, EyeOff, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { AccessFields, hasActiveAccess, isAccessExpired, isStaff } from "@/lib/access";
@@ -237,22 +237,26 @@ const Auth = () => {
   };
 
   return (
-    <div className="app-shell bg-gradient-night text-white flex flex-col">
+    <div className="app-shell bg-gradient-dark text-white flex flex-col">
       <div className="flex-1 flex flex-col justify-between px-6 pt-12 pb-6">
         <header className="text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-flame shadow-flame mb-5">
-            <Flame className="w-10 h-10 text-white" strokeWidth={2.5} />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-brand shadow-brand mb-5">
+            <Target className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
+          {/* Antes do login não se sabe o edital do aluno, então esta tela fala
+              do método, não do concurso. Quem veste as cores da instituição é
+              o app depois de entrar (ver ExamContext). */}
           <h1 className="text-3xl font-display font-bold tracking-wide">Método Questão Certa</h1>
-          <p className="stencil text-xs text-primary mt-1">CFSd CBMMG 2027 · Banca IDECAN</p>
+          <p className="stencil text-xs text-primary mt-1">Carreira militar · Minas Gerais</p>
           <p className="text-sm text-white/70 mt-3 max-w-xs mx-auto">
-            O caminho até a farda começa aqui. Treine com questões inéditas no estilo da banca.
+            O caminho até a farda começa aqui. Estude resolvendo questões, com o conteúdo
+            do seu edital e o gabarito comentado.
           </p>
         </header>
 
         {pendingEmail && accessReleased ? (
           <div className="animate-fade-in">
-            <div className="bg-success/10 border-2 border-success/60 rounded-2xl p-6 shadow-flame backdrop-blur space-y-4">
+            <div className="bg-success/10 border-2 border-success/60 rounded-2xl p-6 shadow-brand backdrop-blur space-y-4">
               <div className="flex flex-col items-center text-center gap-3">
                 <div className="w-16 h-16 rounded-full bg-success/20 border border-success/60 flex items-center justify-center">
                   <CheckCircle2 className="w-9 h-9 text-success" />
@@ -269,7 +273,7 @@ const Auth = () => {
               <Button
                 type="button"
                 onClick={backToLogin}
-                className="w-full h-12 bg-gradient-flame hover:opacity-95 text-white font-display tracking-wider shadow-flame stencil"
+                className="w-full h-12 bg-gradient-brand hover:opacity-95 text-white font-display tracking-wider shadow-brand stencil"
               >
                 Ir para o login
               </Button>
@@ -277,7 +281,7 @@ const Auth = () => {
           </div>
         ) : pendingEmail ? (
           <div className="animate-fade-in">
-            <div className="bg-amber-500/10 border-2 border-amber-400/70 rounded-2xl p-5 shadow-flame backdrop-blur space-y-4">
+            <div className="bg-amber-500/10 border-2 border-amber-400/70 rounded-2xl p-5 shadow-brand backdrop-blur space-y-4">
               <div className="flex flex-col items-center text-center gap-2">
                 <div className="w-14 h-14 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center animate-pulse">
                   <AlertTriangle className="w-7 h-7 text-amber-300" />
@@ -313,7 +317,7 @@ const Auth = () => {
                     type="button"
                     onClick={sendSupport}
                     disabled={supportSending || supportMessage.trim().length < 3}
-                    className="w-full h-12 bg-gradient-flame hover:opacity-95 text-white font-display tracking-wider shadow-flame stencil"
+                    className="w-full h-12 bg-gradient-brand hover:opacity-95 text-white font-display tracking-wider shadow-brand stencil"
                   >
                     {supportSending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -421,7 +425,7 @@ const Auth = () => {
             type="submit"
             disabled={loading}
             className={cn(
-              "w-full h-13 py-3.5 bg-gradient-flame hover:opacity-95 text-white font-display text-base tracking-wider shadow-flame stencil",
+              "w-full h-13 py-3.5 bg-gradient-brand hover:opacity-95 text-white font-display text-base tracking-wider shadow-brand stencil",
             )}
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : mode === "signup" ? "Alistar-se" : "Entrar no quartel"}

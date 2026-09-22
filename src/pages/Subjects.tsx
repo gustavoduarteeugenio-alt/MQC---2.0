@@ -40,7 +40,7 @@ const Subjects = () => {
 
   return (
     <AppShell>
-      <header className="px-5 pt-12 pb-5 bg-gradient-night text-white">
+      <header className="px-5 pt-12 pb-5 bg-gradient-dark text-white">
         <p className="stencil text-xs text-primary">{exam ? examLabel(exam) : "Conteúdo"}</p>
         {parent ? (
           <>
@@ -76,7 +76,7 @@ const Subjects = () => {
               <button
                 onClick={() => navigate(`/questao/${parent.slug}`)}
                 disabled={countWithSubtree(nodes, counts, parent.id) === 0}
-                className="w-full flex items-center gap-3 bg-gradient-flame text-white rounded-2xl p-4 shadow-flame disabled:opacity-50"
+                className="w-full flex items-center gap-3 bg-gradient-brand text-white rounded-2xl p-4 shadow-brand disabled:opacity-50"
               >
                 <div className="flex-1 text-left">
                   <p className="stencil text-[10px] opacity-90">Treinar</p>

@@ -262,7 +262,7 @@ export const SupportMessages = () => {
                       <Button
                         onClick={() => sendReply(m)}
                         disabled={sending === m.id || !(drafts[m.id] ?? "").trim()}
-                        className="bg-gradient-flame text-white"
+                        className="bg-gradient-brand text-white"
                       >
                         <Send className="w-4 h-4" />
                       </Button>

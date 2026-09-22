@@ -183,7 +183,7 @@ export const HotmartProducts = () => {
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={salvar} disabled={saving} className="bg-gradient-flame text-white stencil">
+          <Button onClick={salvar} disabled={saving} className="bg-gradient-brand text-white stencil">
             {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
             {editando ? "Salvar alterações" : "Vincular produto"}
           </Button>

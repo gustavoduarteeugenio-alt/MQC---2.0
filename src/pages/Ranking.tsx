@@ -162,7 +162,7 @@ const Ranking = () => {
 
   return (
     <AppShell>
-      <header className="bg-gradient-night text-white px-5 pt-12 pb-6">
+      <header className="bg-gradient-dark text-white px-5 pt-12 pb-6">
         <p className="stencil text-xs text-primary">{exam ? examLabel(exam) : "Quartel · Ranking"}</p>
         <h1 className="text-2xl font-display font-bold">Top combatentes</h1>
         <p className="text-sm text-white/70 mt-1">
@@ -290,7 +290,7 @@ const Ranking = () => {
                 </p>
                 <Link
                   to="/simulados"
-                  className="inline-flex items-center gap-1 bg-gradient-flame text-white px-4 py-2 rounded-xl stencil text-xs shadow-flame"
+                  className="inline-flex items-center gap-1 bg-gradient-brand text-white px-4 py-2 rounded-xl stencil text-xs shadow-brand"
                 >
                   Realizar simulado agora <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
@@ -298,7 +298,7 @@ const Ranking = () => {
             )}
 
             {mineSim && !loadingRanking && (
-              <div className="bg-gradient-night text-white rounded-2xl p-4 shadow-flame">
+              <div className="bg-gradient-dark text-white rounded-2xl p-4 shadow-brand">
                 <p className="stencil text-[10px] text-white/70">Sua posição oficial</p>
                 <p className="font-display font-bold text-base">
                   {mineSim.rank_position}º lugar

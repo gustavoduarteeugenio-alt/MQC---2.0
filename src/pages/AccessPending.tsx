@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flame, Loader2, LogOut, MessageSquare, RefreshCw } from "lucide-react";
+import { Target, Loader2, LogOut, MessageSquare, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,10 +40,10 @@ const AccessPending = () => {
   };
 
   return (
-    <div className="app-shell bg-gradient-night text-white flex flex-col">
+    <div className="app-shell bg-gradient-dark text-white flex flex-col">
       <div className="flex-1 flex flex-col justify-center items-center px-6 py-10 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-flame shadow-flame mb-5">
-          <Flame className="w-10 h-10 text-white" strokeWidth={2.5} />
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-brand shadow-brand mb-5">
+          <Target className="w-10 h-10 text-white" strokeWidth={2.5} />
         </div>
         {accessExpired && profile?.access_until ? (
           <>
@@ -73,7 +73,7 @@ const AccessPending = () => {
           <Button
             onClick={checkAgain}
             disabled={checking}
-            className="w-full h-12 bg-gradient-flame hover:opacity-95 text-white font-display tracking-wider shadow-flame stencil"
+            className="w-full h-12 bg-gradient-brand hover:opacity-95 text-white font-display tracking-wider shadow-brand stencil"
           >
             {checking ? <Loader2 className="w-5 h-5 animate-spin" /> : <><RefreshCw className="w-4 h-4 mr-2" /> Verificar novamente</>}
           </Button>
