@@ -3,20 +3,13 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/AppShell";
-import { fetchDedupedAttempts } from "@/lib/stats";
+import { accuracyOf, fetchExamAttempts, tallyByNode } from "@/lib/stats";
+import { useExam } from "@/contexts/ExamContext";
+import { disciplinesOf, examLabel } from "@/lib/exams";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { Trophy, Target, Flame as FlameIcon, TrendingUp, Swords, AlertTriangle, ShieldCheck, BookOpen, Quote } from "lucide-react";
 
-// Pesos do edital CBMMG (nº de questões na prova real)
-const WEIGHTS: Record<string, number> = {
-  "lingua-portuguesa": 10,
-  "rlm": 5,
-  "direitos-humanos-legislacao": 10,
-  "ciencias-naturais": 10,
-  "ciencias-humanas": 10,
-  "protecao-defesa-civil": 5,
-};
-
+// O peso de cada disciplina vem do edital (content_nodes.weight), não mais do código.
 // Metas mínimas por tipo de peso
 const TARGET_LIGHT = 80; // matérias de 5 questões
 const TARGET_HEAVY = 70; // matérias de 10 questões
@@ -41,6 +34,7 @@ const COMMANDER_QUOTES = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { exam, nodes, loading: examLoading } = useExam();
   const [rows, setRows] = useState<Row[]>([]);
   const [overall, setOverall] = useState({ total: 0, correct: 0, streak: 0 });
   const [hasEligible, setHasEligible] = useState(false);
@@ -51,23 +45,14 @@ const Dashboard = () => {
   );
 
   const load = useCallback(async () => {
-    if (!user) return;
-    const { data: subs } = await supabase.from("subjects").select("id, name, slug").order("display_order");
-    const attempts = await fetchDedupedAttempts(user.id);
+    if (!user || !exam) return;
+    const attempts = await fetchExamAttempts(user.id, exam.id);
+    const { byDiscipline } = tallyByNode(attempts, nodes);
 
-    const bySubject: Record<string, { total: number; correct: number }> = {};
-    attempts.forEach((a) => {
-      const sid = a.subject_id;
-      if (!sid) return;
-      bySubject[sid] = bySubject[sid] ?? { total: 0, correct: 0 };
-      bySubject[sid].total++;
-      if (a.is_correct) bySubject[sid].correct++;
-    });
-
-    const built: Row[] = (subs ?? []).map((s: any) => {
-      const stat = bySubject[s.id] ?? { total: 0, correct: 0 };
-      const accuracy = stat.total ? Math.round((stat.correct / stat.total) * 100) : 0;
-      const weight = WEIGHTS[s.slug] ?? 10;
+    const built: Row[] = disciplinesOf(nodes).map((s) => {
+      const stat = byDiscipline[s.id] ?? { total: 0, correct: 0 };
+      const accuracy = accuracyOf(stat);
+      const weight = s.weight ?? 10;
       const target = weight === 5 ? TARGET_LIGHT : TARGET_HEAVY;
       let status: Row["status"] = "ready";
       if (stat.total >= 5) {
@@ -104,9 +89,9 @@ const Dashboard = () => {
       d.setDate(d.getDate() - 1);
     }
     setOverall({ total, correct, streak });
-  }, [user]);
+  }, [user, exam, nodes]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (!examLoading) load(); }, [load, examLoading]);
 
   // Re-busca ao retornar à aba (bloco de treino recém-concluído)
   useEffect(() => {
@@ -172,7 +157,9 @@ const Dashboard = () => {
       <header className="bg-gradient-night text-white px-5 pt-12 pb-6">
         <p className="stencil text-xs text-primary">Quartel · Inteligência</p>
         <h1 className="text-2xl font-display font-bold">Seu progresso</h1>
-        <p className="text-sm text-white/70 mt-1">Análise tática por peso do edital CBMMG.</p>
+        <p className="text-sm text-white/70 mt-1">
+          Análise tática por peso do edital{exam ? ` ${examLabel(exam)}` : ""}.
+        </p>
       </header>
 
       <main className="px-5 py-5 space-y-4">

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:ui": "vite --mode ui-mock --port 8081",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

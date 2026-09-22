@@ -4,8 +4,11 @@ import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { LogOut, Mail, Zap, Shield, ChevronRight, PlayCircle, Radio, Trophy, CalendarClock } from "lucide-react";
+import { LogOut, Mail, Shield, ChevronRight, PlayCircle, Radio, Trophy, CalendarClock } from "lucide-react";
 import { formatAccessDate } from "@/lib/access";
+import { useExam } from "@/contexts/ExamContext";
+import { examLabel } from "@/lib/exams";
+import { GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -13,7 +16,8 @@ import { useState, useEffect } from "react";
 
 const Profile = () => {
   const { signOut, user } = useAuth();
-  const { profile, isAdmin, dailyCount, refresh } = useProfile();
+  const { profile, isAdmin, isDidacticAdmin, refresh } = useProfile();
+  const { enrollments, exam, setExam } = useExam();
   const initialShow = (profile as any)?.show_in_ranking ?? true;
   const [showInRanking, setShowInRanking] = useState<boolean>(initialShow);
   const [rankingName, setRankingName] = useState<string>((profile as any)?.ranking_name ?? "");
@@ -82,13 +86,41 @@ const Profile = () => {
       <main className="px-5 -mt-10 space-y-3 relative">
         <Card>
           <Row icon={Mail} label="E-mail" value={profile?.email ?? user?.email ?? "—"} />
-          <Row icon={Zap} label="Questões hoje" value={`${dailyCount}`} />
           {profile?.access_until && (
             <Row icon={CalendarClock} label="Acesso até" value={formatAccessDate(profile.access_until)} />
           )}
         </Card>
 
-        {isAdmin && (
+        {enrollments.length > 0 && (
+          <Card>
+            <p className="stencil text-[10px] text-muted-foreground mb-2">Minhas matrículas</p>
+            <div className="space-y-2">
+              {enrollments.map(({ exam: e, access_until }) => {
+                const ativo = exam?.id === e.id;
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => setExam(e.id)}
+                    className={`w-full text-left flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+                      ativo ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <GraduationCap className={`w-5 h-5 shrink-0 ${ativo ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-display text-sm font-semibold truncate">{examLabel(e)}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {access_until ? `Acesso até ${formatAccessDate(access_until)}` : "Acesso sem prazo"}
+                      </p>
+                    </div>
+                    {ativo && <span className="stencil text-[10px] text-primary shrink-0">Ativo</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {(isAdmin || isDidacticAdmin) && (
           <Link to="/admin">
             <Card>
               <div className="flex items-center justify-between p-1">

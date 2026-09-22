@@ -1,9 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart3, User, Shield, ClipboardList, Trophy } from "lucide-react";
+import { Home, BookOpen, BarChart3, User, ClipboardList, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/hooks/useProfile";
 
-const baseItems = [
+// Seis itens é o limite confortável em tela de celular. O painel administrativo
+// fica no Perfil, que já tem o atalho, em vez de apertar um sétimo item aqui.
+const items = [
   { to: "/", label: "Início", icon: Home },
   { to: "/materias", label: "Matérias", icon: BookOpen },
   { to: "/simulados", label: "Simulados", icon: ClipboardList },
@@ -14,18 +15,13 @@ const baseItems = [
 
 export const BottomNav = () => {
   const location = useLocation();
-  const { isAdmin, isDidacticAdmin } = useProfile();
-  const showAdminTab = isAdmin || isDidacticAdmin;
-  const items = showAdminTab
-    ? [...baseItems.slice(0, 5), { to: "/admin", label: "Admin", icon: Shield }, baseItems[5]]
-    : baseItems;
   // Esconde em telas de questão para foco
   if (location.pathname.startsWith("/questao")) return null;
   if (location.pathname.startsWith("/simulado/")) return null;
   if (location.pathname.startsWith("/auth")) return null;
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card/95 backdrop-blur border-t border-border z-40">
-      <ul className={cn("grid px-2 pb-[env(safe-area-inset-bottom)]", showAdminTab ? "grid-cols-7" : "grid-cols-6")}>
+      <ul className="grid grid-cols-6 px-2 pb-[env(safe-area-inset-bottom)]">
         {items.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <NavLink

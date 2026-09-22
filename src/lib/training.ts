@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
-import { fetchDedupedAttempts } from "@/lib/stats";
+import { accuracyOf, fetchExamAttempts, tallyByNode } from "@/lib/stats";
+import { ContentNode, disciplinesOf } from "@/lib/exams";
 
 export type SubjectInfo = { id: string; name: string; slug: string };
 export type SubjectStat = SubjectInfo & {
@@ -11,35 +11,29 @@ export type SubjectStat = SubjectInfo & {
 
 const TARGET_ACCURACY = 80;
 
-/** Carrega todas as matérias + estatísticas de acerto do usuário por matéria.
- *  Usa attempts deduplicados (apenas resposta mais recente por questão). */
-export async function getSubjectStats(userId: string): Promise<SubjectStat[]> {
-  const [{ data: subjects }, attempts] = await Promise.all([
-    supabase.from("subjects").select("id, name, slug").order("display_order"),
-    fetchDedupedAttempts(userId),
-  ]);
+/**
+ * Estatística por disciplina no escopo de um edital: as "matérias" são as
+ * disciplinas (nível 1) da árvore de conteúdo, e as tentativas contadas são só
+ * as daquele edital. Alimenta pickNextSubject sem mudar suas regras.
+ */
+export async function getDisciplineStats(
+  userId: string,
+  examId: string,
+  nodes: ContentNode[],
+): Promise<SubjectStat[]> {
+  const attempts = await fetchExamAttempts(userId, examId);
+  const { byDiscipline } = tallyByNode(attempts, nodes);
 
-  const stats: Record<string, { total: number; correct: number }> = {};
-  attempts.forEach((a) => {
-    const sid = a.subject_id;
-    if (!sid) return;
-    stats[sid] = stats[sid] ?? { total: 0, correct: 0 };
-    stats[sid].total++;
-    if (a.is_correct) stats[sid].correct++;
-  });
-
-  return (subjects ?? []).map((s: any) => {
-    const st = stats[s.id];
-    const total = st?.total ?? 0;
-    const correct = st?.correct ?? 0;
+  return disciplinesOf(nodes).map((d) => {
+    const tally = byDiscipline[d.id];
     return {
-      id: s.id,
-      name: s.name,
-      slug: s.slug,
-      total,
-      correct,
-      accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
-      hasAttempts: total > 0,
+      id: d.id,
+      name: d.name,
+      slug: d.slug,
+      total: tally?.total ?? 0,
+      correct: tally?.correct ?? 0,
+      accuracy: accuracyOf(tally),
+      hasAttempts: (tally?.total ?? 0) > 0,
     };
   });
 }
