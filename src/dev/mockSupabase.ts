@@ -166,7 +166,18 @@ const TABLES: Record<string, Row[]> = {
   support_replies: [],
   tickets_suporte: [],
   hotmart_purchases: [],
-  hotmart_webhook_events: [],
+  // Um evento recebido, para dar para ver de onde sai o ID do produto
+  hotmart_webhook_events: [{
+    id: "ev1",
+    hotmart_event_id: "hm-teste-1",
+    event: "PURCHASE_APPROVED",
+    action: "grant",
+    transaction: "HP1234567890",
+    email: "comprador.teste@exemplo.com",
+    product_id: "9988776",
+    applied: true,
+    received_at: new Date().toISOString(),
+  }],
 };
 
 // O ranking é por edital: no mock o PMMG tem menos gente, para dar para ver
@@ -216,6 +227,40 @@ const RPCS: Record<string, (args: any) => any> = {
       }))
       .filter((s) => s.question_count > 0),
   list_hotmart_purchases: () => [],
+  // Uma linha por produto, com os editais que ele libera
+  admin_hotmart_products: () => {
+    const porProduto: Record<string, { label: string | null; ids: string[]; nomes: string[] }> = {};
+    for (const p of TABLES.hotmart_products ?? []) {
+      const g = (porProduto[p.product_id] ??= { label: p.label ?? null, ids: [], nomes: [] });
+      if (p.label) g.label = p.label;
+      g.ids.push(p.exam_id);
+      g.nomes.push((TABLES.exams ?? []).find((e) => e.id === p.exam_id)?.name ?? "?");
+    }
+    return Object.entries(porProduto).map(([product_id, g]) => ({
+      product_id, label: g.label, exam_ids: g.ids, exam_names: g.nomes, compras_ativas: 0,
+    }));
+  },
+  admin_set_hotmart_product: (args: any) => {
+    const pid = String(args?._product_id ?? "").trim();
+    const ids: string[] = args?._exam_ids ?? [];
+    const tabela = (TABLES.hotmart_products ??= []);
+    // Espelha a RPC: remove o que saiu da seleção e insere o que entrou
+    for (let i = tabela.length - 1; i >= 0; i--) {
+      if (tabela[i].product_id === pid && !ids.includes(tabela[i].exam_id)) tabela.splice(i, 1);
+    }
+    for (const exam_id of ids) {
+      const atual = tabela.find((p) => p.product_id === pid && p.exam_id === exam_id);
+      if (atual) atual.label = args?._label ?? null;
+      else tabela.unshift({ product_id: pid, exam_id, label: args?._label ?? null });
+    }
+    return ids.length;
+  },
+  // Uma venda órfã de exemplo, que desaparece assim que for vinculada
+  admin_unmapped_hotmart_products: () =>
+    (TABLES.hotmart_products ?? []).some((p) => p.product_id === "9988776")
+      ? []
+      : [{ product_id: "9988776", compras: 3, ultima_compra: new Date().toISOString() }],
+  resync_hotmart_enrollments: () => 0,
   admin_list_questions: () => QUESTIONS,
   admin_list_exam_questions: (args: any) => {
     const vinculos = (TABLES.exam_questions ?? []).filter((v) => v.exam_id === args?._exam_id);
@@ -311,6 +356,20 @@ class Query<T = any> implements PromiseLike<{ data: T; error: null; count: numbe
       id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...padrao, ...r,
     }));
     (TABLES[this.table] ??= []).unshift(...list);
+    this.inserted = list;
+    return this;
+  }
+  /** Como no Postgres: substitui a linha existente pela chave, ou insere. */
+  upsert(rows: Row | Row[], opts?: { onConflict?: string }) {
+    const chave = opts?.onConflict ?? "id";
+    const alvo = (TABLES[this.table] ??= []);
+    const list = (Array.isArray(rows) ? rows : [rows]).map((r) => {
+      const i = alvo.findIndex((x) => String(x[chave]) === String(r[chave]));
+      if (i >= 0) { Object.assign(alvo[i], r); return alvo[i]; }
+      const nova = { id: `new-${Date.now()}`, created_at: new Date().toISOString(), ...r };
+      alvo.unshift(nova);
+      return nova;
+    });
     this.inserted = list;
     return this;
   }

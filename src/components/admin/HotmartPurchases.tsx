@@ -25,6 +25,7 @@ type WebhookEvent = {
   action: "grant" | "revoke" | "ignore";
   transaction: string | null;
   email: string | null;
+  product_id: string | null;
   applied: boolean;
   received_at: string;
 };
@@ -49,7 +50,7 @@ export const HotmartPurchases = () => {
       (supabase as any).rpc("list_hotmart_purchases", { _limit: 500 }),
       (supabase as any)
         .from("hotmart_webhook_events")
-        .select("id, event, action, transaction, email, applied, received_at")
+        .select("id, event, action, transaction, email, product_id, applied, received_at")
         .order("received_at", { ascending: false })
         .limit(30),
     ]);
@@ -164,7 +165,16 @@ export const HotmartPurchases = () => {
             {events.map((ev) => (
               <div key={ev.id} className="flex items-center justify-between gap-3 text-xs border-b border-border last:border-0 pb-1.5">
                 <div className="min-w-0">
-                  <p className="font-semibold truncate">{ev.event}</p>
+                  <p className="font-semibold truncate">
+                    {ev.event}
+                    {/* O ID do produto só existe aqui: é por ele que se descobre
+                        qual número cadastrar no mapeamento produto → edital. */}
+                    {ev.product_id && (
+                      <span className="ml-2 font-mono font-normal text-muted-foreground">
+                        produto {ev.product_id}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-muted-foreground truncate">{ev.email ?? "—"} · {new Date(ev.received_at).toLocaleString("pt-BR")}</p>
                 </div>
                 <Badge variant={ev.applied ? "default" : "secondary"} className="stencil text-[10px] shrink-0">
