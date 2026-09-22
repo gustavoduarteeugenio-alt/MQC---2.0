@@ -4,8 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Flame, Target, BookOpen, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { getSubjectStats, pickNextSubject } from "@/lib/training";
-import { fetchDedupedAttempts } from "@/lib/stats";
+import { getDisciplineStats, pickNextSubject } from "@/lib/training";
+import { accuracyOf, fetchExamAttempts, tallyByNode } from "@/lib/stats";
+import { useExam } from "@/contexts/ExamContext";
+import { disciplinesOf, examLabel } from "@/lib/exams";
+import { ExamSwitcher } from "@/components/ExamSwitcher";
 import { toast } from "sonner";
 
 type SubjectStat = { name: string; total: number; correct: number; accuracy: number };
@@ -18,6 +21,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { exam, nodes, loading: examLoading } = useExam();
   const [stats, setStats] = useState({ total: 0, correct: 0 });
   const [best, setBest] = useState<SubjectStat | null>(null);
   const [worst, setWorst] = useState<SubjectStat | null>(null);
@@ -28,7 +32,8 @@ const Index = () => {
     if (!user || training) return;
     setTraining(true);
     try {
-      const subjectStats = await getSubjectStats(user.id);
+      if (!exam) { navigate("/materias"); return; }
+      const subjectStats = await getDisciplineStats(user.id, exam.id, nodes);
       const next = pickNextSubject({ stats: subjectStats });
       if (!next) {
         toast.error("Nenhuma matéria disponível ainda.");
@@ -42,24 +47,26 @@ const Index = () => {
   };
 
   const load = useCallback(async () => {
-    if (!user) return;
-    const data = await fetchDedupedAttempts(user.id);
+    if (!user || !exam) return;
+    const data = await fetchExamAttempts(user.id, exam.id);
 
     const total = data.length;
     const correct = data.filter((a) => a.is_correct).length;
     setStats({ total, correct });
 
-    const bySubject: Record<string, FocusStat> = {};
-    data.forEach((a) => {
-      const name = a.subject_name;
-      if (!name) return;
-      bySubject[name] = bySubject[name] ?? { name, slug: a.subject_slug, total: 0, correct: 0, accuracy: 0 };
-      bySubject[name].total++;
-      if (a.is_correct) bySubject[name].correct++;
-    });
-
-    const ranked = Object.values(bySubject)
-      .map((s) => ({ ...s, accuracy: Math.round((s.correct / s.total) * 100) }))
+    // Desempenho por disciplina do edital ativo
+    const { byDiscipline } = tallyByNode(data, nodes);
+    const ranked: FocusStat[] = disciplinesOf(nodes)
+      .map((d) => {
+        const tally = byDiscipline[d.id];
+        return {
+          name: d.name,
+          slug: d.slug,
+          total: tally?.total ?? 0,
+          correct: tally?.correct ?? 0,
+          accuracy: accuracyOf(tally),
+        };
+      })
       .filter((s) => s.total >= MIN_ATTEMPTS);
 
     if (ranked.length === 0) { setBest(null); setWorst(null); setFocus([]); return; }
@@ -68,9 +75,9 @@ const Index = () => {
     setWorst(sorted[sorted.length - 1]);
     // Abaixo da meta de 80%, da pior para a melhor — é onde o treino rende mais
     setFocus(sorted.filter((s) => s.accuracy < TARGET_ACCURACY).reverse().slice(0, 3));
-  }, [user]);
+  }, [user, exam, nodes]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (!examLoading) load(); }, [load, examLoading]);
 
   // Atualiza ao voltar para a aba (após terminar um bloco de treino)
   useEffect(() => {
@@ -97,14 +104,19 @@ const Index = () => {
         <div className="relative">
           <div className="flex items-start justify-between">
             <div>
-              <p className="stencil text-[11px] text-primary tracking-widest">CFSd CBMMG 2027</p>
+              <p className="stencil text-[11px] text-primary tracking-widest">
+                {exam ? examLabel(exam) : ""}
+              </p>
               <h1 className="text-[28px] leading-tight font-display font-bold mt-1.5">
                 Olá, {firstName}.
               </h1>
               <p className="text-sm text-white/60 mt-1">Hora de treinar.</p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-flame flex items-center justify-center shadow-flame">
-              <Flame className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <div className="flex flex-col items-end gap-2">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-flame flex items-center justify-center shadow-flame">
+                <Flame className="w-6 h-6 text-white" strokeWidth={2.5} />
+              </div>
+              <ExamSwitcher />
             </div>
           </div>
         </div>

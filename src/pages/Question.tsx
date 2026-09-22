@@ -9,11 +9,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { QuestionImage } from "@/components/QuestionImage";
 import { RichText } from "@/components/RichText";
-import { getSubjectStats, pickNextSubject } from "@/lib/training";
+import { useExam } from "@/contexts/ExamContext";
+import { nodeBySlug, subtreeIds } from "@/lib/exams";
 
 type Letter = "A" | "B" | "C" | "D" | "E";
 type Question = {
-  id: string; subject_id: string; statement: string;
+  id: string; subject_id: string; content_node_id?: string | null; statement: string;
   option_a: string; option_b: string; option_c: string; option_d: string;
   option_e: string | null;
   correct_answer: Letter; explanation: string;
@@ -26,6 +27,7 @@ const Question = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { incrementDaily, refresh } = useProfile();
+  const { exam, nodes, loading: examLoading } = useExam();
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -42,35 +44,43 @@ const Question = () => {
   const current = questions[index];
 
   useEffect(() => {
+    if (examLoading) return;
     (async () => {
       setLoading(true);
-      const { data: sub } = await supabase.from("subjects").select("*").eq("slug", slug!).maybeSingle();
-      if (!sub) { navigate("/materias"); return; }
-      setSubject(sub as Subject);
+      // O nó vem da árvore do edital ativo; treinar um tópico inclui seus subtópicos
+      const node = exam ? nodeBySlug(nodes, slug!) : null;
+      if (!exam || !node) { navigate("/materias"); return; }
+      setSubject({ id: node.id, name: node.name, slug: node.slug });
+      const escopo = subtreeIds(nodes, node.id);
 
-      // 1) Busca TODOS os ids da matéria (paginado para superar o teto padrão do PostgREST)
-      const allIds: string[] = [];
+      // 1) Questões publicadas do edital dentro desse escopo (paginado: teto do PostgREST)
+      const vinculos: { question_id: string; content_node_id: string | null }[] = [];
       const PAGE = 1000;
       for (let from = 0; ; from += PAGE) {
-        const { data: page } = await supabase
-          .from("questions")
-          .select("id")
-          .eq("subject_id", sub.id)
+        const { data: page } = await (supabase as any)
+          .from("exam_questions")
+          .select("question_id, content_node_id")
+          .eq("exam_id", exam.id)
+          .eq("status", "published")
+          .in("content_node_id", escopo)
           .range(from, from + PAGE - 1);
         const rows = page ?? [];
-        rows.forEach((r: any) => allIds.push(r.id));
+        vinculos.push(...rows);
         if (rows.length < PAGE) break;
       }
+      const noDaQuestao = new Map(vinculos.map((v) => [v.question_id, v.content_node_id]));
+      const allIds = vinculos.map((v) => v.question_id);
 
-      // 2) Exclui todas as questões já respondidas pelo usuário (dedup por question_id)
+      // 2) Exclui as já respondidas pelo aluno NESTE edital
       let candidateIds = allIds;
       if (user && allIds.length > 0) {
         const done = new Set<string>();
         for (let from = 0; ; from += PAGE) {
-          const { data: page } = await supabase
+          const { data: page } = await (supabase as any)
             .from("attempts")
             .select("question_id")
             .eq("user_id", user.id)
+            .eq("exam_id", exam.id)
             .range(from, from + PAGE - 1);
           const rows = page ?? [];
           rows.forEach((r: any) => done.add(r.question_id));
@@ -98,7 +108,10 @@ const Question = () => {
           .select("id, subject_id, statement, option_a, option_b, option_c, option_d, option_e, image_url")
           .in("id", pickIds);
         const byId = new Map((data ?? []).map((q: any) => [q.id, q]));
-        picked = pickIds.map((id) => byId.get(id)).filter(Boolean);
+        picked = pickIds
+          .map((id) => byId.get(id))
+          .filter(Boolean)
+          .map((q: any) => ({ ...q, content_node_id: noDaQuestao.get(q.id) ?? node.id }));
       }
 
       setQuestions(picked as Question[]);
@@ -107,7 +120,7 @@ const Question = () => {
       setConfirmed(false);
       setLoading(false);
     })();
-  }, [slug, navigate, user]);
+  }, [slug, navigate, user, exam, nodes, examLoading]);
 
   useEffect(() => {
     startRef.current = Date.now();
@@ -175,12 +188,16 @@ const Question = () => {
       });
     }
     await Promise.all([
-      supabase.from("attempts").insert({
+      // exam_id e content_node_id gravados na resposta: sem eles não existe
+      // estatística por edital nem por assunto, e não há como recalcular depois
+      (supabase as any).from("attempts").insert({
         user_id: user.id,
         question_id: current.id,
         selected_answer: selected,
         is_correct: isCorrect,
         time_seconds: elapsed,
+        exam_id: exam?.id ?? null,
+        content_node_id: (current as any).content_node_id ?? null,
       }),
       incrementDaily(),
     ]);

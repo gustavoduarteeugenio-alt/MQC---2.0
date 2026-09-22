@@ -11,6 +11,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ExamProvider } from "@/contexts/ExamContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -38,7 +39,7 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <AuthProvider>
-          
+          <ExamProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ExamProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

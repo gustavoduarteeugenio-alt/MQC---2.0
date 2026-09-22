@@ -62,7 +62,93 @@ const PROFILE: Row = {
   show_in_ranking: true,
 };
 
+// ---- Estrutura multi-edital ----
+const INSTITUTIONS: Row[] = [
+  { id: "i1", name: "Corpo de Bombeiros Militar de Minas Gerais", sigla: "CBMMG", slug: "cbmmg" },
+  { id: "i2", name: "Polícia Militar de Minas Gerais", sigla: "PMMG", slug: "pmmg" },
+];
+const CONTESTS: Row[] = [
+  { id: "ct1", institution_id: "i1", name: "Curso de Formação de Soldados", slug: "cfsd" },
+  { id: "ct2", institution_id: "i2", name: "Curso de Formação de Soldados", slug: "cfsd" },
+];
+const EXAMS: Row[] = [
+  { id: "e1", contest_id: "ct1", name: "CFSd BM 2027", slug: "cbmmg-cfsd-bm-2027", year: 2027, duration_minutes: 240, is_published: true,
+    contests: { name: "Curso de Formação de Soldados", institutions: { name: INSTITUTIONS[0].name, sigla: "CBMMG" } } },
+  { id: "e2", contest_id: "ct2", name: "CFSd 2025", slug: "pmmg-cfsd-2025", year: 2025, duration_minutes: 180, is_published: true,
+    contests: { name: "Curso de Formação de Soldados", institutions: { name: INSTITUTIONS[1].name, sigla: "PMMG" } } },
+];
+
+// Árvore do CBMMG: as 6 disciplinas, com subtópicos em Ciências Naturais para
+// exercitar os três níveis; e uma árvore menor para o PMMG.
+const NODES: Row[] = [];
+const addNode = (exam_id: string, parent_id: string | null, name: string, slug: string, level: number, order: number, weight: number | null = null) => {
+  const id = `n${NODES.length + 1}`;
+  NODES.push({ id, exam_id, parent_id, name, slug, level, display_order: order, weight });
+  return id;
+};
+const CB = [
+  { name: "Língua Portuguesa", slug: "lingua-portuguesa", w: 10, t: ["Compreensão e interpretação de textos", "Ortografia e acentuação", "Concordância verbal e nominal"] },
+  { name: "Raciocínio Lógico e Matemático", slug: "rlm", w: 5, t: ["Estruturas lógicas", "Operações com conjuntos"] },
+  { name: "Noções de Direitos Humanos e Legislação", slug: "direitos-humanos-legislacao", w: 10, t: ["Declaração Universal", "Constituição Federal"] },
+  { name: "Ciências Naturais", slug: "ciencias-naturais", w: 10, t: ["Química", "Física", "Biologia e fisiologia humana"] },
+  { name: "Ciências Humanas", slug: "ciencias-humanas", w: 10, t: ["História de Minas Gerais", "Mineração"] },
+  { name: "Proteção e Defesa Civil", slug: "protecao-defesa-civil", w: 5, t: ["Gestão de riscos e desastres"] },
+];
+CB.forEach((d, di) => {
+  const pid = addNode("e1", null, d.name, d.slug, 1, di + 1, d.w);
+  d.t.forEach((t, ti) => {
+    const tid = addNode("e1", pid, t, t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-"), 2, ti + 1);
+    if (d.slug === "ciencias-naturais") {
+      ["Reações químicas", "Cinemática", "Genética"].slice(ti, ti + 1).forEach((s, si) =>
+        addNode("e1", tid, s, s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-"), 3, si + 1));
+    }
+  });
+});
+[
+  { name: "Língua Portuguesa e Interpretação de Textos", slug: "lp-pmmg", w: 20, t: ["Estudo de texto", "Crase"] },
+  { name: "Literatura", slug: "literatura", w: 5, t: ["Campo Geral", "Vidas Secas"] },
+  { name: "Noções de Língua Inglesa", slug: "ingles", w: 5, t: ["Interpretação de texto"] },
+  { name: "Noções de Direito", slug: "direito", w: 10, t: ["Constituição Federal"] },
+  { name: "Raciocínio Lógico-Matemático", slug: "rlm-pmmg", w: 10, t: ["Conjuntos", "Regra de três"] },
+].forEach((d, di) => {
+  const pid = addNode("e2", null, d.name, d.slug, 1, di + 1, d.w);
+  d.t.forEach((t, ti) => addNode("e2", pid, t, `${d.slug}-${ti + 1}`, 2, ti + 1));
+});
+
+// Questões vinculadas ao CBMMG, distribuídas entre os nós folha
+const FOLHAS = NODES.filter((n) => n.exam_id === "e1" && !NODES.some((c) => c.parent_id === n.id));
+const EXAM_QUESTIONS: Row[] = QUESTIONS.map((q, i) => ({
+  id: `eq${i + 1}`,
+  exam_id: "e1",
+  question_id: q.id,
+  content_node_id: FOLHAS[i % FOLHAS.length].id,
+  status: "published",
+}));
+
+// Duas matrículas, para o seletor de concurso aparecer
+const ENROLLMENTS: Row[] = EXAMS.map((e, i) => ({
+  id: `en${i + 1}`,
+  user_id: uid,
+  exam_id: e.id,
+  access_until: new Date(Date.now() + 300 * 864e5).toISOString(),
+  source: "manual",
+  exams: e,
+}));
+
+// Tentativas passam a apontar para nó de conteúdo e edital
+ATTEMPTS.forEach((a, i) => {
+  a.exam_id = "e1";
+  a.content_node_id = FOLHAS[i % FOLHAS.length].id;
+});
+
 const TABLES: Record<string, Row[]> = {
+  institutions: INSTITUTIONS,
+  contests: CONTESTS,
+  exams: EXAMS,
+  content_nodes: NODES,
+  exam_questions: EXAM_QUESTIONS,
+  enrollments: ENROLLMENTS,
+  hotmart_products: [],
   subjects: SUBJECTS,
   questions: QUESTIONS,
   attempts: ATTEMPTS,
