@@ -1,9 +1,48 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useExam } from "@/contexts/ExamContext";
-import { ContentNode, childrenOf, disciplinesOf, examLabel, fetchQuestionCounts, countWithSubtree } from "@/lib/exams";
+import { ContentNode, childrenOf, disciplinesOf, examLabel, fetchQuestionCounts, countWithSubtree, subtreeIds } from "@/lib/exams";
+import { NodeTally, fetchExamAttempts, tallyByNode } from "@/lib/stats";
+import { cn } from "@/lib/utils";
+
+/** Faixa de desempenho. A meta do app é 80%, e é ela que define o "bom". */
+const faixa = (pct: number) =>
+  pct >= 80 ? "bom" : pct >= 60 ? "atencao" : "critico";
+
+const CORES = {
+  bom: { barra: "bg-success", texto: "text-success" },
+  atencao: { barra: "bg-warning", texto: "text-warning" },
+  critico: { barra: "bg-destructive", texto: "text-destructive" },
+} as const;
+
+/**
+ * Como o aluno vai neste conteúdo. A porcentagem vem escrita ao lado da barra
+ * de propósito: quem não distingue as cores lê o número.
+ *
+ * Não dizemos quantas questões existem — regra de produto — só quantas ele já
+ * respondeu.
+ */
+const Desempenho = ({ tally }: { tally: NodeTally }) => {
+  if (tally.total === 0) {
+    return <p className="text-[11px] text-muted-foreground mt-1.5">Ainda não treinado</p>;
+  }
+  const pct = Math.round((tally.correct / tally.total) * 100);
+  const cor = CORES[faixa(pct)];
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+        <div className={cn("h-full rounded-full transition-all", cor.barra)} style={{ width: `${pct}%` }} />
+      </div>
+      <span className={cn("font-display text-xs font-bold tabular-nums", cor.texto)}>{pct}%</span>
+      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+        em {tally.total} {tally.total === 1 ? "questão" : "questões"}
+      </span>
+    </div>
+  );
+};
 
 /**
  * Navegação pela árvore de conteúdo do edital ativo: disciplina → tópico →
@@ -16,8 +55,33 @@ import { ContentNode, childrenOf, disciplinesOf, examLabel, fetchQuestionCounts,
 const Subjects = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const { user } = useAuth();
   const { exam, nodes, loading } = useExam();
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [porNo, setPorNo] = useState<Record<string, NodeTally>>({});
+
+  // Desempenho do aluno neste edital, para cada cartão dizer como ele vai ali.
+  useEffect(() => {
+    if (!user || !exam || nodes.length === 0) return;
+    let cancelled = false;
+    fetchExamAttempts(user.id, exam.id).then((attempts) => {
+      if (cancelled) return;
+      setPorNo(tallyByNode(attempts, nodes).byNode);
+    });
+    return () => { cancelled = true; };
+  }, [user, exam, nodes]);
+
+  /** O desempenho de um nó inclui o dos filhos: treinar a disciplina inteira
+   *  responde questões dos subtópicos, e é lá que a resposta fica classificada. */
+  const desempenho = useCallback((nodeId: string): NodeTally => {
+    return subtreeIds(nodes, nodeId).reduce<NodeTally>(
+      (soma, id) => {
+        const t = porNo[id];
+        return t ? { total: soma.total + t.total, correct: soma.correct + t.correct } : soma;
+      },
+      { total: 0, correct: 0 },
+    );
+  }, [nodes, porNo]);
 
   const parentSlug = params.get("em");
   const parent = parentSlug ? nodes.find((n) => n.slug === parentSlug) ?? null : null;
@@ -100,16 +164,12 @@ const Subjects = () => {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-display font-semibold leading-tight">{node.name}</p>
-                    {node.level === 1 && node.weight != null && (
-                      <p className="stencil text-[10px] text-muted-foreground mt-0.5">
-                        {node.weight} questões na prova oficial
-                      </p>
-                    )}
-                    {filhos > 0 && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {filhos} {filhos === 1 ? "assunto" : "assuntos"}
-                      </p>
-                    )}
+                    <p className="stencil text-[10px] text-muted-foreground mt-0.5">
+                      {node.level === 1 && node.weight != null && `${node.weight} questões na prova oficial`}
+                      {node.level === 1 && node.weight != null && filhos > 0 && " · "}
+                      {filhos > 0 && `${filhos} ${filhos === 1 ? "assunto" : "assuntos"}`}
+                    </p>
+                    <Desempenho tally={desempenho(node.id)} />
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
                 </button>

@@ -297,10 +297,12 @@ const SimuladoRunner = () => {
               <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
                 <Lightbulb className="w-4 h-4" /> Comentário do professor
               </div>
-              <div className="text-sm leading-relaxed">
-                <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
-                <RichText content={current.explanation} />
-              </div>
+              {/* Na revisão do simulado não há bloco de veredito: o aluno
+                  percorre muitas questões, então o gabarito vem aqui. */}
+              <p className="font-display font-bold mb-1.5">
+                Resposta correta: {current.correct_answer}.
+              </p>
+              <RichText content={current.explanation} className="text-sm" />
               {current.comment_image_url && (
                 <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
               )}
