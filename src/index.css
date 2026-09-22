@@ -191,6 +191,17 @@
   }
 }
 
+/* Texto de leitura.
+   Rajdhani é condensada: boa em rótulo, número e título, cansativa em enunciado
+   de português e legislação, que é o que o aluno lê por horas. O conteúdo da
+   questão — enunciado, alternativas e comentário — usa uma fonte de leitura.
+   A cara militar continua nos títulos e rótulos. */
+@layer base {
+  :root {
+    --font-reading: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
 @layer components {
   .app-shell {
     @apply mx-auto w-full max-w-md min-h-screen relative bg-background;
@@ -202,6 +213,11 @@
     letter-spacing: 0.08em;
   }
 
+  .rich-text {
+    font-family: var(--font-reading);
+    letter-spacing: 0;
+    line-height: 1.6;
+  }
   .rich-text > :first-child { margin-top: 0; }
   .rich-text > :last-child { margin-bottom: 0; }
   .rich-text p { margin: 0 0 0.5em; }

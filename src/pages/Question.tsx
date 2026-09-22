@@ -201,8 +201,8 @@ const Question = () => {
       }),
       incrementDaily(),
     ]);
-    if (isCorrect) toast.success("Resposta correta, soldado!");
-    else toast.error("Resposta incorreta. Estude o gabarito.");
+    // O resultado aparece no bloco de veredito, que fica na tela junto do
+    // gabarito. Um toast por cima diria a mesma coisa e sumiria sozinho.
   };
 
   const next = async () => {
@@ -244,6 +244,8 @@ const Question = () => {
     );
   }
 
+  const acertou = confirmed && selected === current.correct_answer;
+
   return (
     <div className="app-shell bg-background flex flex-col min-h-screen">
       <TopBar
@@ -255,23 +257,28 @@ const Question = () => {
         }
       />
 
-      <div className="px-5 pt-3">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-success/30 bg-success/10 py-2">
-            <CheckCircle2 className="w-4 h-4 text-success" />
-            <span className="stencil text-[11px] text-muted-foreground tracking-widest">Acertos</span>
-            <span className="font-display font-bold text-success">{sessionTotals.totalCorrect}</span>
-          </div>
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 py-2">
-            <XCircle className="w-4 h-4 text-destructive" />
-            <span className="stencil text-[11px] text-muted-foreground tracking-widest">Erros</span>
-            <span className="font-display font-bold text-destructive">{sessionTotals.totalWrong}</span>
-          </div>
-        </div>
+      {/* Placar em uma linha discreta: no celular, cada bloco a mais no topo
+          empurra o enunciado para fora da tela. */}
+      <div className="px-5 pt-2.5 flex items-center gap-4 text-xs">
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+          <span className="font-display font-bold text-success">{sessionTotals.totalCorrect}</span>
+          <span className="text-muted-foreground">acertos</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <XCircle className="w-3.5 h-3.5 text-destructive" />
+          <span className="font-display font-bold text-destructive">{sessionTotals.totalWrong}</span>
+          <span className="text-muted-foreground">erros</span>
+        </span>
+        {sessionTotals.totalAnswered > 0 && (
+          <span className="ml-auto stencil text-[10px] text-muted-foreground">
+            {Math.round((sessionTotals.totalCorrect / sessionTotals.totalAnswered) * 100)}% na sessão
+          </span>
+        )}
       </div>
 
       {/* pb acompanha a barra fixa: com o gabarito aberto ela tem dois botões e fica mais alta */}
-      <main className={cn("flex-1 px-5 pt-5", confirmed ? "pb-48" : "pb-32")}>
+      <main className={cn("flex-1 px-5 pt-4", confirmed ? "pb-48" : "pb-32")}>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card animate-fade-in">
           <RichText content={current.statement} className="text-[15px] leading-relaxed" />
           {current.image_url && <QuestionImage src={current.image_url} alt="Imagem do enunciado" />}
@@ -316,15 +323,35 @@ const Question = () => {
           })}
         </div>
 
+        {/* O veredito é o momento que o aluno espera. Ele vem antes do
+            comentário, grande o bastante para não precisar procurar. */}
         {confirmed && (
-          <div className="mt-5 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
+          <div
+            className={cn(
+              "mt-4 flex items-center gap-3 rounded-2xl border-2 p-4 animate-fade-in",
+              acertou ? "border-success/50 bg-success/10" : "border-destructive/50 bg-destructive/10",
+            )}
+          >
+            {acertou
+              ? <CheckCircle2 className="w-7 h-7 text-success shrink-0" />
+              : <XCircle className="w-7 h-7 text-destructive shrink-0" />}
+            <div className="min-w-0">
+              <p className={cn("font-display font-bold leading-tight", acertou ? "text-success" : "text-destructive")}>
+                {acertou ? "Resposta correta." : `Resposta incorreta — a certa era ${current.correct_answer}.`}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {acertou ? "Leia o comentário para fixar o raciocínio." : "O comentário abaixo mostra o porquê."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {confirmed && (
+          <div className="mt-4 bg-secondary text-secondary-foreground rounded-2xl p-5 animate-fade-in">
             <div className="flex items-center gap-2 stencil text-warning text-xs mb-2">
               <Lightbulb className="w-4 h-4" /> Gabarito comentado
             </div>
-            <div className="text-sm leading-relaxed">
-              <strong className="font-display">Resposta correta: {current.correct_answer}.</strong>{" "}
-              <RichText content={current.explanation} />
-            </div>
+            <RichText content={current.explanation} className="text-sm" />
             {current.comment_image_url && (
               <QuestionImage src={current.comment_image_url} alt="Imagem do comentário" />
             )}
@@ -335,9 +362,16 @@ const Question = () => {
       {/* Botões fixos */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-gradient-to-t from-background via-background to-transparent space-y-2.5">
         {!confirmed ? (
+          // Desabilitado não pode parecer quebrado: sem alternativa marcada o
+          // botão fica sólido e apagado, com o texto dizendo o que falta.
           <Button onClick={confirm} disabled={!selected}
-            className="w-full h-13 py-3.5 bg-gradient-brand text-white font-display text-base stencil shadow-brand disabled:opacity-50">
-            Confirmar resposta
+            className={cn(
+              "w-full h-13 py-3.5 font-display text-base stencil transition-colors",
+              selected
+                ? "bg-gradient-brand text-white shadow-brand"
+                : "bg-muted text-muted-foreground shadow-none hover:bg-muted disabled:opacity-100",
+            )}>
+            {selected ? "Confirmar resposta" : "Escolha uma alternativa"}
           </Button>
         ) : (
           <Button onClick={next}
