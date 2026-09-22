@@ -194,6 +194,40 @@ const RPCS: Record<string, (args: any) => any> = {
   list_published_simulados: () => [{ id: "sim1", name: "Simulado Inédito 01", description: null, created_at: new Date().toISOString(), question_count: 50 }],
   list_hotmart_purchases: () => [],
   admin_list_questions: () => QUESTIONS,
+  admin_list_exam_questions: (args: any) => {
+    const vinculos = (TABLES.exam_questions ?? []).filter((v) => v.exam_id === args?._exam_id);
+    const byId = new Map(QUESTIONS.map((q) => [q.id, q]));
+    return vinculos
+      .filter((v) => !args?._node_ids || args._node_ids.includes(v.content_node_id))
+      .map((v) => {
+        const q: any = byId.get(v.question_id) ?? {};
+        const no = (TABLES.content_nodes ?? []).find((n) => n.id === v.content_node_id);
+        return {
+          ...q,
+          correct_answer: "B",
+          explanation: "Comentário de teste.",
+          difficulty: "medium",
+          year: 2026,
+          banca: "IDECAN",
+          comment_image_url: null,
+          content_node_id: v.content_node_id,
+          content_node_name: no?.name ?? null,
+          status: v.status,
+          created_at: new Date().toISOString(),
+        };
+      })
+      .filter((q: any) => !args?._search || q.statement.toLowerCase().includes(String(args._search).toLowerCase()))
+      .slice(0, args?._limit ?? 200);
+  },
+  admin_count_questions_by_node: (args: any) => {
+    const contagem: Record<string, { publicadas: number; rascunhos: number }> = {};
+    for (const v of (TABLES.exam_questions ?? []).filter((x) => x.exam_id === args?._exam_id)) {
+      if (!v.content_node_id) continue;
+      const c = (contagem[v.content_node_id] ??= { publicadas: 0, rascunhos: 0 });
+      v.status === "published" ? c.publicadas++ : c.rascunhos++;
+    }
+    return Object.entries(contagem).map(([content_node_id, c]) => ({ content_node_id, ...c }));
+  },
 };
 
 const matches = (row: Row, filters: [string, string, any][]) =>
