@@ -167,6 +167,49 @@
     --sidebar-border: 220 20% 18%;
     --sidebar-ring: 18 95% 55%;
   }
+
+  /* PMMG no escuro. O cáqui clareia: sobre fundo escuro, o tom de aplicação
+     do modo claro fica sujo e perde contraste. O preto do fardamento vira o
+     próprio fundo, então o secundário clareia junto para não sumir. */
+  .dark[data-instituicao="pmmg"],
+  :root[data-instituicao="pmmg"].dark {
+    --background: 40 8% 7%;
+    --foreground: 40 10% 96%;
+
+    --card: 40 8% 11%;
+    --card-foreground: 40 10% 96%;
+    --popover: 40 8% 11%;
+    --popover-foreground: 40 10% 96%;
+
+    --primary: 43 38% 58%;
+    --primary-foreground: 40 10% 8%;
+    --primary-glow: 43 40% 68%;
+
+    --secondary: 40 6% 24%;
+    --secondary-foreground: 40 10% 96%;
+
+    --muted: 40 7% 16%;
+    --muted-foreground: 40 8% 65%;
+
+    --border: 40 7% 20%;
+    --input: 40 7% 20%;
+    --ring: 43 38% 58%;
+
+    /* O gradiente da marca não acompanha o clareamento: os cartões que o usam
+       levam texto branco por cima, e cáqui claro não sustenta esse contraste. */
+    --gradient-brand: linear-gradient(135deg, hsl(43 28% 24%), hsl(43 33% 34%) 55%, hsl(43 35% 44%));
+    --gradient-dark: linear-gradient(160deg, hsl(40 8% 9%), hsl(43 12% 17%));
+    --gradient-card: linear-gradient(180deg, hsl(40 8% 12%), hsl(40 8% 9%));
+    --shadow-brand: 0 12px 30px -12px hsl(43 38% 40% / 0.5);
+
+    --sidebar-background: 40 8% 9%;
+    --sidebar-foreground: 40 8% 88%;
+    --sidebar-primary: 43 38% 58%;
+    --sidebar-accent: 40 7% 16%;
+    --sidebar-accent-foreground: 40 10% 96%;
+    --sidebar-border: 40 7% 20%;
+    --sidebar-ring: 43 38% 58%;
+  }
 }
 
 @layer base {
