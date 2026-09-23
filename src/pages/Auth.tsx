@@ -84,6 +84,9 @@ const Auth = () => {
   const [supportSending, setSupportSending] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
   const [accessReleased, setAccessReleased] = useState(false);
+  // E-mail que tentou entrar sem ter confirmado o cadastro.
+  const [naoConfirmado, setNaoConfirmado] = useState<string | null>(null);
+  const [reenviando, setReenviando] = useState(false);
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
@@ -131,6 +134,27 @@ const Auth = () => {
     setPendingEmail(pendingFor);
     setSupportSent(false);
     setSupportMessage("");
+  };
+
+  /** O link de confirmação expira, então quem tropeça nele precisa de outro. */
+  const reenviarConfirmacao = async () => {
+    if (!naoConfirmado) return;
+    setReenviando(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: naoConfirmado,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setReenviando(false);
+    if (error) {
+      toast.error(
+        `${error.code ?? ""} ${error.message}`.toLowerCase().includes("rate limit")
+          ? "Já enviamos um link há pouco. Espere alguns minutos antes de pedir outro."
+          : "Não conseguimos reenviar agora. Fale com o suporte.",
+      );
+      return;
+    }
+    toast.success("Link reenviado. Confira também a caixa de spam.");
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -184,7 +208,17 @@ const Auth = () => {
           password: parsed.data.password,
         });
         if (error) {
-          toast.error("Credenciais inválidas.");
+          // "Credenciais inválidas" para tudo escondia a causa real: quem não
+          // tinha confirmado o e-mail era informado de que a senha estava
+          // errada, e ficava tentando a senha certa.
+          const motivo = `${error.code ?? ""} ${error.message}`.toLowerCase();
+          if (motivo.includes("not confirmed")) {
+            setNaoConfirmado(parsed.data.email);
+          } else if (motivo.includes("rate limit") || motivo.includes("too many")) {
+            toast.error("Muitas tentativas seguidas. Espere um minuto e tente de novo.");
+          } else {
+            toast.error("E-mail ou senha incorretos.");
+          }
           return;
         }
         // Checar se o acesso está liberado (compra aprovada ou liberação manual)
@@ -253,6 +287,44 @@ const Auth = () => {
             do seu edital e o gabarito comentado.
           </p>
         </header>
+
+        {/* Conta criada mas e-mail nunca confirmado. Antes esta situação
+            aparecia como senha errada, e o aluno ficava tentando a senha certa. */}
+        {naoConfirmado && (
+          <div className="animate-fade-in rounded-2xl border-2 border-warning/60 bg-warning/10 p-5 backdrop-blur space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <h2 className="font-display font-bold text-warning">Confirme seu e-mail para entrar</h2>
+                <p className="text-sm text-white/80 mt-1">
+                  Sua senha está correta. Falta clicar no link que enviamos para{" "}
+                  <strong className="break-all">{naoConfirmado}</strong>.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={reenviarConfirmacao}
+                disabled={reenviando}
+                className="flex-1 h-11 bg-gradient-brand text-white stencil text-xs"
+              >
+                {reenviando ? "Reenviando..." : "Reenviar o link"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setNaoConfirmado(null)}
+                className="h-11 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white stencil text-xs"
+              >
+                Fechar
+              </Button>
+            </div>
+            <p className="text-[11px] text-white/60">
+              O link vale por algumas horas. Confira a caixa de spam antes de pedir outro.
+            </p>
+          </div>
+        )}
 
         {pendingEmail && accessReleased ? (
           <div className="animate-fade-in">
