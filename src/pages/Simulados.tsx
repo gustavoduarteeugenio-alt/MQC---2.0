@@ -161,7 +161,9 @@ const Simulados = () => {
           <Button
             onClick={generateRandom}
             disabled={generating || grade.length === 0 || !exam}
-            className="mt-4 w-full bg-white text-foreground hover:bg-white/90 font-display stencil"
+            // O fundo é branco fixo, então a cor do texto também tem de ser:
+            // com text-foreground o texto clareia no modo escuro e desaparece.
+            className="mt-4 w-full bg-white text-slate-900 hover:bg-white/90 disabled:text-slate-500 font-display stencil"
           >
             {generating ? "Sorteando questões..." : "Gerar agora"}
           </Button>
