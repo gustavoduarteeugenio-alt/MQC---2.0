@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { SeletorDeTema } from "@/components/SeletorDeTema";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,12 @@ const Profile = () => {
             </Card>
           </Link>
         )}
+
+        <Card>
+          <div className="p-1">
+            <SeletorDeTema />
+          </div>
+        </Card>
 
         <Link to="/suporte">
           <Card>

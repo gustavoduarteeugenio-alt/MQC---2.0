@@ -1,13 +1,13 @@
 {
   "name": "Método Questão Certa",
   "short_name": "Questão Certa",
-  "description": "Método Questão Certa: o app identifica suas matérias fracas e escolhe as próximas questões para te levar a 80% de acerto até o dia da prova do CFSd CBMMG 2027 (IDECAN).",
+  "description": "Método Questão Certa: estude resolvendo questões. O app identifica suas matérias fracas e escolhe as próximas questões do seu edital para te levar a 80% de acerto até o dia da prova.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b1220",
-  "theme_color": "#ed5a1f",
+  "theme_color": "#0b1220",
   "lang": "pt-BR",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
