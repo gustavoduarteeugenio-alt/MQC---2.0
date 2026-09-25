@@ -27,8 +27,19 @@ export type ContentNode = {
   weight: number | null;
 };
 
-/** Rótulo curto do edital, como o aluno o reconhece: "CBMMG · CFSd BM 2027". */
+/** Rótulo do edital, como o aluno o reconhece: "CBMMG · CFSd BM 2027". */
 export const examLabel = (e: ExamRef) => `${e.institution_sigla} · ${e.name}`;
+
+/**
+ * Rótulo compacto para o seletor de concurso: "CFSd-CBMMG".
+ *
+ * O curso sai da primeira palavra do nome do edital, em vez de ficar fixo no
+ * código: um "CFO 2028" vira "CFO-PMMG" sem ninguém lembrar de mexer aqui.
+ */
+export const examLabelCurto = (e: ExamRef) => {
+  const curso = e.name.trim().split(/\s+/)[0];
+  return curso ? `${curso}-${e.institution_sigla}` : e.institution_sigla;
+};
 
 const EXAM_SELECT =
   "access_until, exams(id, slug, name, year, duration_minutes, contests(name, institutions(name, sigla)))";
