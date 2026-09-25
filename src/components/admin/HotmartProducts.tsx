@@ -92,7 +92,9 @@ export const HotmartProducts = () => {
     if (selected.size === 0) { toast.error("Marque ao menos um edital."); return; }
     // Um produto liberando vários editais é combo, não o caso normal: uma
     // marcação errada aqui daria acesso a um concurso que o aluno não pagou.
-    if (selected.size > 1) {
+    // Só o combo precisa de confirmação: marcar vários no modo "escolher" é o
+    // normal — são as opções oferecidas, e o aluno leva uma.
+    if (modo === "liberar" && selected.size > 1) {
       const nomes = exams.filter((e) => selected.has(e.id)).map((e) => e.name).join(", ");
       if (!confirm(
         `Este produto vai liberar ${selected.size} editais de uma vez: ${nomes}.\n\n` +
@@ -108,7 +110,11 @@ export const HotmartProducts = () => {
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(`Produto liberando ${selected.size} edital(is).`);
+    toast.success(
+      modo === "escolher"
+        ? `Salvo. O aluno vai escolher entre ${selected.size} edital(is).`
+        : `Salvo. O produto libera ${selected.size} edital(is) de uma vez.`,
+    );
     limpar();
     load();
   };
