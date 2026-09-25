@@ -6,15 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle, Link2, Loader2, Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 // Que produto da Hotmart dá acesso a quais editais. Um produto pode cobrir
 // mais de um: o Método Questão Certa é vendido como produto único, e o aluno
 // escolhe dentro do app o edital que vai estudar.
 
 type Exam = { id: string; name: string };
+type Modo = "liberar" | "escolher";
 type Mapping = {
   product_id: string;
   label: string | null;
+  modo: Modo;
   exam_ids: string[];
   exam_names: string[];
   compras_ativas: number;
@@ -32,6 +35,7 @@ export const HotmartProducts = () => {
   const [productId, setProductId] = useState("");
   const [label, setLabel] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [modo, setModo] = useState<Modo>("escolher");
   const [editando, setEditando] = useState(false);
 
   const load = useCallback(async () => {
@@ -56,13 +60,14 @@ export const HotmartProducts = () => {
   useEffect(() => { load(); }, [load]);
 
   const limpar = () => {
-    setProductId(""); setLabel(""); setSelected(new Set()); setEditando(false);
+    setProductId(""); setLabel(""); setSelected(new Set()); setModo("escolher"); setEditando(false);
   };
 
   const editar = (m: Mapping) => {
     setProductId(m.product_id);
     setLabel(m.label ?? "");
     setSelected(new Set(m.exam_ids));
+    setModo(m.modo ?? "liberar");
     setEditando(true);
   };
 
@@ -99,6 +104,7 @@ export const HotmartProducts = () => {
       _product_id: pid,
       _label: label.trim() || null,
       _exam_ids: Array.from(selected),
+      _modo: modo,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -141,8 +147,8 @@ export const HotmartProducts = () => {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Cada produto libera <strong>um edital</strong>: quem quiser outro concurso faz outra compra.
-          Marcar mais de um só faz sentido num produto combo, vendido como os dois concursos juntos.
+          O produto individual dá direito a <strong>um</strong> dos editais, e quem escolhe é o aluno
+          no primeiro acesso. O combo libera todos de uma vez.
           Compras de produtos não listados aqui liberam o app, mas não matriculam em nenhum concurso.
         </p>
 
@@ -164,7 +170,32 @@ export const HotmartProducts = () => {
         </div>
 
         <div>
-          <Label className="stencil text-[10px]">Edital que este produto libera</Label>
+          <Label className="stencil text-[10px]">O que a compra deste produto faz</Label>
+          <div className="mt-1 grid gap-2 sm:grid-cols-2">
+            {([
+              { v: "escolher" as Modo, t: "O aluno escolhe", d: "A compra dá direito a um dos editais marcados. Quem decide é ele, no primeiro acesso." },
+              { v: "liberar" as Modo, t: "Libera todos", d: "A compra matricula em todos os editais marcados. É o combo." },
+            ]).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setModo(o.v)}
+                className={cn(
+                  "rounded-xl border-2 p-3 text-left transition-colors",
+                  modo === o.v ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+                )}
+              >
+                <p className={cn("font-display text-sm font-semibold", modo === o.v && "text-primary")}>{o.t}</p>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{o.d}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label className="stencil text-[10px]">
+            {modo === "escolher" ? "Editais que o aluno poderá escolher" : "Editais que este produto libera"}
+          </Label>
           <div className="mt-1 grid gap-1.5 sm:grid-cols-2">
             {exams.map((e) => (
               <label key={e.id} className="flex items-center gap-2 text-sm border border-border rounded-lg px-3 py-2 cursor-pointer hover:bg-muted/50">
@@ -173,11 +204,20 @@ export const HotmartProducts = () => {
               </label>
             ))}
           </div>
-          {selected.size > 1 && (
+          {/* No modo "liberar" marcar vários é o combo, e é intencional. No
+              modo "escolher" vários é o normal: são as opções oferecidas. */}
+          {modo === "liberar" && selected.size > 1 && (
             <p className="mt-1.5 text-xs text-warning flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              {selected.size} editais marcados: uma compra só vai liberar todos eles. Use isso apenas
-              num produto combo.
+              {selected.size} editais marcados: uma compra vai liberar todos eles de uma vez.
+              É isso que você quer?
+            </p>
+          )}
+          {modo === "escolher" && selected.size === 1 && (
+            <p className="mt-1.5 text-xs text-warning flex items-start gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              Com um edital só não há o que escolher — o aluno vai ver uma tela com uma
+              opção. Marque os dois, ou use o modo "Libera todos".
             </p>
           )}
         </div>
@@ -246,7 +286,8 @@ export const HotmartProducts = () => {
                     )}
                   </p>
                   <p className="stencil text-[10px] text-muted-foreground mt-0.5">
-                    {m.exam_names.join(" · ")} · {m.compras_ativas} compra(s) ativa(s)
+                    {m.modo === "escolher" ? "Aluno escolhe entre" : "Libera"}: {m.exam_names.join(" · ")}
+                    {" · "}{m.compras_ativas} compra(s) ativa(s)
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">

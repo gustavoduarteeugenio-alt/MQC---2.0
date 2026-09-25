@@ -26,6 +26,7 @@ import Admin from "./pages/Admin.tsx";
 import Simulados from "./pages/Simulados.tsx";
 import SimuladoRunner from "./pages/SimuladoRunner.tsx";
 import AccessPending from "./pages/AccessPending.tsx";
+import EscolherConcurso from "./pages/EscolherConcurso.tsx";
 import Support from "./pages/Support.tsx";
 import Ranking from "./pages/Ranking.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/recuperar-senha" element={<ForgotPassword />} />
             <Route path="/sem-acesso" element={<ProtectedRoute><AccessPending /></ProtectedRoute>} />
+            <Route path="/escolher-concurso" element={<ProtectedRoute><EscolherConcurso /></ProtectedRoute>} />
             <Route path="/" element={<RootRedirect />} />
             <Route path="/inicio" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/materias" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
