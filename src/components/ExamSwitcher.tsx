@@ -1,5 +1,5 @@
 import { useExam } from "@/contexts/ExamContext";
-import { examLabel } from "@/lib/exams";
+import { examLabelCurto } from "@/lib/exams";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronsUpDown } from "lucide-react";
 
@@ -23,7 +23,7 @@ export const ExamSwitcher = ({ className = "" }: { className?: string }) => {
       <SelectContent>
         {enrollments.map(({ exam: e }) => (
           <SelectItem key={e.id} value={e.id} className="text-xs">
-            {examLabel(e)}
+            {examLabelCurto(e)}
           </SelectItem>
         ))}
       </SelectContent>
