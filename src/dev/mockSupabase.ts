@@ -231,15 +231,15 @@ const RPCS: Record<string, (args: any) => any> = {
   list_hotmart_purchases: () => [],
   // Uma linha por produto, com os editais que ele libera
   admin_hotmart_products: () => {
-    const porProduto: Record<string, { label: string | null; ids: string[]; nomes: string[] }> = {};
+    const porProduto: Record<string, { label: string | null; modo: string; ids: string[]; nomes: string[] }> = {};
     for (const p of TABLES.hotmart_products ?? []) {
-      const g = (porProduto[p.product_id] ??= { label: p.label ?? null, ids: [], nomes: [] });
+      const g = (porProduto[p.product_id] ??= { label: p.label ?? null, modo: p.modo ?? "liberar", ids: [], nomes: [] });
       if (p.label) g.label = p.label;
       g.ids.push(p.exam_id);
       g.nomes.push((TABLES.exams ?? []).find((e) => e.id === p.exam_id)?.name ?? "?");
     }
     return Object.entries(porProduto).map(([product_id, g]) => ({
-      product_id, label: g.label, exam_ids: g.ids, exam_names: g.nomes, compras_ativas: 0,
+      product_id, label: g.label, modo: g.modo, exam_ids: g.ids, exam_names: g.nomes, compras_ativas: 0,
     }));
   },
   admin_set_hotmart_product: (args: any) => {
@@ -252,11 +252,25 @@ const RPCS: Record<string, (args: any) => any> = {
     }
     for (const exam_id of ids) {
       const atual = tabela.find((p) => p.product_id === pid && p.exam_id === exam_id);
-      if (atual) atual.label = args?._label ?? null;
-      else tabela.unshift({ product_id: pid, exam_id, label: args?._label ?? null });
+      const modo = args?._modo ?? "liberar";
+      if (atual) { atual.label = args?._label ?? null; atual.modo = modo; }
+      else tabela.unshift({ product_id: pid, exam_id, label: args?._label ?? null, modo });
     }
     return ids.length;
   },
+  // A tela de escolha só aparece com ?escolher=1 na URL: o aluno do mock já tem
+  // as duas matrículas, então sem isso não haveria como exercitá-la.
+  editais_para_escolher: () =>
+    new URLSearchParams(location.search).has("escolher")
+      ? (TABLES.exams ?? []).map((e) => ({
+          exam_id: e.id,
+          nome: e.name,
+          instituicao: e.contests?.institutions?.name ?? "",
+          sigla: e.contests?.institutions?.sigla ?? "",
+          duracao_minutos: e.duration_minutes,
+        }))
+      : [],
+  escolher_edital: () => ({ ok: true }),
   // Uma venda órfã de exemplo, que desaparece assim que for vinculada
   admin_unmapped_hotmart_products: () =>
     (TABLES.hotmart_products ?? []).some((p) => p.product_id === "9988776")
