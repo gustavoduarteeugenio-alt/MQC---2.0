@@ -262,7 +262,9 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
             exam_id: examId,
             question_id: id,
             content_node_id: lote[idx].content_node_id,
-            status: "draft", // entra como rascunho: publica depois da revisão
+            // Já publica: a revisão acontece na planilha, antes de chegar aqui.
+            // Passar por rascunho obrigava a publicar questão por questão.
+            status: "published",
           })),
         );
         if (e2) throw e2;
@@ -279,7 +281,7 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
         rows_duplicated: duplicadas.length,
       });
 
-      toast.success(`${importadas} questões importadas como rascunho. Revise e publique em Questões.`);
+      toast.success(`${importadas} questões importadas e já publicadas para o aluno.`);
       reset();
       onImported?.();
     } catch (e: any) {
@@ -332,7 +334,8 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground mt-1">
-            As questões entram só neste edital, como rascunho, e ficam invisíveis ao aluno até você publicar.
+            As questões entram só neste edital e já ficam visíveis ao aluno. Se alguma precisar sair,
+            dá para ocultá-la uma a uma em Questões.
           </p>
         </div>
 
@@ -374,7 +377,7 @@ export const BulkImport = ({ onImported }: { onImported?: () => void }) => {
             <Button onClick={importar} disabled={!valid.length || importing}
               className="w-full bg-gradient-brand text-white stencil">
               {importing ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <><Upload className="w-4 h-4 mr-1" /> Importar {valid.length} como rascunho</>}
+                : <><Upload className="w-4 h-4 mr-1" /> Importar e publicar {valid.length} questões</>}
             </Button>
           </div>
 
