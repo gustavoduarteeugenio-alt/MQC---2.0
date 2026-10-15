@@ -296,7 +296,7 @@ export const ManageSimulados = () => {
                         <p className="text-[10px] stencil text-muted-foreground mt-0.5">
                           {disciplineOf(nodes, q.content_node_id)?.name ?? "Sem classificação"}
                           {q.year ? ` · ${q.year}` : ""}
-                          {q.status !== "published" ? " · rascunho" : ""}
+                          {q.status !== "published" ? " · oculta" : ""}
                         </p>
                       </div>
                     </label>

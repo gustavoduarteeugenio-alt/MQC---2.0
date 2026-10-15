@@ -39,7 +39,8 @@ const emptyForm = (content_node_id = "") => ({
   difficulty: "medium",
   year: "" as string | number,
   banca: "",
-  status: "draft" as "draft" | "published",
+  // Nasce publicada, igual à importação: a revisão é feita na planilha.
+  status: "published" as "draft" | "published",
   image_url: "",
   comment_image_url: "",
 });
@@ -223,7 +224,7 @@ export const ManageQuestions = () => {
     const { error } = await (supabase as any).from("exam_questions")
       .update({ status: novo }).eq("exam_id", examId).eq("question_id", q.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(novo === "published" ? "Questão publicada." : "Questão voltou para rascunho.");
+    toast.success(novo === "published" ? "Questão visível ao aluno." : "Questão ocultada do aluno.");
     reload();
   };
 
@@ -249,7 +250,7 @@ export const ManageQuestions = () => {
       exam_id: destinoExamId, question_id: nova.id, content_node_id: null, status: "draft",
     });
     if (e2) { toast.error(e2.message); return; }
-    toast.success("Cópia criada como rascunho no outro edital. Classifique-a por lá.");
+    toast.success("Cópia criada oculta no outro edital. Classifique-a e mostre-a por lá.");
   };
 
   const remove = async (q: QRow) => {
@@ -338,7 +339,7 @@ export const ManageQuestions = () => {
                   <span className={`text-[10px] stencil px-1.5 py-0.5 rounded ${
                     q.status === "published" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
                   }`}>
-                    {q.status === "published" ? "Publicada" : "Rascunho"}
+                    {q.status === "published" ? "Visível" : "Oculta"}
                   </span>
                   <span className="text-[10px] stencil bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">
                     Gab. {q.correct_answer}
@@ -354,7 +355,7 @@ export const ManageQuestions = () => {
               </div>
               <div className="flex flex-col gap-1">
                 <button onClick={() => alternarStatus(q)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-                  aria-label={q.status === "published" ? "Voltar para rascunho" : "Publicar"}>
+                  aria-label={q.status === "published" ? "Ocultar do aluno" : "Mostrar ao aluno"}>
                   {q.status === "published" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
                 <button onClick={() => openEdit(q)} className="p-2 text-primary hover:bg-primary/10 rounded-lg" aria-label="Editar">
@@ -445,8 +446,8 @@ export const ManageQuestions = () => {
                 <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Rascunho</SelectItem>
-                    <SelectItem value="published">Publicada</SelectItem>
+                    <SelectItem value="draft">Oculta do aluno</SelectItem>
+                    <SelectItem value="published">Visível ao aluno</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
