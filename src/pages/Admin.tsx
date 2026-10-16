@@ -44,6 +44,8 @@ const sectionLabels: Record<Section, string> = {
 const Admin = () => {
   const navigate = useNavigate();
   const { isAdmin, isDidacticAdmin, loading } = useProfile();
+  // Simulado é trabalho de conteúdo: a admin didática monta igual ao admin.
+  const podeConteudo = isAdmin || isDidacticAdmin;
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [active, setActive] = useState<Section>("questions");
   const [pendingSupport, setPendingSupport] = useState(0);
@@ -151,7 +153,7 @@ const Admin = () => {
             </SidebarGroup>
 
             {/* Simulados Group */}
-            {isAdmin && (
+            {podeConteudo && (
               <SidebarGroup>
                 <SidebarGroupLabel>Simulados</SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -267,7 +269,7 @@ const Admin = () => {
               >
                 Em lote
               </button>
-              {isAdmin && (
+              {podeConteudo && (
                 <button
                   onClick={() => handleNav("simulados")}
                   className={cn(
