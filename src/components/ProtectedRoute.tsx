@@ -6,8 +6,11 @@ import { Target } from "lucide-react";
 
 // Telas de conta, que seguem acessíveis sem acesso ao curso
 const ALLOW_WITHOUT_ACCESS = ["/sem-acesso", "/perfil"];
-// Telas que fazem sentido antes de existir matrícula em um edital
-const ALLOW_WITHOUT_ENROLLMENT = ["/escolher-concurso", "/sem-acesso", "/perfil"];
+// Telas que fazem sentido antes de existir matrícula em um edital.
+// O painel entra aqui porque é onde se conserta uma matrícula faltando: sem ele,
+// um admin sem matrícula fica trancado para fora da própria ferramenta de
+// conserto. A tela em si já é restrita ao staff.
+const ALLOW_WITHOUT_ENROLLMENT = ["/escolher-concurso", "/sem-acesso", "/perfil", "/admin"];
 
 export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading: authLoading } = useAuth();

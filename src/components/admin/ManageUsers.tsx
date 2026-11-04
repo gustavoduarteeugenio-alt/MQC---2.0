@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2, Users, CheckCircle2, XCircle, CalendarClock } from "lucide-react";
+import { Search, Loader2, Users, CheckCircle2, XCircle, CalendarClock, GraduationCap, X } from "lucide-react";
 import { toast } from "sonner";
 import { accessUntilFrom, formatAccessDate, hasActiveAccess, isAccessExpired } from "@/lib/access";
+import { examLabelCurto } from "@/lib/exams";
 
 type UserRow = {
   user_id: string;
@@ -17,33 +18,74 @@ type UserRow = {
   access_until: string | null;
 };
 
+type Exam = { id: string; name: string; sigla: string };
+type Matricula = { user_id: string; exam_id: string };
+
 const ORIGEM_OPTIONS = ["Instagram", "Indicação de Amigo", "Grupos de Estudo", "Google"];
 const NOT_INFORMED = "Não Informado";
 
 export const ManageUsers = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [originFilter, setOriginFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // Edital escolhido para cada usuário. Sem escolha não há liberação: era
+  // justamente a liberação sem edital que deixava a aluna presa em
+  // "Aguardando sua matrícula", parecendo falha de login.
+  const [escolha, setEscolha] = useState<Record<string, string>>({});
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, email, origem, approved, access_until" as any)
-      .order("created_at", { ascending: false });
+    const [{ data: perfis, error }, { data: ex }, { data: ens }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, email, origem, approved, access_until" as any)
+        .order("created_at", { ascending: false }),
+      (supabase as any)
+        .from("exams")
+        .select("id, name, contests(institutions(sigla))")
+        .order("name"),
+      (supabase as any).from("enrollments").select("user_id, exam_id"),
+    ]);
     if (error) {
       toast.error("Erro ao carregar usuários: " + error.message);
     } else {
-      setUsers(((data ?? []) as any) as UserRow[]);
+      setUsers(((perfis ?? []) as any) as UserRow[]);
     }
+    setExams(
+      ((ex ?? []) as any[]).map((e) => ({
+        id: e.id,
+        name: e.name,
+        sigla: e.contests?.institutions?.sigla ?? "",
+      })),
+    );
+    setMatriculas(((ens ?? []) as any) as Matricula[]);
     setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, []);
+
+  const rotulo = useCallback(
+    (examId: string) => {
+      const e = exams.find((x) => x.id === examId);
+      if (!e) return "edital removido";
+      return examLabelCurto({
+        id: e.id, slug: "", name: e.name, year: null, duration_minutes: 240,
+        contest_name: "", institution_name: "", institution_sigla: e.sigla,
+      });
+    },
+    [exams],
+  );
+
+  const editaisDe = useCallback(
+    (userId: string) => matriculas.filter((m) => m.user_id === userId).map((m) => m.exam_id),
+    [matriculas],
+  );
 
   const originStats = useMemo(() => {
     const stats: Record<string, number> = { [NOT_INFORMED]: 0 };
@@ -70,27 +112,86 @@ export const ManageUsers = () => {
     });
   }, [users, query, originFilter]);
 
-  // Liberar concede 1 ano a partir de agora (também renova quem já expirou); revogar só desliga.
-  const toggleApproval = async (u: UserRow) => {
-    setUpdatingId(u.user_id);
-    const grant = !hasActiveAccess(u);
-    const until = grant ? accessUntilFrom() : null;
-    const patch: Partial<UserRow> = grant ? { approved: true, access_until: until } : { approved: false };
-    const { error } = await supabase
-      .from("profiles")
-      .update(patch as any)
-      .eq("user_id", u.user_id);
-    setUpdatingId(null);
+  /** Matricula no edital, com o mesmo prazo do acesso. */
+  const matricular = async (u: UserRow, examId: string, until: string | null) => {
+    const { error } = await (supabase as any).from("enrollments").insert({
+      user_id: u.user_id,
+      exam_id: examId,
+      source: "manual",
+      access_until: until,
+    });
     if (error) {
-      toast.error("Falha ao atualizar acesso: " + error.message);
+      // 23505 = já existe. Qualquer outro erro o admin precisa ver: sem
+      // matrícula, o acesso liberado não leva a lugar nenhum.
+      if (error.code !== "23505") throw error;
+      return false;
+    }
+    setMatriculas((prev) => [...prev, { user_id: u.user_id, exam_id: examId }]);
+    return true;
+  };
+
+  // Liberar concede 1 ano a partir de agora (também renova quem já expirou) e
+  // matricula no edital escolhido; revogar só desliga o acesso.
+  const toggleApproval = async (u: UserRow) => {
+    const grant = !hasActiveAccess(u);
+    const examId = escolha[u.user_id];
+    if (grant && !examId) {
+      toast.error("Escolha o concurso antes de liberar.");
       return;
     }
-    toast.success(
-      grant
-        ? `${u.email ?? "Usuário"} liberado até ${formatAccessDate(until!)}.`
-        : `Acesso revogado para ${u.email ?? "usuário"}.`,
-    );
-    setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, ...patch } : x)));
+    setUpdatingId(u.user_id);
+    try {
+      const until = grant ? accessUntilFrom() : null;
+      const patch: Partial<UserRow> = grant ? { approved: true, access_until: until } : { approved: false };
+      const { error } = await supabase.from("profiles").update(patch as any).eq("user_id", u.user_id);
+      if (error) throw error;
+
+      if (grant) await matricular(u, examId, until);
+
+      setUsers((prev) => prev.map((x) => (x.user_id === u.user_id ? { ...x, ...patch } : x)));
+      toast.success(
+        grant
+          ? `${u.email ?? "Usuário"} liberado em ${rotulo(examId)} até ${formatAccessDate(until!)}.`
+          : `Acesso revogado para ${u.email ?? "usuário"}. As matrículas continuam — reative quando quiser.`,
+      );
+    } catch (e: any) {
+      toast.error("Falha ao atualizar acesso: " + (e.message ?? e));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  /** Acrescenta um edital a quem já está liberado. */
+  const adicionarEdital = async (u: UserRow) => {
+    const examId = escolha[u.user_id];
+    if (!examId) {
+      toast.error("Escolha o concurso antes de matricular.");
+      return;
+    }
+    setUpdatingId(u.user_id);
+    try {
+      const novo = await matricular(u, examId, u.access_until);
+      toast[novo ? "success" : "info"](
+        novo
+          ? `${u.email ?? "Usuário"} matriculado em ${rotulo(examId)}.`
+          : `${u.email ?? "Usuário"} já estava em ${rotulo(examId)}.`,
+      );
+    } catch (e: any) {
+      toast.error("Falha ao matricular: " + (e.message ?? e));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const removerEdital = async (u: UserRow, examId: string) => {
+    if (!confirm(`Tirar ${u.email ?? "este usuário"} de ${rotulo(examId)}? O histórico de respostas é mantido.`)) return;
+    setUpdatingId(u.user_id);
+    const { error } = await (supabase as any)
+      .from("enrollments").delete().eq("user_id", u.user_id).eq("exam_id", examId);
+    setUpdatingId(null);
+    if (error) { toast.error("Falha ao remover: " + error.message); return; }
+    setMatriculas((prev) => prev.filter((m) => !(m.user_id === u.user_id && m.exam_id === examId)));
+    toast.success(`Removido de ${rotulo(examId)}.`);
   };
 
   return (
@@ -155,6 +256,8 @@ export const ManageUsers = () => {
           {filtered.map((u) => {
             const busy = updatingId === u.user_id;
             const origemLabel = u.origem && u.origem.trim() ? u.origem : NOT_INFORMED;
+            const liberado = hasActiveAccess(u);
+            const meusEditais = editaisDe(u.user_id);
             return (
               <div
                 key={u.user_id}
@@ -189,21 +292,71 @@ export const ManageUsers = () => {
                           <XCircle className="w-3 h-3 mr-1" /> Aguardando liberação
                         </Badge>
                       )}
+
+                      {/* Em qual concurso ele estuda. Sem nenhum, o acesso não leva a lugar nenhum. */}
+                      {meusEditais.length === 0 ? (
+                        <Badge variant="outline" className="stencil text-[10px] border-destructive/50 text-destructive">
+                          <GraduationCap className="w-3 h-3 mr-1" /> Sem concurso
+                        </Badge>
+                      ) : (
+                        meusEditais.map((examId) => (
+                          <Badge key={examId} variant="outline" className="stencil text-[10px] gap-1">
+                            <GraduationCap className="w-3 h-3" /> {rotulo(examId)}
+                            <button
+                              onClick={() => removerEdital(u, examId)}
+                              disabled={busy}
+                              aria-label={`Tirar de ${rotulo(examId)}`}
+                              className="hover:text-destructive"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    value={escolha[u.user_id] ?? ""}
+                    onValueChange={(v) => setEscolha((p) => ({ ...p, [u.user_id]: v }))}
+                  >
+                    <SelectTrigger className="h-8 w-full sm:w-52 text-xs">
+                      <SelectValue placeholder="Concurso…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {exams.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>{rotulo(e.id)} · {e.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
                   <Button
                     size="sm"
                     disabled={busy}
                     onClick={() => toggleApproval(u)}
-                    className={hasActiveAccess(u)
+                    className={liberado
                       ? "bg-muted hover:bg-muted/80 text-foreground stencil text-[11px]"
                       : "bg-success hover:bg-success/90 text-success-foreground stencil text-[11px]"}
                   >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : hasActiveAccess(u) ? <><XCircle className="w-3 h-3 mr-1" /> Revogar acesso</> : <><CheckCircle2 className="w-3 h-3 mr-1" /> Liberar por 1 ano</>}
+                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : liberado ? <><XCircle className="w-3 h-3 mr-1" /> Revogar acesso</> : <><CheckCircle2 className="w-3 h-3 mr-1" /> Liberar por 1 ano</>}
                   </Button>
+
+                  {/* Quem já está liberado precisa de um jeito de ganhar outro edital
+                      — e de ganhar o primeiro, no caso de quem foi liberado antes
+                      de o painel pedir o concurso. */}
+                  {liberado && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => adicionarEdital(u)}
+                      className="stencil text-[11px]"
+                    >
+                      <GraduationCap className="w-3 h-3 mr-1" /> Matricular
+                    </Button>
+                  )}
                 </div>
               </div>
             );
