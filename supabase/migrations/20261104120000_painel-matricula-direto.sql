@@ -1,0 +1,15 @@
+-- O painel de Usuários passa a matricular, então precisa do privilégio.
+--
+-- Quando devolvi a escrita das tabelas de edital (20261013120000), deixei
+-- `enrollments` de fora de propósito: nenhuma tela gravava matrícula direto,
+-- quem matriculava era o webhook (service_role) ou uma RPC SECURITY DEFINER.
+-- Naquele comentário ficou dito que, no dia em que uma tela precisasse, o GRANT
+-- teria de vir junto — e não adiantaria só a política. É esse dia.
+--
+-- O motivo: liberar acesso no painel concedia prazo e nenhum edital. A aluna
+-- entrava e caía em "Aguardando sua matrícula", que de fora parece falha de
+-- login. Agora a liberação pede o edital e matricula de verdade.
+--
+-- A política continua admin-only ("Admin manage enrollments"): é ela que barra,
+-- não a falta de privilégio. O aluno tem SELECT da própria matrícula e nada mais.
+GRANT INSERT, UPDATE, DELETE ON public.enrollments TO authenticated;
